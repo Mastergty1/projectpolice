@@ -1,7 +1,9 @@
 # ignore all node_modules
-node_modules
-# ignore config file
-config/config.env
-.vscode
+node_modules/
+backend/node_modules/
 
-.git
+# ignore config file
+backend/config/config.env
+
+# ignore VS Code settings
+.vscode/
