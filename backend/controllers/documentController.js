@@ -1,15 +1,14 @@
-import { extractText, findKeywords } from '../services/ocrService.js';
-import { generateHash, isDuplicate } from '../utils/duplicateChecker.js';
-import pool from '../config/db.js';
+const { extractText, findKeywords } = require('../services/ocrService');
+const { generateHash, isDuplicate } = require('../utils/duplicateChecker');
+const pool = require('../config/db');
 
-export const processDocuments = async (req, res) => {
+exports.processDocuments = async (req, res) => {
   const files = req.files;
   const keywords = req.body.keywords?.split(',') || [];
   const results = [];
 
   for (const file of files) {
     try {
-
       const text = await extractText(file.path);
 
       const hash = generateHash(text);

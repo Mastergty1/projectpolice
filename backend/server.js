@@ -1,9 +1,10 @@
 const dotenv = require("dotenv");
-const connectDB = require("./config/db");
 
+// 1. สำคัญมาก: โหลด config.env ก่อนที่จะ require ไฟล์อื่นๆ ที่ต้องใช้ process.env
 dotenv.config({ path: "./config/config.env" });
 
-connectDB();
+// 2. นำเข้าไฟล์ db.js (เมื่อถูก require ไฟล์ db.js จะทำงานและเชื่อมต่อฐานข้อมูลให้ทันที)
+const pool = require("./config/db");
 
 const app = require("./app");
 

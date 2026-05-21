@@ -1,5 +1,5 @@
-import multer from 'multer';
-import path from 'path';
+const multer = require('multer');
+const path = require('path');
 
 //folder
 const storage = multer.diskStorage({
@@ -10,7 +10,7 @@ const storage = multer.diskStorage({
 });
 
 //file type filter
-export const upload = multer({
+const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
     const allowed = ['.png', '.jpg', '.jpeg', '.pdf', '.tiff'];
@@ -18,3 +18,5 @@ export const upload = multer({
     cb(null, allowed.includes(ext));
   }
 });
+
+module.exports = { upload };

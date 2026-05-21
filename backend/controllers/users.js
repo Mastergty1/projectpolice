@@ -1,12 +1,11 @@
 const User = require('../models/User');
-const Booking = require('../models/Booking');
 
 // @desc    Get all users
 // @route   GET /api/v1/users
 // @access  Private/Admin
 exports.getUsers = async (req, res, next) => {
     try {
-        const users = await User.find().populate('booking');
+        const users = await User.find(); // เอา .populate('booking') ออก
 
         res.status(200).json({
             success: true,
@@ -26,7 +25,7 @@ exports.getUsers = async (req, res, next) => {
 // @access  Private/Admin
 exports.getUser = async (req, res, next) => {
     try {
-        const user = await User.findById(req.params.id).populate('booking');
+        const user = await User.findById(req.params.id); // เอา .populate('booking') ออก
 
         if (!user) {
             return res.status(404).json({
@@ -52,9 +51,6 @@ exports.getUser = async (req, res, next) => {
 // @access  Private/Admin
 exports.updateUser = async (req, res, next) => {
     try {
-        // Prevent updating booking field (it's virtual)
-        delete req.body.booking;
-
         const user = await User.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
             runValidators: true
@@ -93,32 +89,7 @@ exports.deleteUser = async (req, res, next) => {
             });
         }
 
-        // Find and delete user's booking if exists
-        const booking = await Booking.findOne({ user: req.params.id });
-        
-        if (booking) {
-            // Update dentist's slot to mark as available
-            const bookingDate = new Date(booking.date);
-            bookingDate.setHours(0, 0, 0, 0);
-            
-            await User.findOneAndUpdate(
-                {
-                    _id: booking.dentist,
-                    'availableSlots.date': {
-                        $gte: bookingDate,
-                        $lt: new Date(bookingDate.getTime() + 24 * 60 * 60 * 1000)
-                    },
-                    'availableSlots.startTime': booking.startTime,
-                    'availableSlots.endTime': booking.endTime
-                },
-                {
-                    $set: { 'availableSlots.$.isBooked': false }
-                }
-            );
-
-            // Delete the booking
-            await Booking.deleteOne({ _id: booking._id });
-        }
+        // ลบลอจิกการหาและอัปเดต Booking / Dentist slot ออกทั้งหมด
 
         // Delete the user
         await User.findByIdAndDelete(req.params.id);
@@ -140,7 +111,7 @@ exports.deleteUser = async (req, res, next) => {
 // @access  Private
 exports.getMyProfile = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.id).populate('booking');
+        const user = await User.findById(req.user.id); // เอา .populate('booking') ออก
 
         res.status(200).json({
             success: true,
@@ -159,9 +130,6 @@ exports.getMyProfile = async (req, res, next) => {
 // @access  Private
 exports.updateMyProfile = async (req, res, next) => {
     try {
-        // Prevent updating booking field (it's virtual)
-        delete req.body.booking;
-
         const user = await User.findByIdAndUpdate(req.user.id, req.body, {
             new: true,
             runValidators: true

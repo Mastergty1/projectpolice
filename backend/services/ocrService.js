@@ -1,7 +1,7 @@
-import Tesseract from 'tesseract.js';
+const Tesseract = require('tesseract.js');
 
 //img to text
-export const extractText = async (filePath) => {
+exports.extractText = async (filePath) => {
   const { data: { text } } = await Tesseract.recognize(filePath, 'tha+eng', {
     logger: m => console.log(m)
   });
@@ -9,7 +9,7 @@ export const extractText = async (filePath) => {
 };
 
 //find keywords in text
-export const findKeywords = (text, keywords) => {
+exports.findKeywords = (text, keywords) => {
   const found = {};
   for (const kw of keywords) {
     const regex = new RegExp(kw, 'gi');
