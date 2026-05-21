@@ -1,6 +1,5 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
-const expressMongoSanitize = require("@exortek/express-mongo-sanitize");
 const helmet = require("helmet");
 const { xss } = require("express-xss-sanitizer");
 const rateLimit = require("express-rate-limit");
@@ -10,12 +9,10 @@ const morgan = require("morgan");
 const swaggerJsDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 
-const dentists = require("./routes/dentists");
-const auth = require("./routes/auth");
-const bookings = require("./routes/bookings");
-const users = require("./routes/users");
-const records = require("./routes/records");
 
+const auth = require("./routes/auth");
+const users = require("./routes/users");
+const documents = require("./routes/documents");
 const app = express();
 
 const swaggerOptions = {
@@ -38,7 +35,6 @@ app.use(cors());
 if (process.env.NODE_ENV !== "test") app.use(morgan("dev"));
 app.use(express.json());
 app.use(cookieParser());
-app.use(expressMongoSanitize());
 app.use(helmet());
 app.use(xss());
 app.use(hpp());
@@ -51,11 +47,17 @@ const generalLimiter = rateLimit({
   },
 });
 
-app.use("/api/v1/dentists", dentists);
-app.use("/api/v1/auth", auth);
-app.use("/api/v1/bookings", bookings);
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  handler: (req, res) => {
+    res.status(429).json({ success: false, message: "Too Many Requests" });
+  },
+});
+
+app.use("/api/v1/auth", authLimiter, auth);
 app.use("/api/v1/users", users);
-app.use("/api/v1/records", records);
+app.use("/api/v1/documents",documents);
 app.set("query parser", "extended");
 
 module.exports = app;
