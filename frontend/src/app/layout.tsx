@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Sarabun } from "next/font/google";
-// import "./globals.css";
+// @ts-ignore: CSS import without type declarations
+import "./globals.css";
 import TopBar from "@/components/TopBar";
 
 
