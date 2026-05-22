@@ -59,7 +59,7 @@
     min-height: 0;   
 }
 
-.ContentContentScrollable{
+.ContentContentScrollable ::-webkit-scrollbar {
   width: 5px;
 }
 
