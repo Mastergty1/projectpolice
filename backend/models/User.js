@@ -1,129 +1,96 @@
-const mongoose = require("mongoose");
+const pool = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const UserSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: [true, "Name is required"],
-      trim: true,
-      minlength: [1, "Name must be at least 1 characters"],
-      maxlength: [50, "Name cannot exceed 50 characters"],
-    },
-    email: {
-      type: String,
-      required: [true, "Email is required"],
-      unique: true,
-      lowercase: true,
-      match: [
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-        "Please provide a valid email",
-      ], // From Class
-    },
-    phone: {
-      type: String,
-      required: [true, "Phone is required"],
-      match: [
-        /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/,
-        "Please provide a valid phone number",
-      ],
-    },
-    password: {
-      type: String,
-      required: [true, "Password is required"],
-      minlength: [6, "Password must be at least 6 characters"],
-      select: false, // No return
-    },
-    role: {
-      type: String,
-      enum: ["user", "admin","dentist"],
-      default: "user",
-    },
-    yearsOfExperience: {
-      type: Number,
-      min: [0, "Years of experience cannot be negative"],
-      max: [100, "Years of experience seems invalid"],
-    },
-    areaOfExpertise: {
-      type: String,
-      enum: [
-        "General Dentistry",
-        "Orthodontics",
-        "Periodontology",
-        "Endodontics",
-        "Prosthodontics",
-        "Oral Surgery",
-        "Pediatric Dentistry",
-        "Cosmetic Dentistry",
-      ],
-    },
-    availableSlots: {
-      type: [
-        {
-          date: { type: Date, required: true },
-          startTime: {
-            type: String,
-            required: true,
-            match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format (HH:MM)"],
-          },
-          endTime: {
-            type: String,
-            required: true,
-            match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format (HH:MM)"],
-          },
-          isBooked: { type: Boolean, default: false },
-        },
-      ],
-      default: [],
-    },
-    resetPasswordToken: String,
-    resetPasswordExpire: Date,
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-    updateAt: {
-      type: Date,
-      default: Date.now,
-    },
-  },
-  {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
-  },
-);
+class User {
+  // สร้างผู้ใช้งานใหม่
+  static async create(userData) {
+    const { name, email, phone, password, role, yearsOfExperience, areaOfExpertise } = userData;
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-// Indexes for performance
-UserSchema.index({ phone: 1 });
+    const query = `
+      INSERT INTO users (name, email, phone, password, role, years_of_experience, area_of_expertise) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7) 
+      RETURNING id, name, email, phone, role, years_of_experience, area_of_expertise, created_at
+    `;
+    const values = [name, email, phone, hashedPassword, role || "user", yearsOfExperience || null, areaOfExpertise || null];
 
-UserSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-});
+    const { rows } = await pool.query(query, values);
+    return rows[0];
+  }
 
-UserSchema.methods.getSignedJwtToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE,
-  });
-};
+  // หาข้อมูลผู้ใช้งานด้วย ID
+  static async findById(id) {
+    const { rows } = await pool.query(`SELECT * FROM users WHERE id = $1`, [id]);
+    return rows[0];
+  }
 
-UserSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
-};
+  // หาผู้ใช้งานสำหรับ Login (เช็ค email)
+  static async findOne(criteria) {
+    if (criteria.email) {
+      const { rows } = await pool.query(`SELECT * FROM users WHERE email = $1`, [criteria.email]);
+      return rows[0];
+    }
+    return null;
+  }
 
-UserSchema.virtual("availableSlotCount").get(function () {
-  return this.availableSlots ? this.availableSlots.filter((s) => !s.isBooked).length : 0;
-});
+  // ดึงผู้ใช้งานทั้งหมด
+  static async find() {
+    const { rows } = await pool.query(`
+      SELECT id, name, email, phone, role, years_of_experience, area_of_expertise, created_at, updated_at 
+      FROM users
+    `);
+    return rows;
+  }
 
-// Virtual populate for booking
-UserSchema.virtual("booking", {
-  ref: "Booking",
-  localField: "_id",
-  foreignField: "user",
-  justOne: true,
-});
+  // อัปเดตผู้ใช้งานแบบยืดหยุ่น (Dynamic Update)
+  static async findByIdAndUpdate(id, data) {
+    const keys = Object.keys(data);
+    if (keys.length === 0) return this.findById(id);
 
-module.exports = mongoose.model("User", UserSchema);
+    const values = Object.values(data);
+    const setString = keys.map((key, index) => {
+      // Mapping camelCase ไป snake_case สำหรับบางฟิลด์
+      const dbKey = key === 'yearsOfExperience' ? 'years_of_experience' : 
+                    key === 'areaOfExpertise' ? 'area_of_expertise' : key;
+      return `${dbKey} = $${index + 2}`;
+    }).join(", ");
+
+    const query = `
+      UPDATE users 
+      SET ${setString}, updated_at = NOW() 
+      WHERE id = $1 
+      RETURNING id, name, email, phone, role, years_of_experience, area_of_expertise, created_at, updated_at
+    `;
+    
+    const { rows } = await pool.query(query, [id, ...values]);
+    return rows[0];
+  }
+
+  // ลบผู้ใช้งาน
+  static async findByIdAndDelete(id) {
+    await pool.query(`DELETE FROM users WHERE id = $1`, [id]);
+  }
+
+  // อัปเดตรหัสผ่าน
+  static async updatePassword(id, newPassword) {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    await pool.query(`UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2`, [hashedPassword, id]);
+  }
+
+  // เทียบรหัสผ่าน
+  static async matchPassword(enteredPassword, userPassword) {
+    return await bcrypt.compare(enteredPassword, userPassword);
+  }
+
+  // สร้าง Token
+  static getSignedJwtToken(userId) {
+    return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRE,
+    });
+  }
+}
+
+module.exports = User;

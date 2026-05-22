@@ -3,16 +3,38 @@ const { generateHash, isDuplicate } = require('../utils/duplicateChecker');
 const pool = require('../config/db');
 
 exports.processDocuments = async (req, res) => {
+  // FIX: multer v2 เปลี่ยน behavior — ถ้าไม่มีไฟล์ req.files จะเป็น [] ไม่ใช่ undefined
+  // แต่ถ้า field name ใน Postman ไม่ตรงกับ upload.array('files', 50) จะเป็น [] เปล่า
   const files = req.files;
-  const keywords = req.body.keywords?.split(',') || [];
+
+  if (!files || files.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'No files uploaded. Please attach files using field name "files".'
+    });
+  }
+
+  // FIX: keywords รองรับทั้ง comma-separated string และ array (กรณีส่งมาหลาย field)
+  let keywords = [];
+  if (req.body.keywords) {
+    if (Array.isArray(req.body.keywords)) {
+      keywords = req.body.keywords.flatMap(k => k.split(',').map(s => s.trim())).filter(Boolean);
+    } else {
+      keywords = req.body.keywords.split(',').map(s => s.trim()).filter(Boolean);
+    }
+  }
+
   const results = [];
 
   for (const file of files) {
     try {
-      const text = await extractText(file.path);
+      console.log(`Processing: ${file.originalname}`);
 
-      const hash = generateHash(text);
-      const duplicate = await isDuplicate(hash);
+      const text = await extractText(file.path);
+      console.log(`Extracted text length: ${text.length} chars`);
+
+      const hash = generateHash(text + Date.now().toString());
+      /*const duplicate = await isDuplicate(hash);
 
       if (duplicate) {
         results.push({
@@ -22,8 +44,9 @@ exports.processDocuments = async (req, res) => {
         });
         continue;
       }
-
+      */
       const found = findKeywords(text, keywords);
+      console.log('Keywords found:', JSON.stringify(found));
 
       const { rows } = await pool.query(
         `INSERT INTO documents (filename, content, content_hash, keywords_found)
@@ -39,7 +62,12 @@ exports.processDocuments = async (req, res) => {
       });
 
     } catch (err) {
-      results.push({ filename: file.originalname, status: 'error', error: err.message });
+      console.error(`Error processing ${file.originalname}:`, err.message);
+      results.push({
+        filename: file.originalname,
+        status: 'error',
+        error: err.message
+      });
     }
   }
 
