@@ -12,9 +12,10 @@
     border-radius: 0.2rem;
     box-shadow: 4px 4px 0px rgb(0, 0, 0,25%);
     color: var(--header);
-    
+    container-type: inline-size;
     min-height: 0;
 }
+
 
 .ContentContainer{
     background-color: var(--container);
@@ -36,16 +37,40 @@
     min-height: 0;
 }
 
-.ContentContentScrollable {
+.ContentHeader{
     padding: 0.7rem 1rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    flex: 1;              
+    min-height: 0;
+    min-height: min-content; /* Force container to expand if content wraps */
+    height: auto;            /* Allow it to grow naturally */
+    flex-shrink: 0;
+}
+
+.ContentContentScrollable {
+    padding: 0rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 0 0 auto !important;          
     overflow-y: auto;     
     max-height: 100%;  
     min-height: 0;   
 }
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--shadow);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--wrapper);
+}
+
 
 .Dropdown{
     background-color: var(--button);
@@ -67,7 +92,8 @@
 }
 
 .Button:hover{
-    background-color: var(--wrapper);
+    background-color: var(--container);
+    cursor: pointer;
 }
 
 
