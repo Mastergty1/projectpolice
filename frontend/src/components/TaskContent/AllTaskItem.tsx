@@ -56,7 +56,6 @@ export default function AllTaskItem({date,name,personInCharge,status,id}:TaskIte
     theme = styles.DateGreen;
     }
 
-
     const [taskStatus, setStatus] = useState<TaskStatus>("following");
 
     const statusOption: StatusOption[] = [
@@ -84,6 +83,16 @@ export default function AllTaskItem({date,name,personInCharge,status,id}:TaskIte
         } as const;
 
     const themeStyle = selectThemeMap[taskStatus];
+
+    // สร้างตัวแปรสำหรับแสดงผลข้อความ 'เหลือเวลาอีก' ตามความเป็นจริง
+    let timeRemainingText = "";
+    if (diffDays < 0) {
+        timeRemainingText = `เลยกำหนดมาแล้ว ${Math.abs(diffDays)} วัน`;
+    } else if (diffDays === 0) {
+        timeRemainingText = "ครบกำหนดวันนี้";
+    } else {
+        timeRemainingText = `${diffDays} วัน`;
+    }
     
     return(
         <div className={styles.TaskWrapper}>
@@ -99,7 +108,9 @@ export default function AllTaskItem({date,name,personInCharge,status,id}:TaskIte
                 <h1 className={styles.Header}>{name}</h1>
                 <div className={styles.DetailContainer}>
                     <p className="flex flex-col sm:flex-row"><strong>ผู้รับผิดชอบ: &nbsp; </strong> {personInCharge}</p>
-                    <p className="flex flex-col sm:flex-row"><strong>เหลือเวลาอีก: &nbsp; </strong> {personInCharge}</p>
+                    
+                    {/* แก้ไขบัคตรงนี้ จากเดิมใช้ {personInCharge} เปลี่ยนเป็น {timeRemainingText} */}
+                    <p className="flex flex-col sm:flex-row"><strong>เหลือเวลาอีก: &nbsp; </strong> {timeRemainingText}</p>
                 </div>
                 </div>
                 </div>
@@ -114,8 +125,9 @@ export default function AllTaskItem({date,name,personInCharge,status,id}:TaskIte
                             )}
                             isClearable={false}
                             onChange={(selectedOption) => {
-                                setStatus(selectedOption!.value);
-                                
+                                if (selectedOption) {
+                                    setStatus(selectedOption.value);
+                                }
                             }}
                             menuPortalTarget={
                                 typeof document !== "undefined"

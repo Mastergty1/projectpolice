@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Sarabun } from "next/font/google";
-import "./globals.css";
+// import "./globals.css";
 import TopBar from "@/components/TopBar";
 
 
