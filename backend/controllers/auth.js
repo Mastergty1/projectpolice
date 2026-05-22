@@ -2,13 +2,11 @@ const User = require("../models/User");
 
 // Get token from model, create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {
-  // Create token
-  const token = user.getSignedJwtToken();
+  // สร้าง token ผ่าน static method
+  const token = User.getSignedJwtToken(user.id);
 
   const options = {
-    expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000,
-    ),
+    expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000),
     httpOnly: true,
   };
 
@@ -29,19 +27,17 @@ exports.register = async (req, res, next) => {
   try {
     const { name, email, phone, password, role } = req.body;
 
-    // Create user
-    const user = await User.create({
-      name,
-      email,
-      phone,
-      password,
-      role,
-    });
+    // ตรวจสอบอีเมลซ้ำ
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, msg: "Email already in use" });
+    }
 
+    const user = await User.create({ name, email, phone, password, role });
     sendTokenResponse(user, 200, res);
   } catch (err) {
-    res.status(400).json({ success: false });
     console.log(err.stack);
+    res.status(400).json({ success: false, msg: err.message });
   }
 };
 
@@ -52,41 +48,23 @@ exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Validate email & password
     if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        msg: "Please provide an email and password",
-      });
+      return res.status(400).json({ success: false, msg: "Please provide an email and password" });
     }
 
-    // Check for user
-    const user = await User.findOne({ email }).select("+password");
-
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({
-        success: false,
-        msg: "Invalid credentials",
-      });
+      return res.status(400).json({ success: false, msg: "Invalid credentials" });
     }
 
-    // Check if password matches
-    const isMatch = await user.matchPassword(password);
-
+    const isMatch = await User.matchPassword(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        msg: "Invalid credentials",
-      });
+      return res.status(401).json({ success: false, msg: "Invalid credentials" });
     }
 
-    // Create token
     sendTokenResponse(user, 200, res);
   } catch (err) {
-    return res.status(401).json({
-      success: false,
-      msg: "Cannot convert email or password to string",
-    });
+    return res.status(500).json({ success: false, msg: "Server error" });
   }
 };
 
@@ -99,20 +77,24 @@ exports.logout = async (req, res, next) => {
     httpOnly: true,
   });
 
-  res.status(200).json({
-    success: true,
-    data: {},
-  });
+  res.status(200).json({ success: true, data: {} });
 };
 
 // @desc    Get current logged in user
 // @route   GET /api/v1/auth/me
 // @access  Private
 exports.getMe = async (req, res, next) => {
-  const user = await User.findById(req.user.id).populate('booking');
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, msg: "User not found" });
+    }
+    
+    // ซ่อนรหัสผ่านไม่ให้ส่งกลับไป
+    delete user.password; 
 
-  res.status(200).json({
-    success: true,
-    data: user,
-  });
+    res.status(200).json({ success: true, data: user });
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
 };

@@ -7,3 +7,5 @@ backend/config/config.env
 
 # ignore VS Code settings
 .vscode/
+
+backend/config/drive-credentials.json
