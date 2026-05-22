@@ -28,7 +28,7 @@ export default function RootLayout({
 
           <TopBar />
 
-          <main className="flex-1 overflowx-scroll">
+          <main className="flex-1 overflow-auto">
             {children}
           </main>
 

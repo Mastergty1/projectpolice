@@ -7,6 +7,28 @@
   --wrapper:#DBDBD4;
   --container:#F7F6EE;
   --button:#FFFDF8;
+
+  --redText:#900707;
+  --redBG:#e98586;
+  --redBorder:#BE5B5C;
+
+  --orangeText:#903207;
+  --orangeBG:#e9aa85;
+  --orangeBorder:#be835b;
+
+  --yellowText:#872D00;
+  --yellowBG:#FFEA94;
+  --yellowBorder:#CEA74C;
+
+  --greenText:#008755;
+  --greenBG:#94FFB8;
+  --greenBorder:#4ccea7;
+
+  --greyText:#eaeaea;
+  --greyBG:#696969;
+  --greyBorder:#5f5f5f;
+
+
 }
 
 @theme inline {

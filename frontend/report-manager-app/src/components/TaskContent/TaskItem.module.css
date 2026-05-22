@@ -3,6 +3,7 @@
     border: 2px solid var(--wrapper);
     border-radius: 0.5rem;
     overflow: hidden;
+    flex-shrink: 0;
     container-type: inline-size;
 }
 
@@ -26,7 +27,6 @@
     align-items: center;
     line-height: 2rem;
     padding: 1rem;
-    background-color: rebeccapurple;
     text-align: center;
     justify-content: center;
 }
@@ -56,23 +56,15 @@
     font-size: 2rem;
 }
 
-.ButtonContainer{
-    flex: 1;
-    padding: 1rem;
-    align-items: center;
-    align-self: center;
-    display: flex;
-    flex-direction: column;
-
-    gap: 0.5rem;
-    
-}
 
 .Clickable{
     background-color: var(--container);
     border: 2px solid var(--wrapper);
     padding: 0.2rem 0.5rem;
     border-radius: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex: 1;
     width: 100%;
 }
@@ -92,8 +84,8 @@
 
     gap: 0.5rem;
     color: var(--header);
-
-    width: 100%;
+    
+    max-width: 250px;
 }
 
 .ButtonContainer > *{
@@ -105,6 +97,8 @@
 @container (max-width: 550px){
     .ButtonContainer{
         flex-direction: row;
+        align-items: stretch;
+        max-width: none;
     }
 }
 @container (max-width: 400px){
@@ -123,4 +117,59 @@
     .DetailContainer{
         display: none;
     }
+}
+
+.Grey{
+    color: var(--greyText);
+    background-color: var(--greyBG);
+    border: 2px solid var(--greyBorder);
+}
+
+.Red{
+    color: var(--redText);
+    background-color: var(--redBG);
+    border: 2px solid var(--redBorder);
+}
+
+.Orange{
+    color: var(--orangeText);
+    background-color: var(--orangeBG);
+    border: 2px solid var(--orangeBorder);
+}
+
+.Yellow{
+    color: var(--yellowText);
+    background-color: var(--yellowBG);
+    border: 2px solid var(--yellowBorder);
+}
+
+.Green{
+    color: var(--greenText);
+    background-color: var(--greenBG);
+    border: 2px solid var(--greenBorder);
+}
+
+.DateGrey{
+    color: var(--greyText);
+    background-color: var(--greyBG);
+}
+
+.DateRed{
+    color: var(--redText);
+    background-color: var(--redBG);
+}
+
+.DateOrange{
+    color: var(--orangeText);
+    background-color: var(--orangeBG);
+}
+
+.DateYellow{
+    color: var(--yellowText);
+    background-color: var(--yellowBG);
+}
+
+.DateGreen{
+    color: var(--greenText);
+    background-color: var(--greenBG);
 }

@@ -1,3 +1,4 @@
+import AllTaskItem from "../TaskContent/AllTaskItem";
 import styles from "./TaskDisplayer.module.css"
 
 export default function UrgenTask(){
@@ -7,12 +8,18 @@ export default function UrgenTask(){
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
                     <div className={styles.ContentContent}>
-                        <strong>สำหรับ</strong>
-                        <button className={styles.Dropdown}>dropdown placeholder</button>
+                        <div className="flex flex-col sm:flex-row">
+                            <strong>สำหรับ</strong>
+                            <button className={styles.Dropdown}>dropdown placeholder</button>
+                        </div>
                     </div>
                     <hr className={styles.Line}></hr>
-                    <div className={styles.ContentContent}>
-                        อะไรสักอย่าง 
+                    <div className={styles.ContentContentScrollable}>
+                        <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
+                        <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
+                        <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
+                        <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
+                        <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
                     </div>
                 </div>
             </div>
