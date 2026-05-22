@@ -59,16 +59,8 @@
     min-height: 0;   
 }
 
-.ContentContentScrollable ::-webkit-scrollbar {
+.ContentContentScrollable{
   width: 5px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--shadow);
-}
-
-::-webkit-scrollbar-track {
-  background: var(--wrapper);
 }
 
 
