@@ -1,4 +1,5 @@
 import AllTaskItem from "../TaskContent/AllTaskItem";
+import TaskDisplayer from "./TaskDisplayer";
 import styles from "./TaskDisplayer.module.css"
 
 export default function AllTask(){
@@ -11,7 +12,7 @@ export default function AllTask(){
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
                     <div className={styles.ContentHeader}>
-                        <div className="flex flex-col sm:flex-row  sm:items-center">
+                        <div className="flex flex-col sm:flex-row sm:items-center">
                             <strong>ต้องติดตามใน</strong>
                             <button className={styles.Dropdown}>dropdown placeholder</button>
                             <strong>สำหรับ</strong>
@@ -19,15 +20,7 @@ export default function AllTask(){
                         </div>
                     </div>
                     <hr className={styles.Line}></hr>
-                    <div className={styles.ContentContent}>
-                        <div className={styles.ContentContentScrollable}>
-                            <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
-                            <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
-                            <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
-                            <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
-                            <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
-                        </div>
-                    </div>
+                    <TaskDisplayer></TaskDisplayer>
                 </div>
             </div>
         </div>

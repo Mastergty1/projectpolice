@@ -1,4 +1,5 @@
 import AllTaskItem from "../TaskContent/AllTaskItem";
+import TaskDisplayer from "./TaskDisplayer";
 import styles from "./TaskDisplayer.module.css"
 
 export default function UrgenTask(){
@@ -14,15 +15,7 @@ export default function UrgenTask(){
                         </div>
                     </div>
                     <hr className={styles.Line}></hr>
-                    <div className={styles.ContentContent}>
-                        <div className={styles.ContentContentScrollable}>
-                            <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
-                            <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
-                            <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
-                            <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
-                            <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
-                        </div>
-                    </div>
+                    <TaskDisplayer></TaskDisplayer>
                 </div>
             </div>
         </div>
