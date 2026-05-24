@@ -2,7 +2,7 @@ import styles from "./fileUploader.module.css"
 
 export default function Uploaded(){
     return(
-        <div className="flex flex-col w-full h-full gap-[1.5rem] min-h-[300px]">
+        <div className="flex flex-col w-full h-full gap-6 min-h-75">
             <h1 className={styles.Header}>งานติดตามที่ตรวจอ่านได้</h1>
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
@@ -27,7 +27,7 @@ export default function Uploaded(){
 
                     sth
             </div>
-            <div className="flex flex-col md:flex-row  md:justify-end gap-[1rem]">
+            <div className="flex flex-col md:flex-row  md:justify-end gap-4">
                 <button className={styles.Button}>กลับหน้าหลัก</button>
                 <button className={styles.Button}>ยืนยันเพิ่มงานติดตาม</button>
             </div>
