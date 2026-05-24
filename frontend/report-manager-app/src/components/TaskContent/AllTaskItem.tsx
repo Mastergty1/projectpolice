@@ -10,6 +10,11 @@ type TaskItemProps = {
   personInCharge: string;
   status: string;
   id: string;
+
+  onStatusChange: (
+    id: string,
+    status: TaskStatus
+  ) => void;
 };
 
 type TaskStatus = "following" | "problem" | "completed";
@@ -19,7 +24,7 @@ type StatusOption = {
   label: string;
 };
 
-export default function AllTaskItem({date,name,personInCharge,status,id}:TaskItemProps){
+export default function AllTaskItem({date,name,personInCharge,status,id,onStatusChange}:TaskItemProps){
     
     const parsedDate = new Date(date);
     const day = parsedDate.getDate();
@@ -99,7 +104,12 @@ export default function AllTaskItem({date,name,personInCharge,status,id}:TaskIte
                 <h1 className={styles.Header}>{name}</h1>
                 <div className={styles.DetailContainer}>
                     <p className="flex flex-col sm:flex-row"><strong>ผู้รับผิดชอบ: &nbsp; </strong> {personInCharge}</p>
-                    <p className="flex flex-col sm:flex-row"><strong>เหลือเวลาอีก: &nbsp; </strong> {personInCharge}</p>
+                    <p className="flex flex-col sm:flex-row"><strong>กำหนดเวลา: &nbsp; </strong>  
+                    {diffDays < 0
+                        ? `เกินกำหนด ${Math.abs(diffDays)} วัน`
+                        : diffDays === 0
+                        ? "วันนี้"
+                        : `เหลืออีก ${diffDays} วัน`}</p>
                 </div>
                 </div>
                 </div>
@@ -114,8 +124,9 @@ export default function AllTaskItem({date,name,personInCharge,status,id}:TaskIte
                             )}
                             isClearable={false}
                             onChange={(selectedOption) => {
-                                setStatus(selectedOption!.value);
-                                
+                                const newStatus = selectedOption!.value;
+                                setStatus(newStatus);
+                                onStatusChange(id, newStatus);
                             }}
                             menuPortalTarget={
                                 typeof document !== "undefined"

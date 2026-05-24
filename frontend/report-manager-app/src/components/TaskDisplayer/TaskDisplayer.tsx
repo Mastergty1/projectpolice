@@ -1,16 +1,57 @@
 import AllTaskItem from "../TaskContent/AllTaskItem";
-import styles from "./TaskDisplayer.module.css"
+import styles from "./TaskDisplayer.module.css";
 
-export default function TaskDisplayer(){
-    return(
+type Task = {
+    id: string;
+    name: string;
+    personInCharge: string;
+    date: string;
+    status: string;
+};
+
+
+type Props = {
+    tasks: Task[];
+    onStatusChange: (
+        id: string,
+        status: TaskStatus
+    ) => void;
+};
+
+type TaskStatus = "following" | "problem" | "completed";
+
+
+export default function TaskDisplayer({
+    tasks,
+    onStatusChange
+}: Props) {
+
+    console.log(tasks);
+
+    // Sort by date 
+    const sortedTasks = [...tasks].sort(
+        (a, b) =>
+            new Date(a.date).getTime() -
+            new Date(b.date).getTime()
+    );
+
+    
+
+    return (
         <div className={styles.ContentContent}>
             <div className={styles.ContentContentScrollable}>
-                <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
-                <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
-                <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
-                <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
-                <AllTaskItem name="ชื่องานติดตาม" id="a" personInCharge="ชื่อชั่วคราว" date="2026-05-22" status="กำลังติดตาม"></AllTaskItem>
+                {sortedTasks.map((task) => (
+                    <AllTaskItem
+                        key={task.id}
+                        id={task.id}
+                        name={task.name}
+                        personInCharge={task.personInCharge}
+                        date={task.date}
+                        status={task.status}
+                        onStatusChange={onStatusChange}
+                    />
+                ))}
             </div>
         </div>
-    )
+    );
 }
