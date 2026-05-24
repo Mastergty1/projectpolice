@@ -59,8 +59,17 @@
     min-height: 0;   
 }
 
-.ContentContentScrollable ::-webkit-scrollbar {
+.ContentContentScrollable::-webkit-scrollbar {
   width: 5px;
+}
+
+.ContentContentScrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ContentContentScrollable::-webkit-scrollbar-thumb {
+  background-color: var(--shadow); /* ใช้สี shadow ที่คุณตั้งไว้ */
+  border-radius: 10px;
 }
 
 

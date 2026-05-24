@@ -51,15 +51,3 @@ body {
   color: var(--foreground);
   font-family: Sarabun, Arial, Helvetica, sans-serif;
 }
-::-webkit-scrollbar {
-  width: 5px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: var(--shadow); /* ใช้สี shadow ที่คุณตั้งไว้ */
-  border-radius: 10px;
-}

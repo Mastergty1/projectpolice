@@ -59,15 +59,15 @@
     min-height: 0;   
 }
 
-::-webkit-scrollbar {
+.ContentContentScrollable::-webkit-scrollbar {
   width: 5px;
 }
 
-::-webkit-scrollbar-thumb {
+.ContentContentScrollable::-webkit-scrollbar-thumb {
   background: var(--shadow);
 }
 
-::-webkit-scrollbar-track {
+.ContentContentScrollable::-webkit-scrollbar-track {
   background: var(--wrapper);
 }
 
