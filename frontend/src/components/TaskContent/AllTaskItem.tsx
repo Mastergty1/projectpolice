@@ -61,7 +61,6 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
     theme = styles.DateGreen;
     }
 
-
     const [taskStatus, setStatus] = useState<TaskStatus>("following");
 
     const statusOption: StatusOption[] = [
@@ -89,6 +88,16 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
         } as const;
 
     const themeStyle = selectThemeMap[taskStatus];
+
+    // สร้างตัวแปรสำหรับแสดงผลข้อความ 'เหลือเวลาอีก' ตามความเป็นจริง
+    let timeRemainingText = "";
+    if (diffDays < 0) {
+        timeRemainingText = `เลยกำหนดมาแล้ว ${Math.abs(diffDays)} วัน`;
+    } else if (diffDays === 0) {
+        timeRemainingText = "ครบกำหนดวันนี้";
+    } else {
+        timeRemainingText = `${diffDays} วัน`;
+    }
     
     return(
         <div className={styles.TaskWrapper}>

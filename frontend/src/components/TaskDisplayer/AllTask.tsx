@@ -85,7 +85,7 @@ export default function AllTask() {
     };
 
     return (
-        <div className="flex flex-col w-full h-full gap-[1.5rem] min-h-[300px]">
+        <div className="flex flex-col w-full h-full gap-6 min-h-75">
 
             <div className="flex flex-col sm:flex-row justify-between gap-4">
 

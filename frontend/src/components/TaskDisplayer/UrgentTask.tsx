@@ -97,7 +97,7 @@ export default function UrgenTask(){
         };
 
     return(
-        <div className="flex flex-col w-full h-full gap-[1.5rem] min-h-[300px]">
+        <div className="flex flex-col w-full h-full gap-6 min-h-75">
             <h1 className={styles.Header}>งานติดตามเร่งด่วน</h1>
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
