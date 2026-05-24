@@ -14,15 +14,15 @@ CREATE TABLE users (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- 1. เก็บไฟล์ต้นฉบับ (แก้ไขให้ตรงกับ Backend แล้ว)
+-- 1. เก็บไฟล์ต้นฉบับ
 CREATE TABLE documents (
   id                  SERIAL PRIMARY KEY,
   filename            VARCHAR(255),
-  content             TEXT,          -- เปลี่ยนจาก content_raw เป็น content
+  content             TEXT,
   content_hash        VARCHAR(64) UNIQUE,
-  keywords_found      JSONB,         -- เพิ่มคอลัมน์นี้เพื่อให้ตรงกับคำสั่ง INSERT
-  drive_file_id       VARCHAR(255),  -- เพิ่มคอลัมน์เก็บ ID ไฟล์จาก Google Drive
-  drive_web_view_link TEXT,          -- เพิ่มคอลัมน์เก็บ Link สำหรับเปิดดูไฟล์จาก Drive
+  keywords_found      JSONB,
+  drive_file_id       VARCHAR(255),
+  drive_web_view_link TEXT,
   status              VARCHAR(20) DEFAULT 'pending',
   created_at          TIMESTAMP DEFAULT NOW()
 );
@@ -30,7 +30,7 @@ CREATE TABLE documents (
 -- 2. ผลการวิเคราะห์แต่ละเอกสาร
 CREATE TABLE document_analysis (
   id             SERIAL PRIMARY KEY,
-  document_id    INT REFERENCES documents(id) ON DELETE CASCADE, -- เพิ่ม ON DELETE CASCADE ไว้เผื่อลบเอกสารหลัก จะได้ลบอันนี้ด้วย
+  document_id    INT REFERENCES documents(id) ON DELETE CASCADE,
   has_report     BOOLEAN DEFAULT FALSE,
   keywords_found JSONB,                  
   dates_raw      JSONB,   
@@ -41,7 +41,7 @@ CREATE TABLE document_analysis (
 -- 3. deadlineที่แยกออกมาชัดเจน
 CREATE TABLE document_deadlines (
   id           SERIAL PRIMARY KEY,
-  document_id  INT REFERENCES documents(id) ON DELETE CASCADE, -- เพิ่ม ON DELETE CASCADE เช่นกัน
+  document_id  INT REFERENCES documents(id) ON DELETE CASCADE,
   deadline_date DATE,
   date_raw      VARCHAR(100),  
   context       TEXT,          
@@ -57,3 +57,22 @@ CREATE TABLE keywords (
   is_active   BOOLEAN DEFAULT TRUE,
   created_at  TIMESTAMP DEFAULT NOW()
 );
+
+-- 5. ตารางเก็บงานติดตาม (Tasks) -- [ส่วนที่เพิ่มใหม่]
+CREATE TABLE tasks (
+  id               SERIAL PRIMARY KEY,
+  name             VARCHAR(255) NOT NULL,
+  person_in_charge VARCHAR(100),
+  due_date         DATE,
+  status           VARCHAR(50) DEFAULT 'following', 
+  is_urgent        BOOLEAN DEFAULT FALSE,
+  created_at       TIMESTAMP DEFAULT NOW(),
+  updated_at       TIMESTAMP DEFAULT NOW()
+);
+
+-- ลอง Insert ข้อมูลจำลองลงไปใน Database (เพื่อทดสอบ API)
+INSERT INTO tasks (name, person_in_charge, due_date, status, is_urgent) 
+VALUES 
+('ชื่องานติดตาม 1', 'ชื่อชั่วคราว', '2026-05-22', 'following', false),
+('งานใหม่ที่ต้องแก้', 'สมชาย', '2026-05-25', 'problem', false),
+('งานด่วนมาก', 'สมหญิง', '2026-05-21', 'following', true);
