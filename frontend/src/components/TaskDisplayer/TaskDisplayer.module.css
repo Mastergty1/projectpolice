@@ -4,6 +4,8 @@
     font-size: 2.5rem;
 }
 
+
+
 .ContentWrapper{
     background-color: var(--wrapper);
     display: flex;
@@ -14,6 +16,7 @@
     color: var(--header);
     container-type: inline-size;
     min-height: 0;
+    
 }
 
 
@@ -26,6 +29,7 @@
 
     flex: 1;
     min-height: 0;
+    container-type: inline-size;
 }
 
 
@@ -40,12 +44,20 @@
 .ContentHeader{
     padding: 0.7rem 1rem;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 0.5rem;
     min-height: 0;
     min-height: min-content; /* Force container to expand if content wraps */
     height: auto;            /* Allow it to grow naturally */
     flex-shrink: 0;
+    align-items: center;
+}
+
+@container (max-width:425px){
+    .ContentHeader{
+        flex-direction: column;
+        align-items: stretch;
+    }
 }
 
 .ContentContentScrollable {

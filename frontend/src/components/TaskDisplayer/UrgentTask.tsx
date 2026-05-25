@@ -89,10 +89,10 @@ export default function UrgentTask() {
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
                     <div className={styles.ContentHeader}>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        
                             <strong>สถานะ:</strong>
                             <select 
-                                className="p-1 px-2 border rounded-md bg-white text-sm"
+                                className={styles.Dropdown}
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
                             >
@@ -103,7 +103,7 @@ export default function UrgentTask() {
 
                             <strong>สำหรับ:</strong>
                             <select 
-                                className="p-1 px-2 border rounded-md bg-white text-sm max-w-37.5"
+                                className={styles.Dropdown}
                                 value={personFilter}
                                 onChange={(e) => setPersonFilter(e.target.value)}
                             >
@@ -112,7 +112,6 @@ export default function UrgentTask() {
                                     <option key={idx} value={person}>{person}</option>
                                 ))}
                             </select>
-                        </div>
                     </div>
                     <hr className={styles.Line}></hr>
                     

@@ -75,11 +75,20 @@ export default function AllTask() {
     // รายชื่อคนทั้งหมดสำหรับ Dropdown (กรองชื่อซ้ำออก)
     const uniquePersons = Array.from(new Set(tasks.map(t => t.personInCharge).filter(Boolean)));
 
-    // กรองข้อมูลตามที่เลือกก่อนส่งไปแสดงผล
     const filteredTasks = tasks.filter((task) => {
-        const matchStatus = statusFilter === "all" || task.status === statusFilter;
-        // ใช้ includes เผื่อกรณีที่มีชื่อคนรับผิดชอบหลายคนต่อกันด้วยลูกน้ำ
-        const matchPerson = personFilter === "all" || (task.personInCharge && task.personInCharge.includes(personFilter));
+        // ซ่อนงานที่ completed เสมอ
+        if (task.status === "completed") {
+            return false;
+        }
+
+        const matchStatus =
+            statusFilter === "all" || task.status === statusFilter;
+
+        const matchPerson =
+            personFilter === "all" ||
+            (task.personInCharge &&
+                task.personInCharge.includes(personFilter));
+
         return matchStatus && matchPerson;
     });
 
@@ -95,10 +104,9 @@ export default function AllTask() {
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
                     <div className={styles.ContentHeader}>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                             <strong>สถานะ:</strong>
                             <select 
-                                className="p-1 px-2 border rounded-md bg-white text-sm"
+                                className={styles.Dropdown}
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
                             >
@@ -109,7 +117,7 @@ export default function AllTask() {
 
                             <strong>สำหรับ:</strong>
                             <select 
-                                className="p-1 px-2 border rounded-md bg-white text-sm max-w-37.5"
+                                className={styles.Dropdown}
                                 value={personFilter}
                                 onChange={(e) => setPersonFilter(e.target.value)}
                             >
@@ -118,7 +126,7 @@ export default function AllTask() {
                                     <option key={idx} value={person}>{person}</option>
                                 ))}
                             </select>
-                        </div>
+                        
                     </div>
                     <hr className={styles.Line} />
                     

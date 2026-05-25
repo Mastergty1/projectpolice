@@ -99,7 +99,7 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
     return(
         <div className={styles.TaskWrapper}>
             <div className={styles.InnerWrapper}>
-                <div className="flex flex-row">
+                <div className={styles.InfoContainer}>
                 <div className={`${styles.DateDisplayer} ${theme}`}>
                     <span>กำหนดติดตาม</span>
                     <span className={styles.DateNumber}>{day}</span>
