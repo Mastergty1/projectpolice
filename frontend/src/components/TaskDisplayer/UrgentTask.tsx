@@ -1,100 +1,58 @@
 "use client"
 
-import AllTaskItem from "../TaskContent/AllTaskItem";
+import { useState, useEffect } from "react";
 import TaskDisplayer from "./TaskDisplayer";
 import styles from "./TaskDisplayer.module.css"
-import { useState } from "react";
-
-
 
 type TaskStatus = "following" | "problem" | "completed";
 
-export default function UrgenTask(){
-
+export default function UrgentTask() { // เปลี่ยนชื่อ Component เป็นตัวพิมพ์ที่ถูกต้อง
     const initialTaskData = [
-        {
-            id: "1",
-            name: "ชื่องานติดตาม",
-            personInCharge: "ชื่อชั่วคราว",
-            date: "2026-05-23",
-            status: "กำลังติดตาม",
-        },
-        {
-            id: "2",
-            name: "งานใหม่",
-            personInCharge: "สมชาย",
-            date: "2026-05-25",
-            status: "เสร็จสิ้น",
-        },
-        {
-            id: "3",
-            name: "ชื่องานติดตาม",
-            personInCharge: "ชื่อชั่วคราว",
-            date: "2026-05-21",
-            status: "กำลังติดตาม",
-        },
-        {
-            id: "4",
-            name: "ชื่องานติดตาม",
-            personInCharge: "ชื่อชั่วคราว",
-            date: "2026-05-24",
-            status: "กำลังติดตาม",
-        },
+        { id: "1", name: "ชื่องานด่วนมาก", personInCharge: "ไม่มีข้อมูล", date: "2026-05-21", status: "following" },
     ];
 
-        const [tasks, setTasks] =
-            useState(initialTaskData);
-    
-        const handleStatusChange = async (
-            id: string,
-            newStatus: TaskStatus
-        ) => {
-    
+    const [tasks, setTasks] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // 💡 เพิ่มการดึงข้อมูลงานด่วนจาก Database
+    useEffect(() => {
+        const fetchUrgentTasks = async () => {
             try {
-    
-                console.log(
-                    "Updating task:",
-                    id,
-                    newStatus
-                );
-    
-                // API delay
-                await new Promise((resolve) =>
-                    setTimeout(resolve, 500)
-                );
-    
-                // remove completed task
-                if (newStatus === "completed") {
-    
-                    setTasks((prevTasks) =>
-                        prevTasks.filter(
-                            (task) => task.id !== id
-                        )
-                    );
-    
-                    return;
+                const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
+                const response = await fetch(`${backendUrl}/api/v1/tasks/urgent`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.length > 0) setTasks(data);
+                    else setTasks(initialTaskData);
+                } else {
+                    setTasks(initialTaskData);
                 }
-    
-                // update status
-                setTasks((prevTasks) =>
-                    prevTasks.map((task) =>
-                        task.id === id
-                            ? {
-                                  ...task,
-                                  status: newStatus,
-                              }
-                            : task
-                    )
-                );
-    
             } catch (error) {
-    
-                console.error(
-                    "Failed to update task",
-                    error
-                );
+                setTasks(initialTaskData);
+            } finally {
+                setIsLoading(false);
             }
         };
+        fetchUrgentTasks();
+    }, []);
+
+    const handleStatusChange = async (id: string, newStatus: TaskStatus) => {
+        try {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            
+            if (newStatus === "completed") {
+                setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
+                return;
+            }
+            
+            setTasks((prevTasks) =>
+                prevTasks.map((task) => task.id === id ? { ...task, status: newStatus } : task)
+            );
+        } catch (error) {
+            console.error("Failed to update task", error);
+        }
+    };
 
     return(
         <div className="flex flex-col w-full h-full gap-6 min-h-75">
@@ -108,7 +66,12 @@ export default function UrgenTask(){
                         </div>
                     </div>
                     <hr className={styles.Line}></hr>
-                    <TaskDisplayer tasks={tasks} onStatusChange={handleStatusChange} />
+                    
+                    {isLoading ? (
+                        <div className="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</div>
+                    ) : (
+                        <TaskDisplayer tasks={tasks} onStatusChange={handleStatusChange} />
+                    )}
                 </div>
             </div>
         </div>

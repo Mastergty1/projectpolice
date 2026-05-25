@@ -2,7 +2,7 @@
 
 import styles from "./TaskItem.module.css"
 import Select from "react-select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type TaskItemProps = {
   date: string;
@@ -34,7 +34,6 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
     });
 
     const today = new Date();
-
     today.setHours(0, 0, 0, 0);
     parsedDate.setHours(0, 0, 0, 0);
 
@@ -45,23 +44,31 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
     let theme;
 
     if (diffDays < 0) {
-    urgency = "late";
-    theme = styles.DateGrey;
+        urgency = "late";
+        theme = styles.DateGrey;
     } else if (diffDays === 0) {
-    urgency = "today";
-    theme = styles.DateRed;
+        urgency = "today";
+        theme = styles.DateRed;
     } else if (diffDays === 1) {
-    urgency = "tommorrow";
-    theme = styles.DateOrange;
+        urgency = "tommorrow";
+        theme = styles.DateOrange;
     } else if (diffDays <= 7) {
-    urgency = "this week";
-    theme = styles.DateYellow;
+        urgency = "this week";
+        theme = styles.DateYellow;
     } else {
-    urgency = "later";
-    theme = styles.DateGreen;
+        urgency = "later";
+        theme = styles.DateGreen;
     }
 
-    const [taskStatus, setStatus] = useState<TaskStatus>("following");
+    // 💡 แก้ไข: ดึงค่า status ที่มาจาก Database มาเป็นค่าเริ่มต้น
+    const [taskStatus, setStatus] = useState<TaskStatus>((status as TaskStatus) || "following");
+
+    // 💡 อัปเดตสถานะให้ตรงเมื่อมีการดึง API ใหม่
+    useEffect(() => {
+        if (status) {
+            setStatus(status as TaskStatus);
+        }
+    }, [status]);
 
     const statusOption: StatusOption[] = [
         { value: "following", label: "กำลังติดตาม" },
@@ -85,19 +92,9 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
             bg: "var(--greenBG)",
             border: "var(--greenBorder)",
         },
-        } as const;
+    } as const;
 
     const themeStyle = selectThemeMap[taskStatus];
-
-    // สร้างตัวแปรสำหรับแสดงผลข้อความ 'เหลือเวลาอีก' ตามความเป็นจริง
-    let timeRemainingText = "";
-    if (diffDays < 0) {
-        timeRemainingText = `เลยกำหนดมาแล้ว ${Math.abs(diffDays)} วัน`;
-    } else if (diffDays === 0) {
-        timeRemainingText = "ครบกำหนดวันนี้";
-    } else {
-        timeRemainingText = `${diffDays} วัน`;
-    }
     
     return(
         <div className={styles.TaskWrapper}>
@@ -178,22 +175,17 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
 
                                     return {
                                     ...base,
-
                                     backgroundColor: state.isFocused
                                         ? theme.bg
                                         : "var(--button)",
-
                                     color: theme.color,
-
                                     cursor: "pointer",
-
                                     ":active": {
                                         backgroundColor: theme.bg,
                                     },
                                     };
                                 },
                             }}
-                            
                         />
                         </div>
                     <button className={styles.Clickable}> 
@@ -201,7 +193,6 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                     </button>
                 </div>
             </div>
-        
         </div>
     );
 }
