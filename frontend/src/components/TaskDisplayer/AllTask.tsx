@@ -16,6 +16,10 @@ export default function AllTask() {
     const [tasks, setTasks] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    // State สำหรับ Dropdown Filters
+    const [statusFilter, setStatusFilter] = useState("all");
+    const [personFilter, setPersonFilter] = useState("all");
+
     useEffect(() => {
         const fetchTasks = async () => {
             try {
@@ -40,18 +44,44 @@ export default function AllTask() {
 
     const handleStatusChange = async (id: string, newStatus: TaskStatus) => {
         try {
-            await new Promise((resolve) => setTimeout(resolve, 500));
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
+            
+            // 1. ยิง API ของจริงไปอัปเดตที่ Database
+            const response = await fetch(`${backendUrl}/api/v1/tasks/${id}/status`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: newStatus }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to update status in database");
+            }
+
+            // 2. อัปเดตหน้า UI หลังจาก Database ยืนยันว่าบันทึกสำเร็จ
             if (newStatus === "completed") {
                 setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
                 return;
             }
+            
             setTasks((prevTasks) =>
                 prevTasks.map((task) => task.id === id ? { ...task, status: newStatus } : task)
             );
         } catch (error) {
             console.error("Failed to update task", error);
+            alert("เกิดข้อผิดพลาด ไม่สามารถอัปเดตสถานะได้");
         }
     };
+
+    // รายชื่อคนทั้งหมดสำหรับ Dropdown (กรองชื่อซ้ำออก)
+    const uniquePersons = Array.from(new Set(tasks.map(t => t.personInCharge).filter(Boolean)));
+
+    // กรองข้อมูลตามที่เลือกก่อนส่งไปแสดงผล
+    const filteredTasks = tasks.filter((task) => {
+        const matchStatus = statusFilter === "all" || task.status === statusFilter;
+        // ใช้ includes เผื่อกรณีที่มีชื่อคนรับผิดชอบหลายคนต่อกันด้วยลูกน้ำ
+        const matchPerson = personFilter === "all" || (task.personInCharge && task.personInCharge.includes(personFilter));
+        return matchStatus && matchPerson;
+    });
 
     return (
         <div className="flex flex-col w-full h-full gap-6 min-h-75">
@@ -65,18 +95,37 @@ export default function AllTask() {
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
                     <div className={styles.ContentHeader}>
-                        <div className="flex flex-col sm:flex-row sm:items-center">
-                            <strong>ต้องติดตามใน</strong>
-                            <button className={styles.Dropdown}>dropdown placeholder</button>
-                            <strong>สำหรับ</strong>
-                            <button className={styles.Dropdown}>dropdown placeholder</button>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                            <strong>สถานะ:</strong>
+                            <select 
+                                className="p-1 px-2 border rounded-md bg-white text-sm"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                            >
+                                <option value="all">ทั้งหมด</option>
+                                <option value="following">กำลังติดตาม</option>
+                                <option value="problem">เกิดปัญหา</option>
+                            </select>
+
+                            <strong>สำหรับ:</strong>
+                            <select 
+                                className="p-1 px-2 border rounded-md bg-white text-sm max-w-37.5"
+                                value={personFilter}
+                                onChange={(e) => setPersonFilter(e.target.value)}
+                            >
+                                <option value="all">ทุกคน</option>
+                                {uniquePersons.map((person: any, idx) => (
+                                    <option key={idx} value={person}>{person}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
                     <hr className={styles.Line} />
+                    
                     {isLoading ? (
                         <div className="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</div>
                     ) : (
-                        <TaskDisplayer tasks={tasks} onStatusChange={handleStatusChange} />
+                        <TaskDisplayer tasks={filteredTasks} onStatusChange={handleStatusChange} />
                     )}
                 </div>
             </div>

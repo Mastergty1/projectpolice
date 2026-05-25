@@ -2,7 +2,8 @@
 
 import { useState, useRef, DragEvent, ChangeEvent } from "react";
 import styles from "./fileUploader.module.css";
-import axios from "axios"; // นำเข้า axios
+import axios from "axios";
+import { useRouter } from "next/navigation"; // 💡 นำเข้า useRouter เพื่อใช้เปลี่ยนหน้า
 
 // กำหนด Type ของ Props ที่รับมาจาก page.tsx
 interface FileUploaderProps {
@@ -12,6 +13,7 @@ interface FileUploaderProps {
 }
 
 export default function FileUploader({ setExtractedData, progress, setProgress }: FileUploaderProps) {
+    const router = useRouter(); // 💡 เรียกใช้งาน router
     const [files, setFiles] = useState<File[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
@@ -73,14 +75,18 @@ export default function FileUploader({ setExtractedData, progress, setProgress }
             });
 
             if (response.status === 200) {
-                setMessage({ text: "อัพโหลดไฟล์และประมวลผลสำเร็จ!", type: "success" });
+                setMessage({ text: "แสกนข้อมูลสำเร็จ! กรุณาตรวจสอบและมอบหมายงานทางขวามือ", type: "success" });
                 setFiles([]); 
                 
-                // โยนข้อมูลที่สแกนได้ ส่งไปให้ page.tsx
                 const resultData = response.data.results[0];
                 if (resultData && resultData.extractedData) {
-                    setExtractedData(resultData.extractedData);
+                    // 💡 ส่งข้อมูลรวมถึง documentId ไปให้ฝั่งขวา
+                    setExtractedData({
+                        documentId: resultData.documentId,
+                        memos: resultData.extractedData
+                    });
                 }
+                // 💡 ลบ setTimeout ที่เป็น router.push("/") ออกไปเลยครับ
             }
         } catch (error: any) {
             console.error("Upload error:", error);
@@ -125,7 +131,7 @@ export default function FileUploader({ setExtractedData, progress, setProgress }
 
             {/* แสดงข้อความสถานะ */}
             {message && (
-                <div className={`text-sm text-center ${message.type === "success" ? "text-green-600" : "text-red-600"}`}>
+                <div className={`text-sm text-center ${message.type === "success" ? "text-green-600 font-bold" : "text-red-600"}`}>
                     {message.text}
                 </div>
             )}

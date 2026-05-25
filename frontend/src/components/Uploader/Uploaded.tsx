@@ -1,33 +1,159 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./fileUploader.module.css";
 
 // กำหนด Interface สำหรับ structure ข้อมูลใหม่
 interface ResponsibilityAssignment {
     responsible_person: string;
+    user_id?: string; 
     topics: string[];
 }
 
 interface MemoData {
     ที่?: string;
-    วันที่?: string;
+    วันที่?: string; // ข้อมูลดิบที่แสกนได้ เช่น "12 พ.ค. 2567"
     เวลา?: string;
     เรื่อง?: string;
     เรียน?: string;
     main_text?: string;
     assignments?: ResponsibilityAssignment[];
+    due_date?: string; // 💡 ฟิลด์ใหม่ที่จะส่งไปให้ Backend
+}
+
+interface ExtractedPayload {
+    documentId: number;
+    memos: MemoData[];
 }
 
 interface UploadedProps {
-    extractedData: MemoData[] | null; // รองรับ Array ของเอกสารหลายหน้า
+    extractedData: ExtractedPayload | null; 
 }
 
+// 💡 ฟังก์ชันแปลงวันที่ภาษาไทยที่สกัดจากเอกสาร ให้เป็น Object วันที่ของ JavaScript
+const parseThaiDate = (dateStr: string | undefined): Date | null => {
+    if (!dateStr) return null;
+    
+    const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+    const thaiMonthsAbbr = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+    
+    // ค้นหาตัวเลขวัน, เดือน, และปี 
+    const regex = /(\d{1,2})\s*(.+?)\s*(\d{4})/;
+    const match = dateStr.match(regex);
+    if (!match) return null; 
+
+    const day = parseInt(match[1]);
+    const monthStr = match[2].trim();
+    let year = parseInt(match[3]);
+
+    // แปลง พ.ศ. เป็น ค.ศ.
+    if (year > 2400) year -= 543;
+
+    // หา index ของเดือน
+    let monthIndex = thaiMonths.findIndex(m => m === monthStr);
+    if (monthIndex === -1) monthIndex = thaiMonthsAbbr.findIndex(m => m === monthStr);
+    if (monthIndex === -1) monthIndex = thaiMonths.findIndex(m => monthStr.includes(m)); // เผื่อพิมพ์ผิดเล็กน้อย
+
+    if (monthIndex === -1) return null;
+
+    return new Date(year, monthIndex, day);
+};
+
 export default function Uploaded({ extractedData }: UploadedProps) {
-    // เพิ่ม State สำหรับจัดการ Dropdown ให้กดใช้งานได้จริง
+    const router = useRouter();
+
     const [deadline, setDeadline] = useState("");
     const [assignee, setAssignee] = useState("");
 
-    // แปลงข้อมูลให้เป็น Array เสมอ เพื่อให้ใช้ .map() วนลูปได้
-    const memos = Array.isArray(extractedData) ? extractedData : (extractedData ? [extractedData] : []);
+    const [users, setUsers] = useState<any[]>([]);
+    const [memosData, setMemosData] = useState<MemoData[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003"}/api/v1/users`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setUsers(data.data || []);
+                }
+            } catch (err) {
+                console.error("Fetch users failed", err);
+            }
+        };
+        fetchUsers();
+    }, []);
+
+    useEffect(() => {
+        if (extractedData && extractedData.memos) {
+            setMemosData(extractedData.memos);
+        }
+    }, [extractedData]);
+
+    const handleUserSelect = (memoIndex: number, assignIndex: number, userId: string) => {
+        const newMemos = [...memosData];
+        if (newMemos[memoIndex].assignments) {
+            newMemos[memoIndex].assignments![assignIndex].user_id = userId;
+        }
+        setMemosData(newMemos);
+    };
+
+    const handleConfirm = async () => {
+        if (!extractedData?.documentId) {
+            alert("ไม่พบข้อมูลเอกสารอ้างอิง");
+            return;
+        }
+
+        // 💡 บังคับให้ผู้ใช้เลือกระยะเวลาติดตาม ก่อนกดบันทึก
+        if (!deadline) {
+            alert("⚠️ กรุณาเลือกระยะเวลาที่ต้องติดตามงาน (เช่น 1 วัน, 3 วัน) ด้านบนสุดก่อนครับ");
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            // 💡 คำนวณ Due Date ของแต่ละงานก่อนส่งให้ Backend
+            const memosWithDueDate = memosData.map(memo => {
+                // 1. ดึงวันที่บนเอกสารมาแปลง
+                let baseDate = parseThaiDate(memo.วันที่);
+                
+                // 2. ถ้าในเอกสารไม่มีวันที่ หรือ AI อ่านผิด ให้ใช้วันที่ปัจจุบันเป็นจุดเริ่มต้น
+                if (!baseDate || isNaN(baseDate.getTime())) {
+                    baseDate = new Date();
+                }
+
+                // 3. บวกระยะเวลาทำงานที่เลือกจาก Dropdown เข้าไป
+                baseDate.setDate(baseDate.getDate() + parseInt(deadline));
+                
+                // 4. ส่งกลับคืนรูปแบบ YYYY-MM-DD
+                return {
+                    ...memo,
+                    due_date: baseDate.toISOString().split('T')[0] 
+                };
+            });
+
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003"}/api/v1/tasks/confirm`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    documentId: extractedData.documentId,
+                    memos: memosWithDueDate // 💡 ส่งข้อมูลที่ฝัง due_date แล้วไปให้ Backend
+                })
+            });
+            
+            if (res.ok) {
+                alert("เพิ่มงานติดตามเข้าสู่ระบบเรียบร้อยแล้ว!");
+                router.push("/"); 
+            } else {
+                alert("เกิดข้อผิดพลาดในการบันทึก");
+            }
+        } catch (err) {
+            alert("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     return(
         <div className="flex flex-col w-full h-full gap-6 min-h-75">
@@ -37,7 +163,6 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                     <div className={styles.ContentHeader}>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                             <strong>ต้องติดตามใน</strong>
-                            {/* เปลี่ยนจาก <button> เป็น <select> โดยใช้ className เดิม เพื่อให้ UI เหมือนเดิมแต่ใช้งานได้ */}
                             <select 
                                 className={styles.Dropdown} 
                                 value={deadline}
@@ -64,29 +189,25 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                 </div>
                 <hr className={styles.Line} />
 
-                {/* ส่วนแสดงผลข้อมูลที่สแกนได้ */}
                 <div className="p-4 w-full max-h-150 overflow-y-auto">
-                    {memos.length > 0 ? (
+                    {memosData.length > 0 ? (
                         <div className="flex flex-col gap-8">
-                            {memos.map((memo, index) => (
+                            {memosData.map((memo, index) => (
                                 <div key={index} className="text-sm flex flex-col gap-4 border-b pb-6 last:border-b-0">
-                                    {/* แสดงหัวข้อแยกเอกสาร หากมีหลายฉบับ */}
-                                    {memos.length > 1 && (
+                                    {memosData.length > 1 && (
                                         <h3 className="text-lg font-bold text-blue-800 border-b pb-2">
                                             เอกสารหน้าที่/ฉบับที่ {index + 1}
                                         </h3>
                                     )}
                                     
-                                    {/* ข้อมูลหัวบันทึก */}
                                     <div className="flex flex-col gap-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
                                         <p><strong>ที่:</strong> {memo.ที่ || '-'}</p>
-                                        <p><strong>วันที่:</strong> {memo.วันที่ || '-'}</p>
+                                        <p><strong>วันที่:</strong> <span className="text-blue-600 font-bold">{memo.วันที่ || '-'}</span></p>
                                         {memo.เวลา && <p><strong>เวลา:</strong> {memo.เวลา}</p>}
                                         <p><strong>เรื่อง:</strong> {memo.เรื่อง || '-'}</p>
                                         <p><strong>เรียน:</strong> {memo.เรียน || '-'}</p>
                                     </div>
 
-                                    {/* ข้อความโดยรวมหลังเรียน (ถ้ามี) */}
                                     {memo.main_text && (
                                         <div className="p-2">
                                             <strong>เนื้อหา:</strong>
@@ -94,18 +215,34 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                         </div>
                                     )}
                                     
-                                    {/* แสดงการมอบหมายงานความรับผิดชอบ */}
                                     {memo.assignments && memo.assignments.length > 0 ? (
                                         <div className="mt-2">
                                             <strong className="text-base text-blue-800">การมอบหมายงาน/ความรับผิดชอบ:</strong>
                                             <div className="flex flex-col gap-4 mt-3">
                                                 {memo.assignments.map((assignment: ResponsibilityAssignment, idx: number) => (
                                                     <div key={idx} className="bg-white p-4 rounded-lg shadow-inner border border-gray-100">
-                                                        <p className="font-bold text-base text-green-700">
-                                                            ผู้รับผิดชอบ: {assignment.responsible_person || 'ไม่ระบุผู้รับผิดชอบ'}
-                                                        </p>
+                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3 mb-3">
+                                                            <p className="font-bold text-base text-green-700">
+                                                                สกัดจากเอกสาร: {assignment.responsible_person || 'ไม่ระบุ'}
+                                                            </p>
+                                                            
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs font-bold text-blue-600">มอบหมายให้:</span>
+                                                                <select 
+                                                                    className="p-1.5 border border-blue-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                                    onChange={(e) => handleUserSelect(index, idx, e.target.value)}
+                                                                >
+                                                                    <option value="">-- เลือกระบุบุคคล --</option>
+                                                                    {users.map(u => (
+                                                                        <option key={u.id || u._id} value={u.id || u._id}>
+                                                                            {u.name} {u.role ? `(${u.role})` : ''}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                        </div>
                                                         
-                                                        <div className="mt-2 pl-4 border-l-2 border-gray-200">
+                                                        <div className="pl-4 border-l-2 border-gray-200">
                                                             <strong>หัวข้อที่ต้องรับผิดชอบ:</strong>
                                                             <ul className="list-disc pl-5 mt-2 text-gray-700 flex flex-col gap-1">
                                                                 {assignment.topics && assignment.topics.length > 0 ? (
@@ -140,12 +277,16 @@ export default function Uploaded({ extractedData }: UploadedProps) {
 
             </div>
             <div className="flex flex-col md:flex-row md:justify-end gap-4 mt-6">
-                {/* เพิ่ม onClick ให้ปุ่มตอบสนองได้ */}
-                <button className={styles.ButtonVariant} onClick={() => window.location.href = '/'}>
+                <button className={styles.ButtonVariant} onClick={() => router.push('/')}>
                     กลับหน้าหลัก
                 </button>
-                <button className={styles.Button} onClick={() => alert('กำลังบันทึกงานติดตามเข้าสู่ระบบ SQL...')}>
-                    ยืนยันเพิ่มงานติดตาม
+                <button 
+                    className={styles.Button} 
+                    onClick={handleConfirm}
+                    disabled={isSaving || memosData.length === 0}
+                    style={{ opacity: (isSaving || memosData.length === 0) ? 0.6 : 1 }}
+                >
+                    {isSaving ? 'กำลังบันทึกข้อมูล...' : 'ยืนยันเพิ่มงานติดตาม'}
                 </button>
             </div>
         </div>
