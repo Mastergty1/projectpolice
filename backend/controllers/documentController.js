@@ -1,5 +1,5 @@
 const fs = require('fs').promises; 
-// นำเข้าฟังก์ชันใหม่จาก ocrService
+// 💡 เปลี่ยนจาก extractText เป็น extractDataWithGemini
 const { extractDataWithGemini } = require('../services/ocrService'); 
 const { generateHash, isDuplicate } = require('../utils/duplicateChecker');
 const pool = require('../config/db');
@@ -23,18 +23,20 @@ exports.processDocuments = async (req, res) => {
     try {
       console.log(`Processing: ${file.originalname} (Type: ${file.mimetype})`);
 
-      // 1. ส่งให้ Gemini ทำ OCR และสกัดข้อมูลทีเดียวจบ
+      // 💡 1. เรียกใช้ Gemini API โดยส่ง Path และ MimeType
       const geminiResult = await extractDataWithGemini(file.path, file.mimetype);
       const text = geminiResult.text;
-      const extractedData = geminiResult.extractedData;
-
-      // 2. สร้าง Hash
+      
+      // extractedData ตอนนี้คือ Array ของ Memos ที่มี Assignments ซ้อนอยู่
+      const extractedData = geminiResult.extractedData; 
+      
       const hash = generateHash(text + Date.now().toString());
       
-      // 3. อัปโหลดขึ้น Google Drive
+      // 2. อัปโหลดขึ้น Google Drive
       const driveData = await uploadToDrive(file, DRIVE_FOLDER_ID);
 
-      // 4. บันทึกลง Database
+      // 💡 3. บันทึกลงตาราง documents
+      // ข้อมูล JSON Array ทั้งก้อนจะถูกแปลงเป็น String และเก็บลงคอลัมน์ keywords_found แบบ JSONB
       const { rows } = await pool.query(
         `INSERT INTO documents (filename, content, content_hash, keywords_found, drive_file_id, drive_web_view_link)
          VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
@@ -42,15 +44,16 @@ exports.processDocuments = async (req, res) => {
           file.originalname, 
           text, 
           hash, 
-          JSON.stringify(extractedData), 
+          JSON.stringify(extractedData), // แปลงข้อมูลให้ SQL เข้าใจ
           driveData.id, 
           driveData.webViewLink
         ]
       );
 
-      // 5. ลบไฟล์ชั่วคราวทิ้ง
+      // ลบไฟล์ชั่วคราว
       await fs.unlink(file.path);
 
+      // ส่งข้อมูลกลับไปให้ Frontend ไปแสดงผล
       results.push({
         filename: file.originalname,
         status: 'success',
@@ -62,7 +65,6 @@ exports.processDocuments = async (req, res) => {
     } catch (err) {
       console.error(`Error processing ${file.originalname}:`, err.message);
       try {
-        // หากเกิด error ก็ต้องพยายามลบไฟล์ชั่วคราวทิ้งเสมอ
         await fs.unlink(file.path);
       } catch (unlinkErr) {}
 
