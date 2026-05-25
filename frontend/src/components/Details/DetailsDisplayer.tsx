@@ -1,18 +1,52 @@
 import styles from "./Details.module.css"
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function DetailsDisplayer({ task }: { task: any }) {
-    // เก็บ State การตั้งค่าการติดตามของแต่ละงานที่ถูกสกัดมา
-    const [trackConfigs, setTrackConfigs] = useState<any>({});
+export default function DetailsDisplayer({ 
+    taskData, 
+    setTaskData, 
+    isEditing 
+}: { 
+    taskData: any; 
+    setTaskData: any; 
+    isEditing: boolean; 
+}) {
+    const [users, setUsers] = useState<any[]>([]);
 
-    const handleSelectChange = (assignmentId: number, field: string, value: string) => {
-        setTrackConfigs((prev: any) => ({
-            ...prev,
-            [assignmentId]: {
-                ...prev[assignmentId],
-                [field]: value
+    // 💡 ดึงข้อมูลรายชื่อผู้ใช้ทั้งหมดมารองรับ Dropdown เลือกผู้รับผิดชอบงานย่อย
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003"}/api/v1/users`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setUsers(data.data || []);
+                }
+            } catch (err) {
+                console.error("Fetch users failed", err);
             }
-        }));
+        };
+        fetchUsers();
+    }, []);
+
+    const handleUserSelect = (assignIndex: number, userId: string) => {
+        const newAssignments = [...taskData.assignments];
+        newAssignments[assignIndex].user_id = userId;
+        
+        // อัปเดตข้อมูลผู้ดูแลชั่วคราวเพื่อให้แสดงผลลัพธ์ได้อย่างถูกต้อง
+        const selectedUser = users.find(u => String(u.id || u._id) === String(userId));
+        if (selectedUser) {
+            newAssignments[assignIndex].personInCharge = selectedUser.name;
+        } else {
+            newAssignments[assignIndex].personInCharge = "ไม่ระบุ";
+        }
+
+        setTaskData({ ...taskData, assignments: newAssignments });
+    };
+
+    const handleTopicChange = (assignIndex: number, topicIndex: number, textValue: string) => {
+        const newAssignments = [...taskData.assignments];
+        newAssignments[assignIndex].topics[topicIndex].detail = textValue;
+        setTaskData({ ...taskData, assignments: newAssignments });
     };
 
     return (
@@ -22,9 +56,21 @@ export default function DetailsDisplayer({ task }: { task: any }) {
                     <div className={styles.ContentHeaderScrollable}>
                         
                         <div className="mb-6">
-                            <h2 className="text-xl font-bold mb-2" style={{ color: "var(--header)" }}>รายละเอียดจากเอกสาร (ข้อความเต็ม)</h2>
-                            <div className="p-4 rounded-md" style={{ backgroundColor: "var(--wrapper)", color: "var(--header)", whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
-                                {task?.main_text || "ไม่พบข้อความเนื้อหาในเอกสาร"}
+                            <h2 className="text-xl font-bold mb-2 flex items-center justify-between" style={{ color: "var(--header)" }}>
+                                รายละเอียดจากเอกสาร (ข้อความเต็ม)
+                            </h2>
+                            {taskData?.document_link && (
+                                <a 
+                                    href={taskData.document_link} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="mb-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition w-fit"
+                                >
+                                    📄 เปิดดูไฟล์เอกสารต้นฉบับ
+                                </a>
+                            )}
+                            <div className="p-4 rounded-md mt-2" style={{ backgroundColor: "var(--wrapper)", color: "var(--header)", whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
+                                {taskData?.main_text || "ไม่พบข้อความเนื้อหาในเอกสาร"}
                             </div>
                         </div>
 
@@ -33,46 +79,51 @@ export default function DetailsDisplayer({ task }: { task: any }) {
                         <h2 className="text-xl font-bold mb-4" style={{ color: "var(--header)" }}>งานติดตามที่ตรวจอ่านได้</h2>
                         
                         <div className="flex flex-col gap-6">
-                            {task?.assignments?.length > 0 ? task.assignments.map((assign: any, index: number) => (
+                            {taskData?.assignments?.length > 0 ? taskData.assignments.map((assign: any, index: number) => (
                                 <div key={index} className="flex flex-col gap-4 p-5 rounded-lg border-2 shadow-sm" style={{ backgroundColor: "var(--button)", borderColor: "var(--wrapper)" }}>
                                     
                                     <div className="flex flex-col gap-2">
                                         <h3 className="font-semibold text-lg" style={{ color: "var(--header)" }}>สิ่งที่ต้องดำเนินการ:</h3>
-                                        <ul className="list-disc list-inside ml-2" style={{ color: "var(--header)" }}>
-                                            {assign.topics?.length > 0 ? assign.topics.map((topic: string, i: number) => (
-                                                <li key={i}>{topic}</li>
+                                        <ul className="list-disc list-inside ml-2 flex flex-col gap-2" style={{ color: "var(--header)" }}>
+                                            {assign.topics?.length > 0 ? assign.topics.map((topic: any, i: number) => (
+                                                <li key={i} className="text-sm">
+                                                    {/* 💡 หากอยู่ในโหมดแก้ไข จะแปลงเป็น Input ทันที */}
+                                                    {isEditing ? (
+                                                        <input 
+                                                            type="text" 
+                                                            className="p-2 border border-gray-300 rounded text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 w-full mt-1 outline-none font-medium"
+                                                            value={topic.detail || ""}
+                                                            onChange={(e) => handleTopicChange(index, i, e.target.value)}
+                                                        />
+                                                    ) : (
+                                                        <span>{topic.detail || "ไม่มีรายละเอียดเฉพาะ"}</span>
+                                                    )}
+                                                </li>
                                             )) : <li>ไม่มีรายละเอียดเฉพาะ</li>}
                                         </ul>
                                     </div>
 
-                                    {/* กล่องตั้งค่าการติดตาม */}
-                                    <div className="flex flex-col sm:flex-row gap-4 mt-2">
-                                        <div className="flex flex-col flex-1 gap-2">
-                                            <label className="font-semibold" style={{ color: "var(--header)" }}>ต้องติดตามใน (ระยะเวลา)</label>
+                                    {/* 💡 ปรับปรุงเปลี่ยนจากระยะเวลาของ Mock-up เดิม เป็น Dropdown เลือกพนักงานที่ดูแลจริง */}
+                                    <div className="flex flex-col gap-2 mt-2">
+                                        <label className="font-semibold" style={{ color: "var(--header)" }}>สำหรับ (ผู้รับผิดชอบ)</label>
+                                        {isEditing ? (
                                             <select 
-                                                className={styles.CustomSelect}
-                                                value={trackConfigs[assign.assignment_id]?.duration || "3"}
-                                                onChange={(e) => handleSelectChange(assign.assignment_id, "duration", e.target.value)}
+                                                className="p-2 border border-blue-300 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 w-full sm:w-auto text-black font-semibold"
+                                                value={assign.user_id || ""}
+                                                onChange={(e) => handleUserSelect(index, e.target.value)}
                                             >
-                                                <option value="1">1 วัน</option>
-                                                <option value="3">3 วัน</option>
-                                                <option value="7">7 วัน</option>
+                                                <option value="">-- เลือกระบุบุคคล --</option>
+                                                {users.map(u => (
+                                                    <option key={u.id || u._id} value={u.id || u._id}>
+                                                        {u.name} {u.role ? `(${u.role})` : ''}
+                                                    </option>
+                                                ))}
                                             </select>
-                                        </div>
-
-                                        <div className="flex flex-col flex-1 gap-2">
-                                            <label className="font-semibold" style={{ color: "var(--header)" }}>สำหรับ (ผู้รับผิดชอบ)</label>
-                                            <select 
-                                                className={styles.CustomSelect}
-                                                value={trackConfigs[assign.assignment_id]?.responsible || "all"}
-                                                onChange={(e) => handleSelectChange(assign.assignment_id, "responsible", e.target.value)}
-                                            >
-                                                <option value="all">ทุกหน่วยงาน</option>
-                                                {assign.personInCharge && assign.personInCharge !== "ไม่ระบุ" && (
-                                                    <option value={assign.personInCharge}>{assign.personInCharge}</option>
-                                                )}
-                                            </select>
-                                        </div>
+                                        ) : (
+                                            <p className="text-gray-100 bg-(--wrapper) p-2 rounded border border-gray-600 font-medium">
+                                                {assign.personInCharge || "ไม่ระบุ"}
+                                            </p>
+                                        )}
                                     </div>
 
                                 </div>

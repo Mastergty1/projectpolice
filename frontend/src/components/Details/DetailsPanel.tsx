@@ -8,14 +8,12 @@ import Link from "next/link";
 type TaskStatus = "following" | "problem" | "completed";
 
 type TaskItemProps = {
-  date: string;
-  name: string;
-  personInCharge: string;
-  status: string;
-  id: string;
-  note: string;
+  taskData: any;
+  setTaskData: any;
+  isEditing: boolean;
+  setIsEditing: (val: boolean) => void;
   onStatusChange: (id: string, status: TaskStatus) => void;
-  onUpdateTask: (updatedFields: { name: string; date: string; notes: string }) => void;
+  onUpdateTask: () => void;
   onDeleteTask: () => void;
 };
 
@@ -24,18 +22,22 @@ type StatusOption = {
   label: string;
 };
 
-export default function DetailsPanel({date, name, personInCharge, status, id, note, onStatusChange, onUpdateTask, onDeleteTask}: TaskItemProps){
-    const [isEditing, setIsEditing] = useState(false);
-    const [editName, setEditName] = useState(name);
-    const [editDate, setEditDate] = useState(date);
-    const [editNote, setEditNote] = useState(note);
-    const [taskStatus, setStatus] = useState<TaskStatus>((status as TaskStatus) || "following");
+export default function DetailsPanel({
+    taskData,
+    setTaskData,
+    isEditing,
+    setIsEditing,
+    onStatusChange,
+    onUpdateTask,
+    onDeleteTask
+}: TaskItemProps) {
+    const [taskStatus, setStatus] = useState<TaskStatus>((taskData?.status as TaskStatus) || "following");
 
     useEffect(() => {
-        if (status) setStatus(status as TaskStatus);
-    }, [status]);
+        if (taskData?.status) setStatus(taskData.status as TaskStatus);
+    }, [taskData?.status]);
 
-    const parsedDate = new Date(editDate);
+    const parsedDate = new Date(taskData?.date || "");
     const day = parsedDate.getDate();
     const monthYear = parsedDate.toLocaleDateString("th-TH", { month: "long", year: "numeric" });
 
@@ -66,10 +68,6 @@ export default function DetailsPanel({date, name, personInCharge, status, id, no
 
     const themeStyle = selectThemeMap[taskStatus];
 
-    const handleSaveNoteOnly = () => {
-        onUpdateTask({ name: editName, date: editDate, notes: editNote });
-    };
-
     return (
         <div className="flex flex-col w-full h-full gap-6 justify-between min-h-140">
             <div className={styles.ContentWrapper}>
@@ -85,25 +83,25 @@ export default function DetailsPanel({date, name, personInCharge, status, id, no
                                 {isEditing ? (
                                     <input 
                                         type="text" 
-                                        className="p-1 text-black border rounded w-full text-base mb-2" 
-                                        value={editName} 
-                                        onChange={(e) => setEditName(e.target.value)} 
+                                        className="p-2 text-black border-2 border-blue-400 rounded w-full text-base mb-2 outline-none bg-white font-semibold" 
+                                        value={taskData?.name || ""} 
+                                        onChange={(e) => setTaskData({ ...taskData, name: e.target.value })} 
                                     />
                                 ) : (
-                                    <h1 className={styles.Header}>{editName}</h1>
+                                    <h1 className={styles.Header}>{taskData?.name}</h1>
                                 )}
                                 <div className={styles.DetailContainer}>
                                     <div className={styles.DetailedContainer}>
-                                        <p className="flex flex-row"><strong>ผู้รับผิดชอบ: &nbsp; </strong> {personInCharge}</p>
+                                        <p className="flex flex-row"><strong>ผู้รับผิดชอบ: &nbsp; </strong> {taskData?.personInCharge}</p>
                                         
                                         {isEditing ? (
-                                            <div className="flex items-center gap-1 mt-1">
+                                            <div className="flex items-center gap-2 mt-1">
                                                 <strong>เปลี่ยนวันที่: </strong>
                                                 <input 
                                                     type="date" 
-                                                    className="p-1 text-black text-sm border rounded" 
-                                                    value={editDate} 
-                                                    onChange={(e) => setEditDate(e.target.value)} 
+                                                    className="p-1 text-black text-sm border-2 border-blue-400 rounded outline-none bg-white" 
+                                                    value={taskData?.date || ""} 
+                                                    onChange={(e) => setTaskData({ ...taskData, date: e.target.value })} 
                                                 />
                                             </div>
                                         ) : (
@@ -125,14 +123,14 @@ export default function DetailsPanel({date, name, personInCharge, status, id, no
                                 <label className="min-w-17.5"><strong>สถานะ : </strong></label>
                                 <div className={styles.SelectWrapper}>
                                     <Select
-                                        instanceId={`task-status-${id}`}
+                                        instanceId={`task-status-${taskData?.id}`}
                                         options={statusOption}
                                         value={statusOption.find((option) => option.value === taskStatus)}
                                         isClearable={false}
                                         onChange={(selectedOption) => {
                                             const newStatus = selectedOption!.value;
                                             setStatus(newStatus);
-                                            onStatusChange(id, newStatus);
+                                            onStatusChange(taskData?.id?.toString(), newStatus);
                                         }}
                                         menuPortalTarget={typeof document !== "undefined" ? document.body : null}
                                         isSearchable={false}
@@ -167,12 +165,12 @@ export default function DetailsPanel({date, name, personInCharge, status, id, no
                             <div className="flex flex-col gap-2">
                                 <label><strong>บันทึกเพิ่มเติม : </strong></label>
                                 <textarea 
-                                    className={styles.TextArea} 
+                                    className={`${styles.TextArea} p-2 text-black border-2 border-gray-300 focus:border-blue-400 outline-none bg-white`}
                                     rows={4} 
-                                    value={editNote} 
-                                    onChange={(e) => setEditNote(e.target.value)}
+                                    value={taskData?.notes || ""} 
+                                    onChange={(e) => setTaskData({ ...taskData, notes: e.target.value })}
                                 ></textarea>
-                                <button className={styles.Clickable} onClick={handleSaveNoteOnly}>บันทึกบันทึกเพิ่มเติม</button>
+                                <button className={styles.Clickable} onClick={onUpdateTask}>บันทึกบันทึกเพิ่มเติม</button>
                             </div>
                         </div>
                     </div>
@@ -187,10 +185,7 @@ export default function DetailsPanel({date, name, personInCharge, status, id, no
                     {isEditing ? (
                         <button 
                             className={`${styles.Clickable} ${styles.Green}`} 
-                            onClick={() => {
-                                onUpdateTask({ name: editName, date: editDate, notes: editNote });
-                                setIsEditing(false);
-                            }}
+                            onClick={onUpdateTask}
                         >
                             ตกลง
                         </button>

@@ -129,32 +129,63 @@ exports.confirmTasks = async (req, res) => {
   }
 };
 
-// 5. ดึงข้อมูลงานตาม ID (เพิ่มใหม่สำหรับหน้ารายละเอียด)
-// อัปเดตรายละเอียดงาน (แก้ไขชื่อ, กำหนดส่ง, และ บันทึกเพิ่มเติม)
+// 5. อัปเดตรายละเอียดงาน (แก้ไขชื่อ, กำหนดส่ง, บันทึกเพิ่มเติม และรายการย่อยในตารางแยก)
 exports.updateTaskDetail = async (req, res) => {
+  const client = await pool.connect();
   try {
+    await client.query('BEGIN');
     const { id } = req.params;
-    const { name, date, notes } = req.body;
+    const { name, date, notes, assignments } = req.body;
 
-    const result = await pool.query(
+    // 1. อัปเดตตาราง Tasks หล้ก
+    await client.query(
       `UPDATE tasks 
        SET title = $1, due_date = $2, notes = $3, updated_at = NOW() 
-       WHERE id = $4 RETURNING *`,
+       WHERE id = $4`,
       [name, date, notes, id]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Task not found' });
+    // 2. 💡 วนลูปอัปเดตข้อมูลพนักงานที่รับผิดชอบงานย่อย และข้อมูลรายละเอียดของหัวข้อย่อย
+    if (assignments && Array.isArray(assignments)) {
+      for (const assign of assignments) {
+        const userId = assign.user_id ? parseInt(assign.user_id) : null;
+        
+        // อัปเดต user_id ของใบมอบหมายงานใบนี้
+        await client.query(
+          `UPDATE task_assignments 
+           SET user_id = $1 
+           WHERE id = $2 AND task_id = $3`,
+          [userId, assign.assignment_id, id]
+        );
+
+        // อัปเดตตัวข้อความภายในรายละเอียด (topics)
+        if (assign.topics && Array.isArray(assign.topics)) {
+          for (const topic of assign.topics) {
+            if (topic.topic_id) {
+              await client.query(
+                `UPDATE task_topics 
+                 SET detail = $1 
+                 WHERE id = $2 AND assignment_id = $3`,
+                [topic.detail, topic.topic_id, assign.assignment_id]
+              );
+            }
+          }
+        }
+      }
     }
 
-    res.status(200).json({ success: true, data: result.rows[0] });
+    await client.query('COMMIT');
+    res.status(200).json({ success: true, message: 'บันทึกความเปลี่ยนแปลงเรียบร้อย' });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error("Update task detail error:", err.message);
     res.status(500).json({ success: false, message: 'Server Error' });
+  } finally {
+    client.release();
   }
 };
 
-// ดึงข้อมูลงานตาม ID (เพิ่มการดึงคอลัมน์ notes)
+// ดึงข้อมูลงานตาม ID 
 exports.getTaskById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -165,16 +196,26 @@ exports.getTaskById = async (req, res) => {
         t.status, 
         TO_CHAR(t.due_date, 'YYYY-MM-DD') AS date, 
         t.main_text,
-        t.notes,      -- 💡 เพิ่มการดึงค่า notes (บันทึกเพิ่มเติม) ออกมาแสดง
+        t.notes,      
         t.memo_no, 
         t.memo_date,
+        d.drive_web_view_link AS document_link,
         COALESCE(
           json_agg(
             json_build_object(
               'assignment_id', ta.id,
+              'user_id', ta.user_id,             -- 💡 ดึง id ไปทำ default value ใน Dropdown
+              'role_or_name', ta.role_or_name,   
               'personInCharge', COALESCE(u.name, ta.role_or_name),
               'topics', (
-                SELECT COALESCE(json_agg(tt.detail), '[]'::json)
+                SELECT COALESCE(
+                  json_agg(
+                    json_build_object(
+                      'topic_id', tt.id,          -- 💡 ดึง ID หัวข้อย่อยมาใช้เพื่ออัปเดตลงฐานข้อมูล
+                      'detail', tt.detail,
+                      'status', tt.status
+                    )
+                  ), '[]'::json)
                 FROM task_topics tt 
                 WHERE tt.assignment_id = ta.id
               )
@@ -184,8 +225,9 @@ exports.getTaskById = async (req, res) => {
       FROM tasks t
       LEFT JOIN task_assignments ta ON t.id = ta.task_id
       LEFT JOIN users u ON ta.user_id = u.id
+      LEFT JOIN documents d ON t.document_id = d.id 
       WHERE t.id = $1
-      GROUP BY t.id
+      GROUP BY t.id, d.drive_web_view_link
     `;
     const { rows } = await pool.query(query, [id]);
     
@@ -210,8 +252,6 @@ exports.deleteTask = async (req, res) => {
     await client.query('BEGIN');
     const { id } = req.params;
 
-    // ลบข้อมูลในตารางที่เชื่อมโยงกันก่อนป้องกัน Foreign Key Constraint Error
-    // 1. ดึง assignment_id ที่ผูกกับงานนี้มาลบหัวข้อย่อย (task_topics)
     const assignmentsRes = await client.query('SELECT id FROM task_assignments WHERE task_id = $1', [id]);
     const assignmentIds = assignmentsRes.rows.map(row => row.id);
 
@@ -219,10 +259,7 @@ exports.deleteTask = async (req, res) => {
       await client.query('DELETE FROM task_topics WHERE assignment_id = ANY($1)', [assignmentIds]);
     }
 
-    // 2. ลบการมอบหมายงาน (task_assignments)
     await client.query('DELETE FROM task_assignments WHERE task_id = $1', [id]);
-
-    // 3. ลบตัวงานหลัก (tasks)
     const result = await client.query('DELETE FROM tasks WHERE id = $1 RETURNING *', [id]);
 
     if (result.rows.length === 0) {

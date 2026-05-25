@@ -12,6 +12,7 @@ export default function TaskPage() {
     const router = useRouter();
     const [taskData, setTaskData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [isEditing, setIsEditing] = useState(false); // 💡 รวมศูนย์โหมดแก้ไขไว้ที่นี่
 
     const fetchTask = async () => {
         try {
@@ -45,17 +46,24 @@ export default function TaskPage() {
         }
     };
 
-    const handleUpdateTask = async (updatedFields: { name: string; date: string; notes: string }) => {
+    const handleUpdateTask = async () => {
         try {
+            // 💡 ส่งข้อมูลของงานหลัก และรายการ Assignments ที่แก้ไขแล้วไปยังเซิร์ฟเวอร์
             const res = await fetch(`http://localhost:5003/api/v1/tasks/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(updatedFields),
+                body: JSON.stringify({
+                    name: taskData.name,
+                    date: taskData.date,
+                    notes: taskData.notes,
+                    assignments: taskData.assignments 
+                }),
             });
             const data = await res.json();
             if (data.success) {
                 alert("แก้ไขข้อมูลสำเร็จ");
-                fetchTask(); // รีโหลดข้อมูลใหม่จากเซิร์ฟเวอร์
+                setIsEditing(false);
+                fetchTask(); // ดึงข้อมูลล่าสุดมาอัปเดตหน้าจออีกครั้ง
             }
         } catch (error) {
             console.error("Error updating task:", error);
@@ -71,7 +79,7 @@ export default function TaskPage() {
             const data = await res.json();
             if (data.success) {
                 alert("ลบงานสำเร็จ");
-                router.push("/"); // ลบเสร็จให้เด้งกลับหน้าหลัก
+                router.push("/"); 
             }
         } catch (error) {
             console.error("Error deleting task:", error);
@@ -95,22 +103,25 @@ export default function TaskPage() {
             
             <div className="flex flex-col xl:flex-row justify-between gap-12 items-stretch">
                 <div className="flex flex-1 w-full">
-                    <DetailsDisplayer task={taskData}></DetailsDisplayer>
+                    {/* 💡 ส่งสถานะแก้ไข และฟังก์ชันจัดการข้อมูลให้ฝั่งซ้าย */}
+                    <DetailsDisplayer 
+                        taskData={taskData} 
+                        setTaskData={setTaskData} 
+                        isEditing={isEditing} 
+                    />
                 </div>
                     
                 <div className="flex flex-1 w-full">
+                    {/* 💡 ควบคุมสถานะผ่าน Props ที่ส่งต่อมาจาก Parent ด้านบน */}
                     <DetailsPanel 
-                        key={taskData.id}
-                        id={taskData.id.toString()}
-                        name={taskData.name}
-                        personInCharge={taskData.personInCharge}
-                        date={taskData.date || new Date().toISOString().split('T')[0]}
-                        status={taskData.status}
-                        note={taskData.notes || ""}
+                        taskData={taskData}
+                        setTaskData={setTaskData}
+                        isEditing={isEditing}
+                        setIsEditing={setIsEditing}
                         onStatusChange={handleStatusChange}
                         onUpdateTask={handleUpdateTask}
                         onDeleteTask={handleDeleteTask}
-                    ></DetailsPanel>
+                    />
                 </div>
             </div>
         </div>

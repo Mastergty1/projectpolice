@@ -83,7 +83,16 @@ export default function Uploaded({ extractedData }: UploadedProps) {
 
     useEffect(() => {
         if (extractedData && extractedData.memos) {
-            setMemosData(extractedData.memos);
+            // 💡 1. กรองข้อมูล: ถ้า 'ที่', 'วันที่', 'เรื่อง', 'เรียน' ไม่ครบ หรือเป็นค่าว่าง จะไม่เอาเข้ามาใน List
+            const filteredMemos = extractedData.memos.filter(memo => {
+                const hasAt = memo.ที่ && memo.ที่.trim() !== "" && memo.ที่.trim() !== "-";
+                const hasDate = memo.วันที่ && memo.วันที่.trim() !== "" && memo.วันที่.trim() !== "-";
+                const hasSubject = memo.เรื่อง && memo.เรื่อง.trim() !== "" && memo.เรื่อง.trim() !== "-";
+                const hasTo = memo.เรียน && memo.เรียน.trim() !== "" && memo.เรียน.trim() !== "-";
+                
+                return hasAt && hasDate && hasSubject && hasTo;
+            });
+            setMemosData(filteredMemos);
         }
     }, [extractedData]);
 
@@ -92,6 +101,12 @@ export default function Uploaded({ extractedData }: UploadedProps) {
         if (newMemos[memoIndex].assignments) {
             newMemos[memoIndex].assignments![assignIndex].user_id = userId;
         }
+        setMemosData(newMemos);
+    };
+
+    const handleMemoChange = (index: number, field: keyof MemoData, value: string) => {
+        const newMemos = [...memosData];
+        newMemos[index] = { ...newMemos[index], [field]: value };
         setMemosData(newMemos);
     };
 
@@ -146,73 +161,97 @@ export default function Uploaded({ extractedData }: UploadedProps) {
     };
 
     return(
-        <div className="flex flex-col w-full h-full gap-6 min-h-75">
+        <div className="flex flex-col w-full h-full gap-6 min-h-75 flex-1">
             <h1 className={styles.Header}>งานติดตามที่ตรวจอ่านได้</h1>
-            <div className={styles.ContentWrapper}>
-                <div className={styles.ContentContainer}>
-                    <div className={styles.ContentHeader}>
-                        {/* 💡 เพิ่ม flex-wrap และ shrink-0 ป้องกันช่อง Select หดและบีบกันเอง */}
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-wrap shrink-0 py-2">
-                            <strong className="shrink-0">ต้องติดตามใน</strong>
-                            <select 
-                                className={styles.Dropdown} 
-                                value={deadline}
-                                onChange={(e) => setDeadline(e.target.value)}
-                            >
-                                <option value="" disabled>เลือกระยะเวลา</option>
-                                <option value="1">1 วัน</option>
-                                <option value="3">3 วัน</option>
-                                <option value="7">7 วัน</option>
-                            </select>
+            
+            {/* 💡 2. ปรับโครงสร้าง CSS ให้ Wrapper ควบคุมการล้นได้ เพื่อล็อคส่วนหัวไม่ให้จม */}
+            <div className={`${styles.ContentWrapper} flex flex-col flex-1 min-h-0 overflow-hidden`}>
+                
+                {/* 📌 Header (Dropdown) ล็อคติดด้านบนเสมอ */}
+                <div className="bg-(--container) shrink-0 border-b border-gray-400 z-10 w-full" style={{ borderRadius: '0.2rem 0.2rem 0 0' }}>
+                    <div className="p-4 sm:px-6 py-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-6 flex-wrap shrink-0">
+                            <div className="flex items-center gap-3">
+                                <strong className="shrink-0 whitespace-nowrap">ต้องติดตามใน</strong>
+                                <select 
+                                    className={`${styles.Dropdown} min-w-30`} 
+                                    value={deadline}
+                                    onChange={(e) => setDeadline(e.target.value)}
+                                >
+                                    <option value="" disabled>เลือกระยะเวลา</option>
+                                    <option value="1">1 วัน</option>
+                                    <option value="3">3 วัน</option>
+                                    <option value="7">7 วัน</option>
+                                </select>
+                            </div>
                             
-                            <strong className="shrink-0">สำหรับ</strong>
-                            <select 
-                                className={styles.Dropdown}
-                                value={assignee}
-                                onChange={(e) => setAssignee(e.target.value)}
-                            >
-                                <option value="" disabled>เลือกผู้รับผิดชอบ</option>
-                                <option value="all">ทุกหน่วยงาน</option>
-                                <option value="specific">เฉพาะบุคคล</option>
-                            </select>
+                            <div className="flex items-center gap-3">
+                                <strong className="shrink-0 whitespace-nowrap">สำหรับ</strong>
+                                <select 
+                                    className={`${styles.Dropdown} min-w-37.5`}
+                                    value={assignee}
+                                    onChange={(e) => setAssignee(e.target.value)}
+                                >
+                                    <option value="" disabled>เลือกผู้รับผิดชอบ</option>
+                                    <option value="all">ทุกหน่วยงาน</option>
+                                    <option value="specific">เฉพาะบุคคล</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <hr className={styles.Line} />
 
-                {/* 💡 เพิ่ม shrink-0 ป้องกันลิสต์โดนบีบ */}
-                <div className="p-4 w-full h-full max-h-150 overflow-y-auto shrink-0">
+                {/* 📌 ส่วนเนื้อหา List ที่สามารถ Scroll เลื่อนขึ้นลงได้อย่างอิสระ */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 w-full min-h-0 bg-(--wrapper)" style={{ borderRadius: '0 0 0.2rem 0.2rem' }}>
                     {memosData.length > 0 ? (
                         <div className="flex flex-col gap-8">
                             {memosData.map((memo, index) => (
-                                <div key={index} className="text-sm flex flex-col gap-4 border-b pb-6 last:border-b-0 shrink-0">
+                                <div key={index} className="text-sm flex flex-col gap-4 border-b border-gray-400 pb-6 last:border-b-0 shrink-0">
                                     {memosData.length > 1 && (
-                                        <h3 className="text-lg font-bold text-blue-800 border-b pb-2">
+                                        <h3 className="text-lg font-bold border-b border-gray-400 pb-2" style={{ color: "var(--header)" }}>
                                             เอกสารหน้าที่/ฉบับที่ {index + 1}
                                         </h3>
                                     )}
                                     
-                                    <div className="flex flex-col gap-2 bg-gray-50 p-3 rounded-lg border border-gray-100 shrink-0">
-                                        <p><strong>ที่:</strong> {memo.ที่ || '-'}</p>
-                                        <p><strong>วันที่:</strong> <span className="text-blue-600 font-bold">{memo.วันที่ || '-'}</span></p>
-                                        {memo.เวลา && <p><strong>เวลา:</strong> {memo.เวลา}</p>}
-                                        <p><strong>เรื่อง:</strong> {memo.เรื่อง || '-'}</p>
-                                        <p><strong>เรียน:</strong> {memo.เรียน || '-'}</p>
+                                    <div className="flex flex-col gap-2 bg-gray-50 p-4 rounded-lg border border-gray-200 shrink-0 text-black">
+                                        <div className="flex items-center gap-2">
+                                            <strong className="w-12 shrink-0">ที่:</strong>
+                                            <input type="text" className="border border-gray-300 p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-white" value={memo.ที่ || ''} onChange={(e) => handleMemoChange(index, "ที่", e.target.value)} />
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <strong className="w-12 shrink-0">วันที่:</strong>
+                                            <input type="text" className="border border-gray-300 p-1.5 rounded flex-1 font-bold text-blue-700 focus:ring-2 focus:ring-blue-400 outline-none bg-white" value={memo.วันที่ || ''} onChange={(e) => handleMemoChange(index, "วันที่", e.target.value)} />
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <strong className="w-12 shrink-0">เวลา:</strong>
+                                            <input type="text" className="border border-gray-300 p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-white" value={memo.เวลา || ''} onChange={(e) => handleMemoChange(index, "เวลา", e.target.value)} />
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <strong className="w-12 shrink-0">เรื่อง:</strong>
+                                            <input type="text" className="border border-gray-300 p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-white" value={memo.เรื่อง || ''} onChange={(e) => handleMemoChange(index, "เรื่อง", e.target.value)} />
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <strong className="w-12 shrink-0">เรียน:</strong>
+                                            <input type="text" className="border border-gray-300 p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-white" value={memo.เรียน || ''} onChange={(e) => handleMemoChange(index, "เรียน", e.target.value)} />
+                                        </div>
                                     </div>
 
-                                    {memo.main_text && (
-                                        <div className="p-2 shrink-0">
-                                            <strong>เนื้อหา:</strong>
-                                            <p className="mt-1 text-gray-700 whitespace-pre-wrap">{memo.main_text}</p>
-                                        </div>
-                                    )}
+                                    <div className="p-2 shrink-0 text-black">
+                                        <strong style={{ color: "var(--header)" }}>เนื้อหา:</strong>
+                                        <textarea 
+                                            className="mt-2 w-full border border-gray-300 rounded p-3 text-gray-800 bg-white focus:ring-2 focus:ring-blue-400 outline-none" 
+                                            rows={5} 
+                                            value={memo.main_text || ''} 
+                                            onChange={(e) => handleMemoChange(index, "main_text", e.target.value)} 
+                                        />
+                                    </div>
                                     
                                     {memo.assignments && memo.assignments.length > 0 ? (
                                         <div className="mt-2 shrink-0">
-                                            <strong className="text-base text-blue-800">การมอบหมายงาน/ความรับผิดชอบ:</strong>
+                                            <strong className="text-base" style={{ color: "var(--header)" }}>การมอบหมายงาน/ความรับผิดชอบ:</strong>
                                             <div className="flex flex-col gap-4 mt-3">
                                                 {memo.assignments.map((assignment: ResponsibilityAssignment, idx: number) => (
-                                                    <div key={idx} className="bg-white p-4 rounded-lg shadow-inner border border-gray-100 shrink-0">
+                                                    <div key={idx} className="bg-white p-4 rounded-lg shadow-inner border border-gray-100 shrink-0 text-black">
                                                         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-gray-100 pb-3 mb-3">
                                                             <p className="font-bold text-base text-green-700">
                                                                 สกัดจากเอกสาร: {assignment.responsible_person || 'ไม่ระบุ'}
@@ -221,7 +260,8 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                             <div className="flex items-center gap-2">
                                                                 <span className="text-xs font-bold text-blue-600 shrink-0">มอบหมายให้:</span>
                                                                 <select 
-                                                                    className="p-2 border border-blue-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-full sm:w-auto min-h-10 shrink-0"
+                                                                    className="p-2 border border-blue-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-full sm:w-auto min-h-10 shrink-0 text-black"
+                                                                    value={assignment.user_id || ""}
                                                                     onChange={(e) => handleUserSelect(index, idx, e.target.value)}
                                                                 >
                                                                     <option value="">-- เลือกระบุบุคคล --</option>
@@ -261,15 +301,24 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                             ))}
                         </div>
                     ) : (
-                        <div className="text-gray-400 text-center py-10 shrink-0">
-                            ยังไม่มีข้อมูล กรุณาอัพโหลดเอกสารเพื่อสแกน
+                        <div className="text-gray-400 text-center flex flex-col items-center justify-center h-full gap-4 py-10 shrink-0">
+                            {extractedData && extractedData.memos && extractedData.memos.length > 0 
+                                ? (
+                                    <>
+                                        <span className="text-4xl">⚠️</span>
+                                        <p style={{ color: "var(--header)", fontSize: "1.2rem" }}>
+                                            เอกสารมีข้อมูลไม่ครบถ้วน (ขาด ที่, วันที่, เรื่อง, หรือ เรียน)<br/>
+                                            ระบบจึงทำการคัดกรองออกโดยอัตโนมัติ
+                                        </p>
+                                    </>
+                                )
+                                : "ยังไม่มีข้อมูล กรุณาอัพโหลดเอกสารเพื่อสแกน"}
                         </div>
                     )}
                 </div>
-
             </div>
-            {/* 💡 เพิ่ม flex-wrap ที่ปุ่มด้านล่าง */}
-            <div className="flex flex-col md:flex-row md:justify-end gap-4 mt-6 flex-wrap shrink-0">
+            
+            <div className="flex flex-col md:flex-row md:justify-end gap-4 mt-2 flex-wrap shrink-0">
                 <button className={styles.ButtonVariant} onClick={() => router.push('/')}>
                     กลับหน้าหลัก
                 </button>
