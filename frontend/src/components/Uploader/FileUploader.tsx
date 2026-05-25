@@ -2,16 +2,22 @@
 
 import { useState, useRef, DragEvent, ChangeEvent } from "react";
 import styles from "./fileUploader.module.css";
+import axios from "axios"; // นำเข้า axios
 
-export default function FileUploader() {
+// กำหนด Type ของ Props ที่รับมาจาก page.tsx
+interface FileUploaderProps {
+    setExtractedData: (data: any) => void;
+    progress: number;
+    setProgress: (progress: number) => void;
+}
+
+export default function FileUploader({ setExtractedData, progress, setProgress }: FileUploaderProps) {
     const [files, setFiles] = useState<File[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-    };
+    const handleDragOver = (e: DragEvent<HTMLDivElement>) => { e.preventDefault(); };
 
     const handleDrop = (e: DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -20,9 +26,7 @@ export default function FileUploader() {
         }
     };
 
-    const handleClick = () => {
-        fileInputRef.current?.click();
-    };
+    const handleClick = () => { fileInputRef.current?.click(); };
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -42,6 +46,8 @@ export default function FileUploader() {
 
         setIsUploading(true);
         setMessage(null);
+        setProgress(0); // รีเซ็ตหลอด
+        setExtractedData(null); // รีเซ็ตข้อมูลเดิม
 
         const formData = new FormData();
         files.forEach((file) => {
@@ -49,27 +55,39 @@ export default function FileUploader() {
         });
 
         try {
-            // ใช้ Environment Variable แทน Localhost
             const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
-            const response = await fetch(`${backendUrl}/api/v1/documents/process`, {
-                method: "POST",
-                body: formData,
+            
+            // ใช้ axios แทน fetch เพื่อทำ Progress bar
+            const response = await axios.post(`${backendUrl}/api/v1/documents/process`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+                onUploadProgress: (progressEvent) => {
+                    if (progressEvent.total) {
+                        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        setProgress(percentCompleted);
+                        
+                        if (percentCompleted === 100) {
+                            setMessage({ text: "กำลังให้ AI ประมวลผลและสกัดข้อมูล...", type: "success" });
+                        }
+                    }
+                }
             });
 
-            const data = await response.json();
-
-            if (response.ok) {
+            if (response.status === 200) {
                 setMessage({ text: "อัพโหลดไฟล์และประมวลผลสำเร็จ!", type: "success" });
                 setFiles([]); 
-                // สามารถเพิ่มโค้ดเอา data.results[0].extractedData ไปแสดงในฟอร์มแก้ไขต่อได้
-            } else {
-                setMessage({ text: `เกิดข้อผิดพลาด: ${data.message || "ไม่สามารถอัพโหลดได้"}`, type: "error" });
+                
+                // โยนข้อมูลที่สแกนได้ ส่งไปให้ page.tsx
+                const resultData = response.data.results[0];
+                if (resultData && resultData.extractedData) {
+                    setExtractedData(resultData.extractedData);
+                }
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Upload error:", error);
-            setMessage({ text: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้", type: "error" });
+            setMessage({ text: `เกิดข้อผิดพลาด: ${error.response?.data?.message || "ไม่สามารถเชื่อมต่อได้"}`, type: "error" });
         } finally {
             setIsUploading(false);
+            setProgress(0); // สแกนจบ ซ่อนหลอดโหลด
         }
     };
 
@@ -93,14 +111,9 @@ export default function FileUploader() {
                                 <li key={index} className="flex justify-between items-center bg-gray-100 p-2 rounded">
                                     <span className="truncate pr-4">{file.name}</span>
                                     <button 
-                                        onClick={(e) => {
-                                            e.stopPropagation(); 
-                                            removeFile(index);
-                                        }}
+                                        onClick={(e) => { e.stopPropagation(); removeFile(index); }}
                                         className="text-red-500 font-bold hover:text-red-700"
-                                    >
-                                        ✕
-                                    </button>
+                                    >✕</button>
                                 </li>
                             ))}
                         </ul>
@@ -108,18 +121,19 @@ export default function FileUploader() {
                 </div>
             </div>
 
-            <input 
-                type="file"
-                multiple
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                style={{ display: 'none' }}
-            />
+            <input type="file" multiple ref={fileInputRef} onChange={handleFileChange} className="hidden" style={{ display: 'none' }} />
 
+            {/* แสดงข้อความสถานะ */}
             {message && (
                 <div className={`text-sm text-center ${message.type === "success" ? "text-green-600" : "text-red-600"}`}>
                     {message.text}
+                </div>
+            )}
+
+            {/* แสดงหลอด Progress Bar */}
+            {progress > 0 && progress < 100 && (
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
                 </div>
             )}
 
@@ -135,5 +149,5 @@ export default function FileUploader() {
                 <button className={styles.Button}>เพิ่มงานติดตามด้วยตนเอง</button>
             </div>
         </div>
-    )
+    );
 }

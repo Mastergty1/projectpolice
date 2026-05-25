@@ -1,5 +1,6 @@
 const fs = require('fs').promises; 
-const { extractText, extractDocumentData } = require('../services/ocrService'); 
+// นำเข้าฟังก์ชันใหม่จาก ocrService
+const { extractDataWithGemini } = require('../services/ocrService'); 
 const { generateHash, isDuplicate } = require('../utils/duplicateChecker');
 const pool = require('../config/db');
 const { uploadToDrive } = require('../services/googleDriveService');
@@ -20,15 +21,20 @@ exports.processDocuments = async (req, res) => {
 
   for (const file of files) {
     try {
-      console.log(`Processing: ${file.originalname}`);
+      console.log(`Processing: ${file.originalname} (Type: ${file.mimetype})`);
 
-      const text = await extractText(file.path);
+      // 1. ส่งให้ Gemini ทำ OCR และสกัดข้อมูลทีเดียวจบ
+      const geminiResult = await extractDataWithGemini(file.path, file.mimetype);
+      const text = geminiResult.text;
+      const extractedData = geminiResult.extractedData;
+
+      // 2. สร้าง Hash
       const hash = generateHash(text + Date.now().toString());
       
-      const extractedData = extractDocumentData(text);
-      
+      // 3. อัปโหลดขึ้น Google Drive
       const driveData = await uploadToDrive(file, DRIVE_FOLDER_ID);
 
+      // 4. บันทึกลง Database
       const { rows } = await pool.query(
         `INSERT INTO documents (filename, content, content_hash, keywords_found, drive_file_id, drive_web_view_link)
          VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
@@ -42,6 +48,7 @@ exports.processDocuments = async (req, res) => {
         ]
       );
 
+      // 5. ลบไฟล์ชั่วคราวทิ้ง
       await fs.unlink(file.path);
 
       results.push({
@@ -55,6 +62,7 @@ exports.processDocuments = async (req, res) => {
     } catch (err) {
       console.error(`Error processing ${file.originalname}:`, err.message);
       try {
+        // หากเกิด error ก็ต้องพยายามลบไฟล์ชั่วคราวทิ้งเสมอ
         await fs.unlink(file.path);
       } catch (unlinkErr) {}
 
