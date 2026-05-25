@@ -24,7 +24,7 @@ const swaggerOptions = {
       version: "1.0.0",
       description: "API for managing dentist appointments, schedules, and user bookings",
     },
-    servers: [{ url: `${process.env.FRONTEND}/api/v1` }],
+    servers: [{ url: `${process.env.API_BASE_URL}/api/v1` }],
   },
   apis: ["./routes/*.js"],
 };
