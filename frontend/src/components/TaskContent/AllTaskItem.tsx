@@ -3,6 +3,7 @@
 import styles from "./TaskItem.module.css"
 import Select from "react-select";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 type TaskItemProps = {
   date: string;
@@ -188,9 +189,12 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                             }}
                         />
                         </div>
+
+                    <Link href={`/tasks/${id}`}>
                     <button className={styles.Clickable}> 
                         รายละเอียด 
                     </button>
+                    </Link>
                 </div>
             </div>
         </div>

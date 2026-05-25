@@ -1,0 +1,228 @@
+"use client"
+
+import styles from "./Details.module.css"
+import Select from "react-select";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+
+type TaskItemProps = {
+  date: string;
+  name: string;
+  personInCharge: string;
+  status: string;
+  id: string;
+  note:string;
+
+  onStatusChange: (
+    id: string,
+    status: TaskStatus
+  ) => void;
+};
+
+type TaskStatus = "following" | "problem" | "completed";
+
+type StatusOption = {
+  value: TaskStatus;
+  label: string;
+};
+
+
+export default function ({date,name,personInCharge,status,id,note,onStatusChange}:TaskItemProps){
+
+     const parsedDate = new Date(date);
+        const day = parsedDate.getDate();
+        const monthYear = parsedDate.toLocaleDateString("th-TH", {
+        month: "long",
+        year: "numeric",
+        });
+    
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        parsedDate.setHours(0, 0, 0, 0);
+    
+        const diffTime = parsedDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+        let urgency = "";
+        let theme;
+    
+        if (diffDays < 0) {
+            urgency = "late";
+            theme = styles.DateGrey;
+        } else if (diffDays === 0) {
+            urgency = "today";
+            theme = styles.DateRed;
+        } else if (diffDays === 1) {
+            urgency = "tommorrow";
+            theme = styles.DateOrange;
+        } else if (diffDays <= 7) {
+            urgency = "this week";
+            theme = styles.DateYellow;
+        } else {
+            urgency = "later";
+            theme = styles.DateGreen;
+        }
+    
+        // 💡 แก้ไข: ดึงค่า status ที่มาจาก Database มาเป็นค่าเริ่มต้น
+        const [taskStatus, setStatus] = useState<TaskStatus>((status as TaskStatus) || "following");
+
+         useEffect(() => {
+                if (status) {
+                    setStatus(status as TaskStatus);
+                }
+            }, [status]);
+        
+            const statusOption: StatusOption[] = [
+                { value: "following", label: "กำลังติดตาม" },
+                { value: "problem", label: "เกิดปัญหา" },
+                { value: "completed", label: "เสร็จสิ้น" },
+            ];
+        
+            const selectThemeMap = {
+                following: {
+                    color: "var(--yellowText)",
+                    bg: "var(--yellowBG)",
+                    border: "var(--yellowBorder)",
+                },
+                problem: {
+                    color: "var(--redText)",
+                    bg: "var(--redBG)",
+                    border: "var(--redBorder)",
+                },
+                completed: {
+                    color: "var(--greenText)",
+                    bg: "var(--greenBG)",
+                    border: "var(--greenBorder)",
+                },
+            } as const;
+        
+            const themeStyle = selectThemeMap[taskStatus];
+    
+
+    return (
+        <div className="flex flex-col w-full h-full gap-6 min-h-75">
+            
+            <div className={styles.ContentWrapper}>
+                <div className={styles.ContentContainer}>
+                            <div className={styles.ContentHeader}>
+
+                                <div className={styles.InfoContainer}>
+                                    <div className={`${styles.DateDisplayer} ${theme}`}>
+                                        <span>กำหนดติดตาม</span>
+                                        <span className={styles.DateNumber}>{day}</span>
+                                        <span className={styles.DateMonth}>{monthYear}</span>
+                                    </div>
+                                    <div className={styles.Content}>
+                                        <h1 className={styles.Header}>{name}</h1>
+                                        <div className={styles.DetailContainer}>
+                                            <div className={styles.DetailedContainer}>
+                                                <p className="flex flex-col sm:flex-row"><strong>ผู้รับผิดชอบ: &nbsp; </strong> {personInCharge}</p>
+                                                <p className="flex flex-col sm:flex-row"><strong>กำหนดเวลา: &nbsp; </strong>  
+                                                {diffDays < 0
+                                                    ? `เกินกำหนด ${Math.abs(diffDays)} วัน`
+                                                    : diffDays === 0
+                                                    ? "วันนี้"
+                                                    : `เหลืออีก ${diffDays} วัน`}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-[1rem]">
+                                    <div className={styles.InteractionContainer}>
+                                        <label><strong>สถานะ : </strong></label>
+                                        <div className={styles.SelectWrapper}>
+                                            <Select
+                                                instanceId={`task-status-${id}`}
+                                                options={statusOption}
+                                                value={statusOption.find(
+                                                    (option) => option.value === taskStatus
+                                                )}
+                                                isClearable={false}
+                                                onChange={(selectedOption) => {
+                                                    const newStatus = selectedOption!.value;
+                                                    setStatus(newStatus);
+                                                    onStatusChange(id, newStatus);
+                                                }}
+                                                menuPortalTarget={
+                                                    typeof document !== "undefined"
+                                                    ? document.body
+                                                    : null
+                                                }
+                                                isSearchable={false}
+                                                styles={{
+                                                    control: (base) => ({
+                                                    ...base,
+                                                    padding: "0.2rem 0.5rem",
+                                                    boxShadow: "none", 
+                                                    borderRadius: "0.7rem",
+                                                    backgroundColor: themeStyle.bg,
+                                                    border: `2px solid ${themeStyle.border}`,
+                                                    color: themeStyle.color
+                                                    }),
+                                                    menuPortal: (base) => ({
+                                                    ...base,
+                                                    zIndex: 9999,
+                                                    }),
+                                                    singleValue: (base) => ({
+                                                        ...base,
+                                                        whiteSpace: "normal",
+                                                        overflowWrap: "break-word",
+                                                        textAlign: "center",
+                                                        color: themeStyle.color
+                                                    }),
+                                                    dropdownIndicator: (base) => ({
+                                                        ...base,
+                                                        color: themeStyle.color
+                                                    }),
+                                                    indicatorSeparator: (base) => ({
+                                                        ...base,
+                                                        display: "none",
+                                                    }),
+                                                    option: (base, state) => {
+                                                        const theme =
+                                                        selectThemeMap[state.data.value as keyof typeof selectThemeMap];
+
+                                                        return {
+                                                        ...base,
+                                                        backgroundColor: state.isFocused
+                                                            ? theme.bg
+                                                            : "var(--button)",
+                                                        color: theme.color,
+                                                        cursor: "pointer",
+                                                        ":active": {
+                                                            backgroundColor: theme.bg,
+                                                        },
+                                                        };
+                                                    },
+                                                }}
+                                            />
+                                            </div>
+                                    </div>
+                                    <div className="flex flex-col gap-[0.5rem]">
+                                        <label><strong>บันทึกเพิ่มเติม : </strong></label>
+                                        <textarea className={styles.TextArea} rows={4}></textarea>
+                                        <button className={styles.Clickable}>บันทึกบันทึกเพิ่มเติม</button>
+                                    </div>
+                                <div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+
+            <div className="flex flex-col-reverse md:flex-row justify-between gap-[1rem]">
+                <Link href={'/'}>
+                    <button>กลับหน้าหลัก</button>
+                </Link>
+                <div className="flex flex-row md:w-1/2 gap-[1rem] text-[1.25rem]">
+                    <button className={`${styles.Clickable} ${styles.Yellow}`}>แก้ไขข้อมูล</button>
+                    <button className={`${styles.Clickable} ${styles.Red}`}>ลบ</button>
+                </div>
+            </div>
+        </div>
+    );
+
+}
