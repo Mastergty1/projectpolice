@@ -72,12 +72,23 @@
 }
 
 
-.Dropdown{
+.Dropdown {
     background-color: var(--button);
     border: 2px solid var(--wrapper);
-    padding: 0.2rem 0.5rem;
+    padding: 0.4rem 0.8rem;
     margin: 0rem 0.4rem;
-    border-radius: 0.3rem;
+    border-radius: 0.5rem;
+    color: var(--header);
+    outline: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+
+    /* 💡 เพิ่ม 2 บรรทัดนี้เพื่อล็อคไม่ให้ช่องจมหรือแบน */
+    min-height: 3rem;
+    flex-shrink: 0;
+}
+.Dropdown:focus {
+    border-color: var(--yellowBorder);
 }
 
 .Button{

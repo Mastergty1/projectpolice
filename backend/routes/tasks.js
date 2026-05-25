@@ -4,7 +4,10 @@ const {
     getAllTasks, 
     getUrgentTasks, 
     updateTaskStatus, 
-    confirmTasks 
+    confirmTasks, 
+    getTaskById,
+    updateTaskDetail,
+    deleteTask  
 } = require('../controllers/taskController');
 
 const router = express.Router();
@@ -13,5 +16,8 @@ router.get('/', getAllTasks);
 router.get('/urgent', getUrgentTasks);
 router.put('/:id/status', updateTaskStatus);
 router.post('/confirm', confirmTasks); // เส้นทางสำหรับยืนยันงานที่แสกนมา
+router.get('/:id', getTaskById);
+router.put('/:id', updateTaskDetail);
+router.delete('/:id', deleteTask);
 
 module.exports = router;

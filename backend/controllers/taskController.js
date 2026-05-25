@@ -49,7 +49,7 @@ exports.getUrgentTasks = async (req, res) => {
   }
 };
 
-// 3. อัปเดตสถานะงาน (จาก Dropdown ในหน้าแรก)
+// 3. อัปเดตสถานะงาน
 exports.updateTaskStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -80,8 +80,6 @@ exports.confirmTasks = async (req, res) => {
 
     if (memos && memos.length > 0) {
       for (const memo of memos) {
-        
-        // 💡 มีการรับค่า memo.due_date เพื่อบันทึกลง Database เรียบร้อยแล้ว
         const taskRes = await client.query(
           `INSERT INTO tasks (document_id, title, memo_no, memo_date, main_text, due_date)
            VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
@@ -125,6 +123,118 @@ exports.confirmTasks = async (req, res) => {
   } catch (err) {
     await client.query('ROLLBACK');
     console.error("Confirm error:", err.message);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  } finally {
+    client.release();
+  }
+};
+
+// 5. ดึงข้อมูลงานตาม ID (เพิ่มใหม่สำหรับหน้ารายละเอียด)
+// อัปเดตรายละเอียดงาน (แก้ไขชื่อ, กำหนดส่ง, และ บันทึกเพิ่มเติม)
+exports.updateTaskDetail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, date, notes } = req.body;
+
+    const result = await pool.query(
+      `UPDATE tasks 
+       SET title = $1, due_date = $2, notes = $3, updated_at = NOW() 
+       WHERE id = $4 RETURNING *`,
+      [name, date, notes, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+
+    res.status(200).json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    console.error("Update task detail error:", err.message);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// ดึงข้อมูลงานตาม ID (เพิ่มการดึงคอลัมน์ notes)
+exports.getTaskById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const query = `
+      SELECT 
+        t.id, 
+        t.title AS name, 
+        t.status, 
+        TO_CHAR(t.due_date, 'YYYY-MM-DD') AS date, 
+        t.main_text,
+        t.notes,      -- 💡 เพิ่มการดึงค่า notes (บันทึกเพิ่มเติม) ออกมาแสดง
+        t.memo_no, 
+        t.memo_date,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'assignment_id', ta.id,
+              'personInCharge', COALESCE(u.name, ta.role_or_name),
+              'topics', (
+                SELECT COALESCE(json_agg(tt.detail), '[]'::json)
+                FROM task_topics tt 
+                WHERE tt.assignment_id = ta.id
+              )
+            )
+          ) FILTER (WHERE ta.id IS NOT NULL), '[]'
+        ) AS assignments
+      FROM tasks t
+      LEFT JOIN task_assignments ta ON t.id = ta.task_id
+      LEFT JOIN users u ON ta.user_id = u.id
+      WHERE t.id = $1
+      GROUP BY t.id
+    `;
+    const { rows } = await pool.query(query, [id]);
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+
+    const task = rows[0];
+    task.personInCharge = task.assignments.map(a => a.personInCharge).join(', ') || 'ไม่ระบุ';
+
+    res.status(200).json({ success: true, data: task });
+  } catch (err) {
+    console.error("Get task by id error:", err.message);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// ลบงาน
+exports.deleteTask = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { id } = req.params;
+
+    // ลบข้อมูลในตารางที่เชื่อมโยงกันก่อนป้องกัน Foreign Key Constraint Error
+    // 1. ดึง assignment_id ที่ผูกกับงานนี้มาลบหัวข้อย่อย (task_topics)
+    const assignmentsRes = await client.query('SELECT id FROM task_assignments WHERE task_id = $1', [id]);
+    const assignmentIds = assignmentsRes.rows.map(row => row.id);
+
+    if (assignmentIds.length > 0) {
+      await client.query('DELETE FROM task_topics WHERE assignment_id = ANY($1)', [assignmentIds]);
+    }
+
+    // 2. ลบการมอบหมายงาน (task_assignments)
+    await client.query('DELETE FROM task_assignments WHERE task_id = $1', [id]);
+
+    // 3. ลบตัวงานหลัก (tasks)
+    const result = await client.query('DELETE FROM tasks WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+
+    await client.query('COMMIT');
+    res.status(200).json({ success: true, message: 'ลบข้อมูลสำเร็จ' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error("Delete task error:", err.message);
     res.status(500).json({ success: false, message: 'Server Error' });
   } finally {
     client.release();

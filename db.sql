@@ -66,7 +66,8 @@ CREATE TABLE tasks (
   memo_no VARCHAR(100),     -- เลขที่เอกสาร
   memo_date VARCHAR(100),   -- วันที่บนเอกสาร
   main_text TEXT,           -- เนื้อหารวมของงาน
-  status VARCHAR(50) DEFAULT 'following', 
+  status VARCHAR(50) DEFAULT 'following',
+  notes TEXT, 
   is_urgent BOOLEAN DEFAULT FALSE,
   due_date DATE,
   created_at TIMESTAMP DEFAULT NOW(),

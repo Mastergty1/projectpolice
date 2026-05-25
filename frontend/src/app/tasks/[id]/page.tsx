@@ -2,31 +2,87 @@
 
 import DetailsDisplayer from "@/components/Details/DetailsDisplayer";
 import DetailsPanel from "@/components/Details/DetailsPanel";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 type TaskStatus = "following" | "problem" | "completed";
 
 export default function TaskPage() {
     const { id } = useParams();
-    console.log(id);
+    const router = useRouter();
+    const [taskData, setTaskData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
-    const mockTask = {
-        id: "TASK-001",
-        name: "ติดตามเอกสารขออนุมัติโครงการ",
-        personInCharge: "สมชาย ใจดี",
-        department: "ฝ่ายบริหารโครงการ",
-        status: "following" as TaskStatus,
-        date: "2026-05-30",
-        createdAt: "2026-05-20",
-        description:
-            "ติดตามสถานะการอนุมัติโครงการจากฝ่ายบริหาร พร้อมตรวจสอบเอกสารแนบทั้งหมดก่อนส่งต่อ",
-        notes:
-            "รอการตอบกลับจากหัวหน้าฝ่าย คาดว่าจะได้รับภายในสัปดาห์นี้",
+    const fetchTask = async () => {
+        try {
+            const res = await fetch(`http://localhost:5003/api/v1/tasks/${id}`);
+            if (!res.ok) throw new Error("Failed to fetch");
+            const data = await res.json();
+            if (data.success) {
+                setTaskData(data.data);
+            }
+        } catch (error) {
+            console.error("Error fetching task:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
+    useEffect(() => {
+        if (id) fetchTask();
+    }, [id]);
+
+    const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+        try {
+            await fetch(`http://localhost:5003/api/v1/tasks/${taskId}/status`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: newStatus }),
+            });
+            setTaskData((prev: any) => ({ ...prev, status: newStatus }));
+        } catch (error) {
+            console.error("Error updating status:", error);
+        }
+    };
+
+    const handleUpdateTask = async (updatedFields: { name: string; date: string; notes: string }) => {
+        try {
+            const res = await fetch(`http://localhost:5003/api/v1/tasks/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updatedFields),
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("แก้ไขข้อมูลสำเร็จ");
+                fetchTask(); // รีโหลดข้อมูลใหม่จากเซิร์ฟเวอร์
+            }
+        } catch (error) {
+            console.error("Error updating task:", error);
+        }
+    };
+
+    const handleDeleteTask = async () => {
+        if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบงานนี้?")) return;
+        try {
+            const res = await fetch(`http://localhost:5003/api/v1/tasks/${id}`, {
+                method: "DELETE"
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("ลบงานสำเร็จ");
+                router.push("/"); // ลบเสร็จให้เด้งกลับหน้าหลัก
+            }
+        } catch (error) {
+            console.error("Error deleting task:", error);
+        }
+    };
+
+    if (loading) return <div className="p-16 text-center text-xl" style={{color:"var(--header)"}}>กำลังโหลดข้อมูล...</div>;
+    if (!taskData) return <div className="p-16 text-center text-xl text-red-500">ไม่พบข้อมูลงาน</div>;
 
     return (
-        <div className="flex flex-col w-full md:h-full p-16 pt-8 gap-12">
+        <div className="flex flex-col w-full min-h-screen p-6 md:p-16 pt-8 gap-12 overflow-x-hidden">
             <h1
                 style={{
                     color: "var(--header)",
@@ -37,26 +93,26 @@ export default function TaskPage() {
                 รายละเอียดการติดตาม
             </h1>
             
-            <div className="flex flex-col md:flex-row justify-between gap-12">
-
-                <div className="flex flex-1">
-                    <DetailsDisplayer></DetailsDisplayer>
+            <div className="flex flex-col xl:flex-row justify-between gap-12 items-stretch">
+                <div className="flex flex-1 w-full">
+                    <DetailsDisplayer task={taskData}></DetailsDisplayer>
                 </div>
                     
-                <div className="flex flex-2">
+                <div className="flex flex-1 w-full">
                     <DetailsPanel 
-                    key={mockTask.id}
-                        id={mockTask.id}
-                        name={mockTask.name}
-                        personInCharge={mockTask.personInCharge}
-                        date={mockTask.date}
-                        status={mockTask.status}
-                        note={mockTask.notes}
-                        onStatusChange={()=>{}}
+                        key={taskData.id}
+                        id={taskData.id.toString()}
+                        name={taskData.name}
+                        personInCharge={taskData.personInCharge}
+                        date={taskData.date || new Date().toISOString().split('T')[0]}
+                        status={taskData.status}
+                        note={taskData.notes || ""}
+                        onStatusChange={handleStatusChange}
+                        onUpdateTask={handleUpdateTask}
+                        onDeleteTask={handleDeleteTask}
                     ></DetailsPanel>
                 </div>
             </div>
         </div>
-
     );
 }

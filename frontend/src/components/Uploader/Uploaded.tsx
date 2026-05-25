@@ -13,13 +13,13 @@ interface ResponsibilityAssignment {
 
 interface MemoData {
     ที่?: string;
-    วันที่?: string; // ข้อมูลดิบที่แสกนได้ เช่น "12 พ.ค. 2567"
+    วันที่?: string; 
     เวลา?: string;
     เรื่อง?: string;
     เรียน?: string;
     main_text?: string;
     assignments?: ResponsibilityAssignment[];
-    due_date?: string; // 💡 ฟิลด์ใหม่ที่จะส่งไปให้ Backend
+    due_date?: string; 
 }
 
 interface ExtractedPayload {
@@ -31,14 +31,12 @@ interface UploadedProps {
     extractedData: ExtractedPayload | null; 
 }
 
-// 💡 ฟังก์ชันแปลงวันที่ภาษาไทยที่สกัดจากเอกสาร ให้เป็น Object วันที่ของ JavaScript
 const parseThaiDate = (dateStr: string | undefined): Date | null => {
     if (!dateStr) return null;
     
     const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
     const thaiMonthsAbbr = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
     
-    // ค้นหาตัวเลขวัน, เดือน, และปี 
     const regex = /(\d{1,2})\s*(.+?)\s*(\d{4})/;
     const match = dateStr.match(regex);
     if (!match) return null; 
@@ -47,13 +45,11 @@ const parseThaiDate = (dateStr: string | undefined): Date | null => {
     const monthStr = match[2].trim();
     let year = parseInt(match[3]);
 
-    // แปลง พ.ศ. เป็น ค.ศ.
     if (year > 2400) year -= 543;
 
-    // หา index ของเดือน
     let monthIndex = thaiMonths.findIndex(m => m === monthStr);
     if (monthIndex === -1) monthIndex = thaiMonthsAbbr.findIndex(m => m === monthStr);
-    if (monthIndex === -1) monthIndex = thaiMonths.findIndex(m => monthStr.includes(m)); // เผื่อพิมพ์ผิดเล็กน้อย
+    if (monthIndex === -1) monthIndex = thaiMonths.findIndex(m => monthStr.includes(m)); 
 
     if (monthIndex === -1) return null;
 
@@ -105,7 +101,6 @@ export default function Uploaded({ extractedData }: UploadedProps) {
             return;
         }
 
-        // 💡 บังคับให้ผู้ใช้เลือกระยะเวลาติดตาม ก่อนกดบันทึก
         if (!deadline) {
             alert("⚠️ กรุณาเลือกระยะเวลาที่ต้องติดตามงาน (เช่น 1 วัน, 3 วัน) ด้านบนสุดก่อนครับ");
             return;
@@ -113,20 +108,15 @@ export default function Uploaded({ extractedData }: UploadedProps) {
 
         setIsSaving(true);
         try {
-            // 💡 คำนวณ Due Date ของแต่ละงานก่อนส่งให้ Backend
             const memosWithDueDate = memosData.map(memo => {
-                // 1. ดึงวันที่บนเอกสารมาแปลง
                 let baseDate = parseThaiDate(memo.วันที่);
                 
-                // 2. ถ้าในเอกสารไม่มีวันที่ หรือ AI อ่านผิด ให้ใช้วันที่ปัจจุบันเป็นจุดเริ่มต้น
                 if (!baseDate || isNaN(baseDate.getTime())) {
                     baseDate = new Date();
                 }
 
-                // 3. บวกระยะเวลาทำงานที่เลือกจาก Dropdown เข้าไป
                 baseDate.setDate(baseDate.getDate() + parseInt(deadline));
                 
-                // 4. ส่งกลับคืนรูปแบบ YYYY-MM-DD
                 return {
                     ...memo,
                     due_date: baseDate.toISOString().split('T')[0] 
@@ -138,7 +128,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     documentId: extractedData.documentId,
-                    memos: memosWithDueDate // 💡 ส่งข้อมูลที่ฝัง due_date แล้วไปให้ Backend
+                    memos: memosWithDueDate 
                 })
             });
             
@@ -161,8 +151,9 @@ export default function Uploaded({ extractedData }: UploadedProps) {
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
                     <div className={styles.ContentHeader}>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                            <strong>ต้องติดตามใน</strong>
+                        {/* 💡 เพิ่ม flex-wrap และ shrink-0 ป้องกันช่อง Select หดและบีบกันเอง */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-wrap shrink-0 py-2">
+                            <strong className="shrink-0">ต้องติดตามใน</strong>
                             <select 
                                 className={styles.Dropdown} 
                                 value={deadline}
@@ -174,7 +165,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                 <option value="7">7 วัน</option>
                             </select>
                             
-                            <strong>สำหรับ</strong>
+                            <strong className="shrink-0">สำหรับ</strong>
                             <select 
                                 className={styles.Dropdown}
                                 value={assignee}
@@ -189,18 +180,19 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                 </div>
                 <hr className={styles.Line} />
 
-                <div className="p-4 w-full max-h-150 overflow-y-auto">
+                {/* 💡 เพิ่ม shrink-0 ป้องกันลิสต์โดนบีบ */}
+                <div className="p-4 w-full h-full max-h-150 overflow-y-auto shrink-0">
                     {memosData.length > 0 ? (
                         <div className="flex flex-col gap-8">
                             {memosData.map((memo, index) => (
-                                <div key={index} className="text-sm flex flex-col gap-4 border-b pb-6 last:border-b-0">
+                                <div key={index} className="text-sm flex flex-col gap-4 border-b pb-6 last:border-b-0 shrink-0">
                                     {memosData.length > 1 && (
                                         <h3 className="text-lg font-bold text-blue-800 border-b pb-2">
                                             เอกสารหน้าที่/ฉบับที่ {index + 1}
                                         </h3>
                                     )}
                                     
-                                    <div className="flex flex-col gap-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                    <div className="flex flex-col gap-2 bg-gray-50 p-3 rounded-lg border border-gray-100 shrink-0">
                                         <p><strong>ที่:</strong> {memo.ที่ || '-'}</p>
                                         <p><strong>วันที่:</strong> <span className="text-blue-600 font-bold">{memo.วันที่ || '-'}</span></p>
                                         {memo.เวลา && <p><strong>เวลา:</strong> {memo.เวลา}</p>}
@@ -209,27 +201,27 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                     </div>
 
                                     {memo.main_text && (
-                                        <div className="p-2">
+                                        <div className="p-2 shrink-0">
                                             <strong>เนื้อหา:</strong>
                                             <p className="mt-1 text-gray-700 whitespace-pre-wrap">{memo.main_text}</p>
                                         </div>
                                     )}
                                     
                                     {memo.assignments && memo.assignments.length > 0 ? (
-                                        <div className="mt-2">
+                                        <div className="mt-2 shrink-0">
                                             <strong className="text-base text-blue-800">การมอบหมายงาน/ความรับผิดชอบ:</strong>
                                             <div className="flex flex-col gap-4 mt-3">
                                                 {memo.assignments.map((assignment: ResponsibilityAssignment, idx: number) => (
-                                                    <div key={idx} className="bg-white p-4 rounded-lg shadow-inner border border-gray-100">
-                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3 mb-3">
+                                                    <div key={idx} className="bg-white p-4 rounded-lg shadow-inner border border-gray-100 shrink-0">
+                                                        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-gray-100 pb-3 mb-3">
                                                             <p className="font-bold text-base text-green-700">
                                                                 สกัดจากเอกสาร: {assignment.responsible_person || 'ไม่ระบุ'}
                                                             </p>
                                                             
                                                             <div className="flex items-center gap-2">
-                                                                <span className="text-xs font-bold text-blue-600">มอบหมายให้:</span>
+                                                                <span className="text-xs font-bold text-blue-600 shrink-0">มอบหมายให้:</span>
                                                                 <select 
-                                                                    className="p-1.5 border border-blue-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                                    className="p-2 border border-blue-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-full sm:w-auto min-h-10 shrink-0"
                                                                     onChange={(e) => handleUserSelect(index, idx, e.target.value)}
                                                                 >
                                                                     <option value="">-- เลือกระบุบุคคล --</option>
@@ -260,7 +252,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                         </div>
                                     ) : (
                                         !memo.main_text && (
-                                            <div className="text-gray-400 text-center py-5">
+                                            <div className="text-gray-400 text-center py-5 shrink-0">
                                                 ไม่พบข้อมูลการมอบหมายงานในเอกสารนี้
                                             </div>
                                         )
@@ -269,14 +261,15 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                             ))}
                         </div>
                     ) : (
-                        <div className="text-gray-400 text-center py-10">
+                        <div className="text-gray-400 text-center py-10 shrink-0">
                             ยังไม่มีข้อมูล กรุณาอัพโหลดเอกสารเพื่อสแกน
                         </div>
                     )}
                 </div>
 
             </div>
-            <div className="flex flex-col md:flex-row md:justify-end gap-4 mt-6">
+            {/* 💡 เพิ่ม flex-wrap ที่ปุ่มด้านล่าง */}
+            <div className="flex flex-col md:flex-row md:justify-end gap-4 mt-6 flex-wrap shrink-0">
                 <button className={styles.ButtonVariant} onClick={() => router.push('/')}>
                     กลับหน้าหลัก
                 </button>
