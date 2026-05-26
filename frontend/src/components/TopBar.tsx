@@ -12,7 +12,7 @@ export default function TopBar() {
                         width={40} 
                         height={40} 
                         className="transition-transform group-hover:scale-110" 
-                        priority
+                        priority /* 💡 มีอยู่แล้ว (โหลดทันที) */
                     />
                     <strong style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
                         ระบบติดตามงานมอบหมาย
@@ -26,7 +26,8 @@ export default function TopBar() {
                         src="/window.svg" 
                         alt="ไอคอนช่วยเหลือ" 
                         width={24} 
-                        height={24} 
+                        height={24}
+                        priority /* 💡 แก้ไข: เพิ่ม priority ให้ไอคอนโหลดไวขึ้น ลดการบล็อกเรนเดอร์ */
                     />
                     <span className="font-medium">ช่วยเหลือ</span>
                 </button>
