@@ -98,6 +98,8 @@ export default function UrgentTask() {
                                 className={styles.Dropdown}
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
+                                aria-label="ตัวกรองสถานะงานด่วน" // 💡 เพิ่มบรรทัดนี้
+                                style={{ minHeight: '44px' }} // 💡 เพิ่มบรรทัดนี้
                             >
                                 <option value="all">ทั้งหมด</option>
                                 <option value="following">กำลังติดตาม</option>
@@ -110,6 +112,8 @@ export default function UrgentTask() {
                                 className={styles.Dropdown}
                                 value={personFilter}
                                 onChange={(e) => setPersonFilter(e.target.value)}
+                                aria-label="ตัวกรองผู้รับผิดชอบงานด่วน" // 💡 เพิ่มบรรทัดนี้
+                                style={{ minHeight: '44px' }} // 💡 เพิ่มบรรทัดนี้
                             >
                                 <option value="all">ทุกคน</option>
                                 {uniquePersons.map((person: any, idx) => (

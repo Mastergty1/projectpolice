@@ -158,7 +158,7 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                         </div>
 
                     {/* 💡 แก้ไข: เพิ่ม aria-label ให้แยกความแตกต่างของลิงก์ได้ */}
-                    <Link href={`/tasks/${id}`} aria-label={`ดูรายละเอียดของงาน ${name}`}>
+                    <Link href={`/tasks/${id}`} aria-label={`ดูรายละเอียดของงาน ${name} รหัส ${id}`}>
                     <button className={styles.Clickable} tabIndex={-1} style={{ minHeight: "44px" }}> 
                         รายละเอียด 
                     </button>

@@ -3,27 +3,27 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --header: #1F2937;
+  --header: #111827;
   --wrapper:#DBDBD4;
   --container:#F7F6EE;
   --button:#FFFDF8;
   --shadow:#bfbfbf;
 
-  --redText: #991B1B;
+  --redText: #7F1D1D;
   --redBG: #FEE2E2;
-  --redBorder: #EF4444;
+  --redBorder: #DC2626;
 
   --orangeText:#903207;
   --orangeBG:#e9aa85;
   --orangeBorder:#be835b;
 
-  --yellowText: #966C00;
+  --yellowText: #5C4000;
   --yellowBG: #FEF3C7;
-  --yellowBorder: #F59E0B;
+  --yellowBorder: #D97706;
 
-  --greenText: #065F46;
+  --greenText: #064E3B;
   --greenBG: #D1FAE5;
-  --greenBorder: #10B981;
+  --greenBorder: #059669;
 
   --greyText:#eaeaea;
   --greyBG:#696969;
