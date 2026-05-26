@@ -11,11 +11,7 @@ type TaskItemProps = {
   personInCharge: string;
   status: string;
   id: string;
-
-  onStatusChange: (
-    id: string,
-    status: TaskStatus
-  ) => void;
+  onStatusChange: (id: string, status: TaskStatus) => void;
 };
 
 type TaskStatus = "following" | "problem" | "completed";
@@ -61,10 +57,8 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
         theme = styles.DateGreen;
     }
 
-    // 💡 แก้ไข: ดึงค่า status ที่มาจาก Database มาเป็นค่าเริ่มต้น
     const [taskStatus, setStatus] = useState<TaskStatus>((status as TaskStatus) || "following");
 
-    // 💡 อัปเดตสถานะให้ตรงเมื่อมีการดึง API ใหม่
     useEffect(() => {
         if (status) {
             setStatus(status as TaskStatus);
@@ -78,21 +72,9 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
     ];
 
     const selectThemeMap = {
-        following: {
-            color: "var(--yellowText)",
-            bg: "var(--yellowBG)",
-            border: "var(--yellowBorder)",
-        },
-        problem: {
-            color: "var(--redText)",
-            bg: "var(--redBG)",
-            border: "var(--redBorder)",
-        },
-        completed: {
-            color: "var(--greenText)",
-            bg: "var(--greenBG)",
-            border: "var(--greenBorder)",
-        },
+        following: { color: "var(--yellowText)", bg: "var(--yellowBG)", border: "var(--yellowBorder)" },
+        problem: { color: "var(--redText)", bg: "var(--redBG)", border: "var(--redBorder)" },
+        completed: { color: "var(--greenText)", bg: "var(--greenBG)", border: "var(--greenBorder)" },
     } as const;
 
     const themeStyle = selectThemeMap[taskStatus] || selectThemeMap.following;
@@ -126,9 +108,9 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                         <Select
                             instanceId={`task-status-${id}`}
                             options={statusOption}
-                            value={statusOption.find(
-                                (option) => option.value === taskStatus
-                            ) || statusOption[0]}
+                            // 💡 แก้ไข: เพิ่ม aria-label ให้โปรแกรมอ่านหน้าจอทำงานได้
+                            aria-label={`อัปเดตสถานะงานของ ${name}`}
+                            value={statusOption.find((option) => option.value === taskStatus) || statusOption[0]}
                             isClearable={false}
                             onChange={(selectedOption) => {
                                 const newStatus = selectedOption!.value;
@@ -146,17 +128,11 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                                     backgroundColor: themeStyle.bg,
                                     border: `2px solid ${themeStyle.border}`,
                                     color: themeStyle.color,
-                                    minHeight: "auto",
+                                    minHeight: "44px", // 💡 แก้ไข: เพิ่มขนาดพื้นที่กดให้ผ่านเกณฑ์เป้าหมายการสัมผัส (Touch target)
                                     cursor: "pointer",
                                 }),
-                                menuPortal: (base) => ({
-                                    ...base,
-                                    zIndex: 999999,
-                                }),
-                                menu: (base) => ({
-                                    ...base,
-                                    zIndex: 999999,
-                                }),
+                                menuPortal: (base) => ({ ...base, zIndex: 999999 }),
+                                menu: (base) => ({ ...base, zIndex: 999999 }),
                                 singleValue: (base) => ({
                                     ...base,
                                     whiteSpace: "normal",
@@ -164,14 +140,8 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                                     textAlign: "center",
                                     color: themeStyle.color
                                 }),
-                                dropdownIndicator: (base) => ({
-                                    ...base,
-                                    color: themeStyle.color
-                                }),
-                                indicatorSeparator: (base) => ({
-                                    ...base,
-                                    display: "none",
-                                }),
+                                dropdownIndicator: (base) => ({ ...base, color: themeStyle.color }),
+                                indicatorSeparator: (base) => ({ ...base, display: "none" }),
                                 option: (base, state) => {
                                     const optionStatus = state.data.value as keyof typeof selectThemeMap;
                                     const optionTheme = selectThemeMap[optionStatus] || selectThemeMap.following;
@@ -180,17 +150,16 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                                         backgroundColor: state.isFocused ? optionTheme.bg : "white",
                                         color: optionTheme.color,
                                         cursor: "pointer",
-                                        ":active": {
-                                            backgroundColor: optionTheme.bg,
-                                        },
+                                        ":active": { backgroundColor: optionTheme.bg },
                                     };
                                 },
                             }}
                         />
                         </div>
 
-                    <Link href={`/tasks/${id}`}>
-                    <button className={styles.Clickable}> 
+                    {/* 💡 แก้ไข: เพิ่ม aria-label ให้แยกความแตกต่างของลิงก์ได้ */}
+                    <Link href={`/tasks/${id}`} aria-label={`ดูรายละเอียดของงาน ${name}`}>
+                    <button className={styles.Clickable} tabIndex={-1} style={{ minHeight: "44px" }}> 
                         รายละเอียด 
                     </button>
                     </Link>

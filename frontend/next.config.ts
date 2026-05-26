@@ -1,11 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // 💡 แก้ไข: เพิ่ม Security Headers เพื่อกำหนด HSTS Policy
   async headers() {
     return [
       {
-        // บังคับใช้กับทุกๆ Path ในเว็บไซต์
         source: "/(.*)",
         headers: [
           {
@@ -15,6 +13,15 @@ const nextConfig: NextConfig = {
           {
             key: "X-Content-Type-Options",
             value: "nosniff",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "DENY", // ป้องกัน Clickjacking
+          },
+          {
+            key: "Content-Security-Policy",
+            // อนุญาตให้รัน Script เฉพาะของตัวเอง และต่อ API ไปยัง Render ของคุณได้
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://projectpolice-1.onrender.com https://projectpolice.onrender.com http://localhost:5003;"
           },
         ],
       },
