@@ -152,7 +152,12 @@ export default function FileUploader({ setExtractedData, progress, setProgress }
                 >
                     {isUploading ? "กำลังประมวลผล..." : "อัพโหลดไฟล์"}
                 </button>
-                <button className={styles.Button}>เพิ่มงานติดตามด้วยตนเอง</button>
+                <button 
+                    className={styles.Button} 
+                    onClick={() => router.push("/addFile/self-add")}
+                >
+                    เพิ่มงานติดตามด้วยตนเอง
+                </button>
             </div>
         </div>
     );

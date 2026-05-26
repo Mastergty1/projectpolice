@@ -7,7 +7,8 @@ const {
     confirmTasks, 
     getTaskById,
     updateTaskDetail,
-    deleteTask  
+    deleteTask,
+    createTask
 } = require('../controllers/taskController');
 
 const router = express.Router();
@@ -19,5 +20,6 @@ router.post('/confirm', confirmTasks); // เส้นทางสำหรั�
 router.get('/:id', getTaskById);
 router.put('/:id', updateTaskDetail);
 router.delete('/:id', deleteTask);
+router.post('/', createTask);
 
 module.exports = router;

@@ -32,9 +32,13 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// แก้ไข CORS ให้ปลอดภัยโดยดึงจาก Environment Variable
+// แก้ไข CORS ให้ปลอดภัยและยืดหยุ่นขึ้น
 const corsOptions = {
-  origin: process.env.FRONTEND || "http://localhost:3000",
+  origin: [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    process.env.FRONTEND
+  ].filter(Boolean),
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
 };

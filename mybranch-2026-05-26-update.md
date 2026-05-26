@@ -21,7 +21,7 @@ backend/
 
     middlewarre/upload.js
         -createfolder
-        -file type fileter
+        -file type filter
     
     routes/documents.js
         -post file
@@ -33,3 +33,14 @@ backend/
     utils/duplicatechecker.js
         -hash file 
         -compare already have hash and new hash 
+
+
+เพิ่ม
+FE
+app/addFile/**self-add**
+เพิ่ม components/**self-add**
+เพิ่มpush port->addField/selfadd ใน**components/Uploader/FileUploader.tsx**
+
+
+BE
+เพิ่ม**CreateTask**ในtask controller,route

@@ -95,7 +95,7 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
         },
     } as const;
 
-    const themeStyle = selectThemeMap[taskStatus];
+    const themeStyle = selectThemeMap[taskStatus] || selectThemeMap.following;
     
     return(
         <div className={styles.TaskWrapper}>
@@ -128,32 +128,34 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                             options={statusOption}
                             value={statusOption.find(
                                 (option) => option.value === taskStatus
-                            )}
+                            ) || statusOption[0]}
                             isClearable={false}
                             onChange={(selectedOption) => {
                                 const newStatus = selectedOption!.value;
                                 setStatus(newStatus);
                                 onStatusChange(id, newStatus);
                             }}
-                            menuPortalTarget={
-                                typeof document !== "undefined"
-                                ? document.body
-                                : null
-                            }
+                            menuPortalTarget={typeof document !== "undefined" ? document.body : null}
                             isSearchable={false}
                             styles={{
                                 control: (base) => ({
-                                ...base,
-                                padding: "0.2rem 0.5rem",
-                                boxShadow: "none", 
-                                borderRadius: "0.7rem",
-                                backgroundColor: themeStyle.bg,
-                                border: `2px solid ${themeStyle.border}`,
-                                color: themeStyle.color
+                                    ...base,
+                                    padding: "0.2rem 0.5rem",
+                                    boxShadow: "none", 
+                                    borderRadius: "0.7rem",
+                                    backgroundColor: themeStyle.bg,
+                                    border: `2px solid ${themeStyle.border}`,
+                                    color: themeStyle.color,
+                                    minHeight: "auto",
+                                    cursor: "pointer",
                                 }),
                                 menuPortal: (base) => ({
-                                ...base,
-                                zIndex: 9999,
+                                    ...base,
+                                    zIndex: 999999,
+                                }),
+                                menu: (base) => ({
+                                    ...base,
+                                    zIndex: 999999,
                                 }),
                                 singleValue: (base) => ({
                                     ...base,
@@ -170,20 +172,17 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                                     ...base,
                                     display: "none",
                                 }),
-                                 option: (base, state) => {
-                                    const theme =
-                                    selectThemeMap[state.data.value as keyof typeof selectThemeMap];
-
+                                option: (base, state) => {
+                                    const optionStatus = state.data.value as keyof typeof selectThemeMap;
+                                    const optionTheme = selectThemeMap[optionStatus] || selectThemeMap.following;
                                     return {
-                                    ...base,
-                                    backgroundColor: state.isFocused
-                                        ? theme.bg
-                                        : "var(--button)",
-                                    color: theme.color,
-                                    cursor: "pointer",
-                                    ":active": {
-                                        backgroundColor: theme.bg,
-                                    },
+                                        ...base,
+                                        backgroundColor: state.isFocused ? optionTheme.bg : "white",
+                                        color: optionTheme.color,
+                                        cursor: "pointer",
+                                        ":active": {
+                                            backgroundColor: optionTheme.bg,
+                                        },
                                     };
                                 },
                             }}

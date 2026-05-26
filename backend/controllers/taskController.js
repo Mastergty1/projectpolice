@@ -267,3 +267,75 @@ exports.deleteTask = async (req, res) => {
     client.release();
   }
 };
+
+
+exports.createTask = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const { 
+      title, 
+      memo_no, 
+      memo_date, 
+      due_date, 
+      main_text, 
+      is_urgent, 
+      assignments 
+    } = req.body;
+
+    const taskRes = await client.query(
+      `INSERT INTO tasks (title, memo_no, memo_date, main_text, due_date, is_urgent, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+      [
+        title||'ไม่ระบุชื่อเรื่อง', 
+        memo_no, 
+        memo_date||null, 
+        main_text, 
+        due_date||null, 
+        is_urgent||false,
+        'รอดำเนินการ'
+      ]
+    );
+    const taskId = taskRes.rows[0].id;
+
+    if (assignments && assignments.length > 0) {
+      for (const assign of assignments) {
+
+        const userId = assign.user_id ? parseInt(assign.user_id) : null;
+        const roleOrName = assign.role_or_name || null;
+
+        const assignRes = await client.query(
+          `INSERT INTO task_assignments (task_id, user_id, role_or_name)
+           VALUES ($1, $2, $3) RETURNING id`,
+          [taskId, userId, roleOrName]
+        );
+        const assignmentId = assignRes.rows[0].id;
+
+        if (assign.topics && assign.topics.length > 0) {
+          for (const topicDetail of assign.topics) {
+            await client.query(
+              `INSERT INTO task_topics (assignment_id, detail, is_completed) 
+               VALUES ($1, $2, $3)`,
+              [assignmentId, topicDetail, false]
+            );
+          }
+        }
+      }
+    }
+
+    await client.query('COMMIT');
+    res.status(201).json({ 
+      success: true, 
+      message: 'สร้างงานสำเร็จ!', 
+      taskId: taskId 
+    });
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error("Create task error:", err.message);
+    res.status(500).json({ success: false, message: 'Server Error', error: err.message });
+  } finally {
+    client.release();
+  }
+};
