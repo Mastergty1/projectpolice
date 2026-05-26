@@ -145,7 +145,9 @@ export default function AllTask() {
                     <hr className={styles.Line} />
                     
                     {isLoading ? (
-                        <div className="text-center p-4 text-gray-500">กำลังโหลดข้อมูล...</div>
+                        <div className="flex items-center justify-center w-full text-gray-500 font-bold" style={{ minHeight: '500px' }}>
+                            กำลังโหลดข้อมูล...
+                        </div>
                     ) : (
                         <TaskDisplayer tasks={filteredTasks} onStatusChange={handleStatusChange} />
                     )}

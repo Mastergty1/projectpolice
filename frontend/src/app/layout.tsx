@@ -8,6 +8,7 @@ const sarabun = Sarabun({
   subsets: ["latin", "thai"],
   weight: ["400", "700"],
   variable: "--font-sarabun",
+  display: "swap",
 });
 
 // 💡 แก้ไข: เพิ่ม Meta Description และ Title ที่มีความหมายสำหรับ SEO
