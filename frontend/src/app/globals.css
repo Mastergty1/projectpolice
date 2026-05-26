@@ -3,26 +3,26 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --header: #111827;
+  --header: #3f1818;
   --wrapper:#DBDBD4;
   --container:#F7F6EE;
   --button:#FFFDF8;
   --shadow:#bfbfbf;
 
-  --redText: #7F1D1D;
-  --redBG: #FEE2E2;
+  --redText: #900707;
+  --redBG: #e98586;
   --redBorder: #DC2626;
 
   --orangeText:#903207;
   --orangeBG:#e9aa85;
   --orangeBorder:#be835b;
 
-  --yellowText: #5C4000;
-  --yellowBG: #FEF3C7;
+  --yellowText: #872d00;
+  --yellowBG: #ffea94;
   --yellowBorder: #D97706;
 
-  --greenText: #064E3B;
-  --greenBG: #D1FAE5;
+  --greenText: #008755;
+  --greenBG: #94ffb8;
   --greenBorder: #059669;
 
   --greyText:#eaeaea;
@@ -47,14 +47,12 @@
 }
 
 body {
-  background-color: #ffffff !important;
-  color: #111827 !important;
+  background-color: #ffffff ;
+  color: #111827 ;
   font-family: Sarabun, Arial, Helvetica, sans-serif;
+  font-size: 1.25rem;
 }
 
-h1, h2, h3, h4, h5, h6, strong, p {
-    color: #000000 !important;
-}
 
 
 .TaskItem_DateMonth__m6uGV, 
@@ -65,5 +63,5 @@ span {
 #main-topbar, 
 #main-topbar strong, 
 #main-topbar span {
-    color: #FFFFFF !important;
+    color: #FFFFFF ;
 }

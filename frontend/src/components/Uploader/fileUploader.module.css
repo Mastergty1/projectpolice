@@ -19,7 +19,7 @@
 
 .ContentContainer{
     background-color: var(--container);
-    font-size: 1.25rem;
+    font-size: 1.25rem !important;
     
     display: flex;
     flex-direction: column;
@@ -59,15 +59,15 @@
     min-height: 0;   
 }
 
-.ContentContentScrollable::-webkit-scrollbar {
+* ::-webkit-scrollbar {
   width: 5px;
 }
 
-.ContentContentScrollable::-webkit-scrollbar-thumb {
+* ::-webkit-scrollbar-thumb {
   background: var(--shadow);
 }
 
-.ContentContentScrollable::-webkit-scrollbar-track {
+* ::-webkit-scrollbar-track {
   background: var(--wrapper);
 }
 
@@ -81,7 +81,7 @@
     color: var(--header);
     outline: none;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: 1.25rem;
 
     /* 💡 เพิ่ม 2 บรรทัดนี้เพื่อล็อคไม่ให้ช่องจมหรือแบน */
     min-height: 3rem;

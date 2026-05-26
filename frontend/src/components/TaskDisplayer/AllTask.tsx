@@ -67,7 +67,12 @@ export default function AllTask() {
     });
     const uniquePersons = Array.from(new Set(allPersons));
 
-    const filteredTasks = tasks.filter((task) => {
+    const filteredTasks = tasks
+    .filter((task) => {
+        // 1. กรองงานที่เป็น "completed" ออกไปทันที
+        if (task.status === "completed") return false;
+
+        // 2. เช็ค Status Filter ปกติ (เช่น "todo", "in_progress")
         const matchStatus = statusFilter === "all" || task.status === statusFilter;
 
         // 💡 แก้ไข 3: ถ้างานนี้มอบหมายให้ "ทุกหน่วยงาน" ทุกคนจะต้องมองเห็นแม้อยู่ใน Filter ตัวเอง
@@ -77,16 +82,14 @@ export default function AllTask() {
             (task.personInCharge && task.personInCharge.split(',').map((s: string) => s.trim()).includes(personFilter));
 
         return matchStatus && matchPerson;
-    }).sort((a, b) => {
-        // 💡 แก้ไข 2: จัดเรียงงานที่ completed ไปไว้ท้ายสุด
-        if (a.status === "completed" && b.status !== "completed") return 1;
-        if (a.status !== "completed" && b.status === "completed") return -1;
-        
+    })
+    .sort((a, b) => {
+        // เรียงลำดับตามวันที่จากเก่าไปใหม่ (เนื่องจากไม่มีสถานะ completed มาปนแล้ว)
         const dateA = new Date(a.date).getTime();
         const dateB = new Date(b.date).getTime();
         return dateA - dateB;
     });
-
+    
     return (
         <div className="flex flex-col w-full h-full gap-6 min-h-75">
             <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -113,34 +116,40 @@ export default function AllTask() {
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
                     <div className={styles.ContentHeader}>
+                        {/* Group 1: สถานะ */}
+                        <div className={styles.FilterGroup}>
                             <strong>สถานะ:</strong>
                             <select 
                                 className={styles.Dropdown}
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
-                                aria-label="ตัวกรองสถานะงาน" // 💡 แก้ไข: เพิ่ม Label
-                                style={{ minHeight: '44px' }} // 💡 แก้ไข: เพิ่มพื้นที่กด
+                                aria-label="ตัวกรองสถานะงาน"
+                                style={{ minHeight: '44px' }}
                             >
                                 <option value="all">ทั้งหมด</option>
                                 <option value="following">กำลังติดตาม</option>
                                 <option value="problem">เกิดปัญหา</option>
                                 <option value="completed">เสร็จสิ้น</option>
                             </select>
+                        </div>
 
+                        {/* Group 2: สำหรับ */}
+                        <div className={styles.FilterGroup}>
                             <strong>สำหรับ:</strong>
                             <select 
                                 className={styles.Dropdown}
                                 value={personFilter}
                                 onChange={(e) => setPersonFilter(e.target.value)}
-                                aria-label="ตัวกรองผู้รับผิดชอบ" // 💡 แก้ไข: เพิ่ม Label
-                                style={{ minHeight: '44px' }} // 💡 แก้ไข: เพิ่มพื้นที่กด
+                                aria-label="ตัวกรองผู้รับผิดชอบ"
+                                style={{ minHeight: '44px' }}
                             >
                                 <option value="all">ทุกคน</option>
                                 {uniquePersons.map((person: any, idx) => (
                                     <option key={idx} value={person}>{person}</option>
                                 ))}
                             </select>
-                        
+                        </div>
+                    
                     </div>
                     <hr className={styles.Line} />
                     

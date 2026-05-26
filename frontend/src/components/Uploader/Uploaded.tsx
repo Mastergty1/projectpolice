@@ -275,26 +275,26 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                         </h3>
                                     )}
                                     
-                                    <div className="flex flex-col gap-2 bg-gray-50 p-4 rounded-lg border border-gray-200 shrink-0 text-black">
+                                    <div className="flex flex-col gap-2 p-4 rounded-lg border bg-(--container) border-(--shadow) shrink-0 text-(--foreground)">
                                         <div className="flex items-center gap-2">
                                             <strong className="w-12 shrink-0">ที่:</strong>
-                                            <input type="text" className="border border-gray-300 p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-white" value={memo.ที่ || ''} onChange={(e) => handleMemoChange(index, "ที่", e.target.value)} />
+                                            <input type="text" className="border border-gray-300 p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-(--button)" value={memo.ที่ || ''} onChange={(e) => handleMemoChange(index, "ที่", e.target.value)} />
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <strong className="w-12 shrink-0">วันที่:</strong>
-                                            <input type="text" className="border border-gray-300 p-1.5 rounded flex-1 font-bold text-blue-700 focus:ring-2 focus:ring-blue-400 outline-none bg-white" value={memo.วันที่ || ''} onChange={(e) => handleMemoChange(index, "วันที่", e.target.value)} />
+                                            <input type="text" className="border border-(--wrapper) p-1.5 rounded flex-1 font-bold text-blue-700 focus:ring-2 focus:ring-blue-400 outline-none bg-(--button)" value={memo.วันที่ || ''} onChange={(e) => handleMemoChange(index, "วันที่", e.target.value)} />
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <strong className="w-12 shrink-0">เวลา:</strong>
-                                            <input type="text" className="border border-gray-300 p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-white" value={memo.เวลา || ''} onChange={(e) => handleMemoChange(index, "เวลา", e.target.value)} />
+                                            <input type="text" className="border border-(--wrapper) p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-(--button)" value={memo.เวลา || ''} onChange={(e) => handleMemoChange(index, "เวลา", e.target.value)} />
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <strong className="w-12 shrink-0">เรื่อง:</strong>
-                                            <input type="text" className="border border-gray-300 p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-white" value={memo.เรื่อง || ''} onChange={(e) => handleMemoChange(index, "เรื่อง", e.target.value)} />
+                                            <input type="text" className="border border-(--wrapper) p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-(--button)" value={memo.เรื่อง || ''} onChange={(e) => handleMemoChange(index, "เรื่อง", e.target.value)} />
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <strong className="w-12 shrink-0">เรียน:</strong>
-                                            <input type="text" className="border border-gray-300 p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-white" value={memo.เรียน || ''} onChange={(e) => handleMemoChange(index, "เรียน", e.target.value)} />
+                                            <input type="text" className="border border-(--wrapper) p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-(--button)" value={memo.เรียน || ''} onChange={(e) => handleMemoChange(index, "เรียน", e.target.value)} />
                                         </div>
                                         
                                         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">
@@ -312,10 +312,10 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                         </div>
                                     </div>
 
-                                    <div className="p-2 shrink-0 text-black">
+                                    <div className="p-2 shrink-0 text-(--foreground)">
                                         <strong style={{ color: "var(--header)" }}>เนื้อหา:</strong>
                                         <textarea 
-                                            className="mt-2 w-full border border-gray-300 rounded p-3 text-gray-800 bg-white focus:ring-2 focus:ring-blue-400 outline-none" 
+                                            className="mt-2 w-full border rounded p-3 text-gray-800 focus:ring-2 focus:ring-blue-400 outline-none bg-(--button) border-(--wrapper)" 
                                             rows={5} 
                                             value={memo.main_text || ''} 
                                             onChange={(e) => handleMemoChange(index, "main_text", e.target.value)} 
@@ -337,7 +337,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                 <strong className="text-base" style={{ color: "var(--header)" }}>การมอบหมายงาน/ความรับผิดชอบ:</strong>
                                                 <div className="flex flex-col gap-4 mt-3">
                                                     {memo.assignments.map((assignment: ResponsibilityAssignment, idx: number) => (
-                                                        <div key={idx} className="bg-white p-4 rounded-lg shadow-inner border border-gray-100 shrink-0 text-black">
+                                                        <div key={idx} className=" p-4 rounded-lg  border shrink-0 text-(--foreground) bg-(--container) border-(--shadow)">
                                                             <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-gray-100 pb-3 mb-3">
                                                                 <p className="font-bold text-base text-green-700">
                                                                     สกัดจากเอกสาร: {assignment.responsible_person || 'ไม่ระบุ'}
@@ -346,7 +346,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="text-xs font-bold text-blue-600 shrink-0">มอบหมายให้:</span>
                                                                     <select 
-                                                                        className="p-2 border border-blue-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-full sm:w-auto min-h-10 shrink-0 text-black"
+                                                                        className="p-2 border border-blue-300 rounded text-sm bg-(--button) focus:outline-none focus:ring-1 focus:ring-blue-500 w-full sm:w-auto min-h-10 shrink-0 text-black"
                                                                         value={assignment.user_id || ""}
                                                                         onChange={(e) => handleUserSelect(index, idx, e.target.value)}
                                                                     >
@@ -374,7 +374,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                                                 <span className="text-gray-500 text-lg font-bold w-4">•</span>
                                                                                 <input 
                                                                                     type="text"
-                                                                                    className="border border-gray-300 p-2 rounded flex-1 text-sm outline-none bg-white focus:ring-1 focus:ring-blue-400 w-full"
+                                                                                    className="border border-gray-300 p-2 rounded flex-1 text-sm outline-none bg-(--button) focus:ring-1 focus:ring-blue-400 w-full"
                                                                                     placeholder="ระบุสิ่งที่ต้องดำเนินการ..."
                                                                                     value={topic}
                                                                                     onChange={(e) => handleTopicChange(index, idx, topicIdx, e.target.value)}

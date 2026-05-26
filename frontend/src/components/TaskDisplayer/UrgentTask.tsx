@@ -92,34 +92,40 @@ export default function UrgentTask() {
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
                     <div className={styles.ContentHeader}>
-                        
+                        {/* Group 1: สถานะ */}
+                        <div className={styles.FilterGroup}>
                             <strong>สถานะ:</strong>
                             <select 
                                 className={styles.Dropdown}
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
-                                aria-label="ตัวกรองสถานะงานด่วน" // 💡 เพิ่มบรรทัดนี้
-                                style={{ minHeight: '44px' }} // 💡 เพิ่มบรรทัดนี้
+                                aria-label="ตัวกรองสถานะงาน"
+                                style={{ minHeight: '44px' }}
                             >
                                 <option value="all">ทั้งหมด</option>
                                 <option value="following">กำลังติดตาม</option>
                                 <option value="problem">เกิดปัญหา</option>
                                 <option value="completed">เสร็จสิ้น</option>
                             </select>
+                        </div>
 
+                        {/* Group 2: สำหรับ */}
+                        <div className={styles.FilterGroup}>
                             <strong>สำหรับ:</strong>
                             <select 
                                 className={styles.Dropdown}
                                 value={personFilter}
                                 onChange={(e) => setPersonFilter(e.target.value)}
-                                aria-label="ตัวกรองผู้รับผิดชอบงานด่วน" // 💡 เพิ่มบรรทัดนี้
-                                style={{ minHeight: '44px' }} // 💡 เพิ่มบรรทัดนี้
+                                aria-label="ตัวกรองผู้รับผิดชอบ"
+                                style={{ minHeight: '44px' }}
                             >
                                 <option value="all">ทุกคน</option>
                                 {uniquePersons.map((person: any, idx) => (
                                     <option key={idx} value={person}>{person}</option>
                                 ))}
                             </select>
+                        </div>
+                    
                     </div>
                     <hr className={styles.Line}></hr>
                     
