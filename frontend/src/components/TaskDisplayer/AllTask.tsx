@@ -55,12 +55,8 @@ export default function AllTask() {
             if (!response.ok) {
                 throw new Error("Failed to update status in database");
             }
-
-            if (newStatus === "completed") {
-                setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
-                return;
-            }
             
+            // ยกเลิกการซ่อนเมื่อสถานะเป็น completed เพื่อให้แสดงในหน้ารายการต่อไป
             setTasks((prevTasks) =>
                 prevTasks.map((task) => task.id === id ? { ...task, status: newStatus } : task)
             );
@@ -70,7 +66,7 @@ export default function AllTask() {
         }
     };
 
-    // 💡 แก้ไขข้อ 3: แยกชื่อที่ติดกันด้วยคอมม่า (,) ออกเป็นแต่ละคนแบบไม่ซ้ำ
+    // แยกชื่อที่ติดกันด้วยคอมม่า (,) ออกเป็นแต่ละคนแบบไม่ซ้ำ
     const allPersons = tasks.flatMap(t => {
         if (!t.personInCharge) return [];
         return t.personInCharge.split(',').map((s: string) => s.trim()).filter(Boolean);
@@ -78,14 +74,11 @@ export default function AllTask() {
     const uniquePersons = Array.from(new Set(allPersons));
 
     const filteredTasks = tasks.filter((task) => {
-        if (task.status === "completed") {
-            return false;
-        }
-
+        // ยกเลิกการ return false เมื่อสถานะเป็น completed เพื่อให้แสดงงานที่เสร็จแล้ว
         const matchStatus =
             statusFilter === "all" || task.status === statusFilter;
 
-        // 💡 แก้ไขให้ค้นหาชื่อแบบแยกทีละคนเวลากรอง
+        // ให้ค้นหาชื่อแบบแยกทีละคนเวลากรอง
         const matchPerson =
             personFilter === "all" ||
             (task.personInCharge &&
@@ -115,6 +108,8 @@ export default function AllTask() {
                                 <option value="all">ทั้งหมด</option>
                                 <option value="following">กำลังติดตาม</option>
                                 <option value="problem">เกิดปัญหา</option>
+                                {/* เพิ่มสถานะเสร็จสิ้นลงใน Dropdown */}
+                                <option value="completed">เสร็จสิ้น</option>
                             </select>
 
                             <strong>สำหรับ:</strong>

@@ -8,7 +8,8 @@ exports.getAllTasks = async (req, res) => {
         t.title AS name, 
         COALESCE(STRING_AGG(DISTINCT COALESCE(u.name, ta.role_or_name), ', '), 'ไม่ระบุ') AS "personInCharge", 
         TO_CHAR(t.due_date, 'YYYY-MM-DD') AS date, 
-        t.status 
+        t.status,
+        t.is_urgent AS "isUrgent"
       FROM tasks t
       LEFT JOIN task_assignments ta ON t.id = ta.task_id
       LEFT JOIN users u ON ta.user_id = u.id
@@ -31,7 +32,8 @@ exports.getUrgentTasks = async (req, res) => {
         t.title AS name, 
         COALESCE(STRING_AGG(DISTINCT COALESCE(u.name, ta.role_or_name), ', '), 'ไม่ระบุ') AS "personInCharge", 
         TO_CHAR(t.due_date, 'YYYY-MM-DD') AS date, 
-        t.status 
+        t.status,
+        t.is_urgent AS "isUrgent"
       FROM tasks t
       LEFT JOIN task_assignments ta ON t.id = ta.task_id
       LEFT JOIN users u ON ta.user_id = u.id
@@ -71,10 +73,19 @@ exports.confirmTasks = async (req, res) => {
 
     if (memos && memos.length > 0) {
       for (const memo of memos) {
+        // 💡 แก้ไข: เพิ่ม is_urgent เข้าไปบันทึกลง Database
         const taskRes = await client.query(
-          `INSERT INTO tasks (document_id, title, memo_no, memo_date, main_text, due_date)
-           VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-          [ documentId, memo.เรื่อง || 'ไม่ระบุชื่อเรื่อง', memo.ที่, memo.วันที่, memo.main_text, memo.due_date || null ]
+          `INSERT INTO tasks (document_id, title, memo_no, memo_date, main_text, due_date, is_urgent)
+           VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+          [ 
+            documentId, 
+            memo.เรื่อง || 'ไม่ระบุชื่อเรื่อง', 
+            memo.ที่, 
+            memo.วันที่, 
+            memo.main_text, 
+            memo.due_date || null,
+            memo.isUrgent || false // ดึงค่าจากที่ติ๊กในหน้า Uploaded
+          ]
         );
         const taskId = taskRes.rows[0].id;
 
@@ -118,16 +129,22 @@ exports.updateTaskDetail = async (req, res) => {
   try {
     await client.query('BEGIN');
     const { id } = req.params;
-    const { name, date, notes, assignments } = req.body;
+    // 💡 แก้ไข: รับค่า isUrgent มาด้วยตอนแก้ไข
+    const { name, date, notes, assignments, isUrgent } = req.body;
 
-    // แปลงค่ากรณีวันที่ส่งมาว่างเปล่า
     const validDate = (date === "" || !date) ? null : date;
+    const urgentValue = isUrgent !== undefined ? isUrgent : null; 
 
+    // 💡 แก้ไข: นำ is_urgent ไปอัปเดตลง Database ด้วย
     await client.query(
       `UPDATE tasks 
-       SET title = COALESCE($1, title), due_date = COALESCE($2, due_date), notes = COALESCE($3, notes), updated_at = NOW() 
-       WHERE id = $4`,
-      [name, validDate, notes, id]
+       SET title = COALESCE($1, title), 
+           due_date = COALESCE($2, due_date), 
+           notes = COALESCE($3, notes), 
+           is_urgent = COALESCE($4, is_urgent),
+           updated_at = NOW() 
+       WHERE id = $5`,
+      [name, validDate, notes, urgentValue, id]
     );
 
     if (assignments && Array.isArray(assignments)) {
@@ -187,6 +204,7 @@ exports.getTaskById = async (req, res) => {
         t.id, 
         t.title AS name, 
         t.status, 
+        t.is_urgent AS "isUrgent", -- 💡 แก้ไข: ดึงค่า isUrgent ออกมาส่งให้ Frontend ด้วย
         TO_CHAR(t.due_date, 'YYYY-MM-DD"T"HH24:MI') AS date, 
         t.main_text,
         t.notes,      
@@ -268,7 +286,6 @@ exports.deleteTask = async (req, res) => {
   }
 };
 
-
 exports.createTask = async (req, res) => {
   const client = await pool.connect();
   try {
@@ -294,7 +311,7 @@ exports.createTask = async (req, res) => {
         main_text, 
         due_date||null, 
         is_urgent||false,
-        'รอดำเนินการ'
+        'following'
       ]
     );
     const taskId = taskRes.rows[0].id;

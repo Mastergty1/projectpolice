@@ -23,7 +23,6 @@ export default function UrgentTask() {
         const fetchUrgentTasks = async () => {
             try {
                 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
-                // 💡 จุดสำคัญ: ดึงจากเส้นทาง /urgent
                 const response = await fetch(`${backendUrl}/api/v1/tasks/urgent`);
                 
                 if (response.ok) {
@@ -57,12 +56,7 @@ export default function UrgentTask() {
                 throw new Error("Failed to update status in database");
             }
 
-            // 2. อัปเดตหน้า UI หลังจาก Database ยืนยันว่าบันทึกสำเร็จ
-            if (newStatus === "completed") {
-                setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
-                return;
-            }
-            
+            // 2. อัปเดตหน้า UI หลังจาก Database ยืนยันว่าบันทึกสำเร็จ (ยกเลิกการซ่อนงาน completed)
             setTasks((prevTasks) =>
                 prevTasks.map((task) => task.id === id ? { ...task, status: newStatus } : task)
             );
@@ -99,6 +93,8 @@ export default function UrgentTask() {
                                 <option value="all">ทั้งหมด</option>
                                 <option value="following">กำลังติดตาม</option>
                                 <option value="problem">เกิดปัญหา</option>
+                                {/* เพิ่มสถานะเสร็จสิ้นลงใน Dropdown */}
+                                <option value="completed">เสร็จสิ้น</option>
                             </select>
 
                             <strong>สำหรับ:</strong>

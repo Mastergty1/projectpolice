@@ -33,12 +33,9 @@ export default function DetailsPanel({
 }: TaskItemProps) {
     const [taskStatus, setStatus] = useState<TaskStatus>((taskData?.status as TaskStatus) || "following");
     
-    // ไม่ต้องดึง Users ในไฟล์นี้แล้วเพราะรายชื่อผู้รับผิดชอบถูกดึงสรุปมาจากฝั่งซ้าย (DetailsDisplayer) แทน
-
     useEffect(() => {
         if (taskData?.status) setStatus(taskData.status as TaskStatus);
     }, [taskData?.status]);
-
 
     const parsedDate = new Date(taskData?.date || "");
     const isValidDate = !isNaN(parsedDate.getTime());
@@ -133,17 +130,30 @@ export default function DetailsPanel({
                                         </div>
                                         
                                         {isEditing ? (
-                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
-                                                <strong>เปลี่ยนกำหนดส่ง: </strong>
-                                                <input 
-                                                    type="datetime-local" 
-                                                    className={styles.CustomSelect}
-                                                    style={{ width: 'auto', padding: '0.4rem 0.8rem' }}
-                                                    value={taskData?.date ? formatForInput(taskData.date) : ""} 
-                                                    onChange={(e) => {
-                                                        setTaskData({ ...taskData, date: e.target.value });
-                                                    }} 
-                                                />
+                                            <div className="flex flex-col gap-2 mt-2">
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                                    <strong>เปลี่ยนกำหนดส่ง: </strong>
+                                                    <input 
+                                                        type="datetime-local" 
+                                                        className={styles.CustomSelect}
+                                                        style={{ width: 'auto', padding: '0.4rem 0.8rem' }}
+                                                        value={taskData?.date ? formatForInput(taskData.date) : ""} 
+                                                        onChange={(e) => {
+                                                            setTaskData({ ...taskData, date: e.target.value });
+                                                        }} 
+                                                    />
+                                                </div>
+                                                {/* เพิ่ม Checkbox สำหรับกำหนดงานเร่งด่วน */}
+                                                <div className="flex flex-row items-center gap-2 mt-1">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        id="isUrgent"
+                                                        checked={taskData?.isUrgent || false}
+                                                        onChange={(e) => setTaskData({ ...taskData, isUrgent: e.target.checked })}
+                                                        style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer', accentColor: 'var(--redText)' }}
+                                                    />
+                                                    <label htmlFor="isUrgent" style={{ cursor: 'pointer' }}><strong>กำหนดเป็นงานเร่งด่วน</strong></label>
+                                                </div>
                                             </div>
                                         ) : (
                                             <div className="flex flex-col gap-1 mt-3">
@@ -157,6 +167,14 @@ export default function DetailsPanel({
                                                         {timeRemainingDisplay}
                                                     </span>
                                                 </p>
+                                                {/* แสดงป้ายความเร่งด่วน */}
+                                                {taskData?.isUrgent && (
+                                                    <p className="flex flex-row text-sm mt-1">
+                                                        <span style={{ fontWeight: 'bold', color: 'white', backgroundColor: 'var(--redText)', padding: '0.1rem 0.6rem', borderRadius: '0.4rem' }}>
+                                                            🔥 งานเร่งด่วน
+                                                        </span>
+                                                    </p>
+                                                )}
                                             </div>
                                         )}
                                     </div>

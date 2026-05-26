@@ -12,9 +12,8 @@ export default function TaskPage() {
     const router = useRouter();
     const [taskData, setTaskData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [isEditing, setIsEditing] = useState(false); // 💡 รวมศูนย์โหมดแก้ไขไว้ที่นี่
+    const [isEditing, setIsEditing] = useState(false);
 
-    // 💡 กำหนด URL ของ Backend ให้เหมือนกับคอมโพเนนต์อื่น ๆ
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
 
     const fetchTask = async () => {
@@ -51,7 +50,6 @@ export default function TaskPage() {
 
     const handleUpdateTask = async () => {
         try {
-            // 💡 ส่งข้อมูลของงานหลัก และรายการ Assignments ที่แก้ไขแล้วไปยังเซิร์ฟเวอร์
             const res = await fetch(`${backendUrl}/api/v1/tasks/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
@@ -59,7 +57,8 @@ export default function TaskPage() {
                     name: taskData.name,
                     date: taskData.date,
                     notes: taskData.notes,
-                    assignments: taskData.assignments 
+                    assignments: taskData.assignments,
+                    isUrgent: taskData.isUrgent // เพิ่มการส่งค่าความเร่งด่วนไปยัง Backend
                 }),
             });
             const data = await res.json();
@@ -106,7 +105,6 @@ export default function TaskPage() {
             
             <div className="flex flex-col xl:flex-row justify-between gap-12 items-stretch">
                 <div className="flex flex-1 w-full">
-                    {/* 💡 ส่งสถานะแก้ไข และฟังก์ชันจัดการข้อมูลให้ฝั่งซ้าย */}
                     <DetailsDisplayer 
                         taskData={taskData} 
                         setTaskData={setTaskData} 
@@ -115,7 +113,6 @@ export default function TaskPage() {
                 </div>
                     
                 <div className="flex flex-1 w-full">
-                    {/* 💡 ควบคุมสถานะผ่าน Props ที่ส่งต่อมาจาก Parent ด้านบน */}
                     <DetailsPanel 
                         taskData={taskData}
                         setTaskData={setTaskData}

@@ -20,6 +20,7 @@ interface MemoData {
     main_text?: string;
     assignments?: ResponsibilityAssignment[];
     due_date?: string; 
+    isUrgent?: boolean;
 }
 
 interface ExtractedPayload {
@@ -95,7 +96,6 @@ export default function Uploaded({ extractedData }: UploadedProps) {
         }
     }, [extractedData]);
 
-    // 💡 แก้ไข: ใช้วิธี Immutable ด้วยการ .map() แทนเพื่อเปลี่ยน Reference ให้ React รู้ตัวและสั่งเรนเดอร์ UI
     const handleUserSelect = (memoIndex: number, assignIndex: number, userId: string) => {
         setMemosData(prevMemos => prevMemos.map((memo, mIdx) => {
             if (mIdx !== memoIndex) return memo;
@@ -109,14 +109,13 @@ export default function Uploaded({ extractedData }: UploadedProps) {
         }));
     };
 
-    const handleMemoChange = (index: number, field: keyof MemoData, value: string) => {
+    const handleMemoChange = (index: number, field: keyof MemoData, value: string | boolean) => {
         setMemosData(prevMemos => prevMemos.map((memo, mIdx) => {
             if (mIdx !== index) return memo;
             return { ...memo, [field]: value };
         }));
     };
 
-    // 💡 แก้ไข: ฟังก์ชันเพิ่มหัวข้อแบบป้องกันข้อผิดพลาดกรณี Property ว่างเปล่า
     const handleAddTopic = (memoIndex: number, assignIndex: number) => {
         setMemosData(prevMemos => prevMemos.map((memo, mIdx) => {
             if (mIdx !== memoIndex) return memo;
@@ -133,7 +132,6 @@ export default function Uploaded({ extractedData }: UploadedProps) {
         }));
     };
 
-    // 💡 แก้ไข: ฟังก์ชันแก้ไขเนื้อหาใน Text Input ของแต่ละหัวข้อ
     const handleTopicChange = (memoIndex: number, assignIndex: number, topicIndex: number, value: string) => {
         setMemosData(prevMemos => prevMemos.map((memo, mIdx) => {
             if (mIdx !== memoIndex) return memo;
@@ -150,7 +148,6 @@ export default function Uploaded({ extractedData }: UploadedProps) {
         }));
     };
 
-    // 💡 แก้ไข: ฟังก์ชันลบหัวข้อแบบไร้บัคอ้างอิงตกค้าง
     const handleRemoveTopic = (memoIndex: number, assignIndex: number, topicIndex: number) => {
         setMemosData(prevMemos => prevMemos.map((memo, mIdx) => {
             if (mIdx !== memoIndex) return memo;
@@ -173,8 +170,8 @@ export default function Uploaded({ extractedData }: UploadedProps) {
             return;
         }
 
-        if (!deadline) {
-            alert("⚠️ กรุณาเลือกระยะเวลาที่ต้องติดตามงาน (เช่น 1 วัน, 3 วัน) ด้านบนสุดก่อนครับ");
+        if (!deadline || !assignee) {
+            alert("⚠️ กรุณาเลือกระยะเวลาที่ต้องติดตามงาน และ รูปแบบผู้รับผิดชอบ ด้านบนสุดก่อนครับ");
             return;
         }
 
@@ -189,8 +186,19 @@ export default function Uploaded({ extractedData }: UploadedProps) {
 
                 baseDate.setDate(baseDate.getDate() + parseInt(deadline));
                 
+                // 💡 ถ้าระบุว่า "ทุกหน่วยงาน" ให้มอบหมายงานให้กับ User ทุกคนในระบบแทน
+                let finalAssignments = memo.assignments || [];
+                if (assignee === "all") {
+                    finalAssignments = users.map(u => ({
+                        responsible_person: "ทุกหน่วยงาน (ทุกคน)",
+                        user_id: String(u.id || u._id),
+                        topics: [] // ว่างไว้เพื่อไปกรอกรายละเอียดภายหลัง
+                    }));
+                }
+
                 return {
                     ...memo,
+                    assignments: finalAssignments,
                     due_date: baseDate.toISOString().split('T')[0] 
                 };
             });
@@ -288,6 +296,20 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                             <strong className="w-12 shrink-0">เรียน:</strong>
                                             <input type="text" className="border border-gray-300 p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-white" value={memo.เรียน || ''} onChange={(e) => handleMemoChange(index, "เรียน", e.target.value)} />
                                         </div>
+                                        
+                                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">
+                                            <input 
+                                                type="checkbox" 
+                                                id={`urgent-${index}`}
+                                                checked={memo.isUrgent || false} 
+                                                onChange={(e) => handleMemoChange(index, "isUrgent", e.target.checked)}
+                                                className="w-4 h-4 cursor-pointer"
+                                                style={{ accentColor: 'var(--redText)' }}
+                                            />
+                                            <label htmlFor={`urgent-${index}`} className="cursor-pointer font-bold text-red-600">
+                                                🔥 กำหนดให้เอกสารนี้เป็นงานเร่งด่วน
+                                            </label>
+                                        </div>
                                     </div>
 
                                     <div className="p-2 shrink-0 text-black">
@@ -300,72 +322,82 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                         />
                                     </div>
                                     
-                                    {memo.assignments && memo.assignments.length > 0 ? (
-                                        <div className="mt-2 shrink-0">
-                                            <strong className="text-base" style={{ color: "var(--header)" }}>การมอบหมายงาน/ความรับผิดชอบ:</strong>
-                                            <div className="flex flex-col gap-4 mt-3">
-                                                {memo.assignments.map((assignment: ResponsibilityAssignment, idx: number) => (
-                                                    <div key={idx} className="bg-white p-4 rounded-lg shadow-inner border border-gray-100 shrink-0 text-black">
-                                                        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-gray-100 pb-3 mb-3">
-                                                            <p className="font-bold text-base text-green-700">
-                                                                สกัดจากเอกสาร: {assignment.responsible_person || 'ไม่ระบุ'}
-                                                            </p>
-                                                            
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-xs font-bold text-blue-600 shrink-0">มอบหมายให้:</span>
-                                                                <select 
-                                                                    className="p-2 border border-blue-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-full sm:w-auto min-h-10 shrink-0 text-black"
-                                                                    value={assignment.user_id || ""}
-                                                                    onChange={(e) => handleUserSelect(index, idx, e.target.value)}
-                                                                >
-                                                                    <option value="">-- เลือกระบุบุคคล --</option>
-                                                                    {users.map(u => (
-                                                                        <option key={u.id || u._id} value={u.id || u._id}>
-                                                                            {u.name} {u.role ? `(${u.role})` : ''}
-                                                                        </option>
-                                                                    ))}
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <div className="pl-4 border-l-2 border-gray-200">
-                                                            <div className="flex flex-row items-center justify-between mt-2 mb-2">
-                                                                <strong>สิ่งที่ต้องดำเนินการ / หัวข้อที่รับผิดชอบ:</strong>
-                                                                {/* ใส่ type="button" เพื่อป้องกันการ Trigger พฤติกรรม Form นอกแผน */}
-                                                                <button type="button" onClick={() => handleAddTopic(index, idx)} className="text-xs bg-blue-500 text-white px-2 py-1.5 rounded hover:bg-blue-600 font-medium">
-                                                                    + เพิ่มงานที่ต้องทำ
-                                                                </button>
-                                                            </div>
-                                                            <ul className="list-none pl-1 mt-2 text-gray-700 flex flex-col gap-2">
-                                                                {assignment.topics && assignment.topics.length > 0 ? (
-                                                                    assignment.topics.map((topic: string, topicIdx: number) => (
-                                                                        <li key={topicIdx} className="flex gap-2 items-center">
-                                                                            <span className="text-gray-500 text-lg font-bold w-4">•</span>
-                                                                            <input 
-                                                                                type="text"
-                                                                                className="border border-gray-300 p-2 rounded flex-1 text-sm outline-none bg-white focus:ring-1 focus:ring-blue-400 w-full"
-                                                                                placeholder="ระบุสิ่งที่ต้องดำเนินการ..."
-                                                                                value={topic}
-                                                                                onChange={(e) => handleTopicChange(index, idx, topicIdx, e.target.value)}
-                                                                            />
-                                                                            <button type="button" onClick={() => handleRemoveTopic(index, idx, topicIdx)} className="text-red-500 hover:bg-red-50 p-2 rounded text-lg font-bold shrink-0">✕</button>
-                                                                        </li>
-                                                                    ))
-                                                                ) : (
-                                                                    <li className="text-gray-400 text-sm">- ยังไม่มีสิ่งที่ต้องดำเนินการ -</li>
-                                                                )}
-                                                            </ul>
-                                                        </div>
-
-                                                    </div>
-                                                ))}
-                                            </div>
+                                    {/* 💡 เงื่อนไขการแสดงผล: ถ้าเลือก "ทุกหน่วยงาน" ให้ซ่อนการเพิ่มทีละคน และแสดงข้อความแทน */}
+                                    {assignee === 'all' ? (
+                                        <div className="mt-4 shrink-0 p-5 bg-blue-50 border border-blue-200 rounded-lg text-center shadow-sm">
+                                            <span className="text-blue-700 font-bold text-lg">📢 มอบหมายให้ทุกหน่วยงาน (ทุกคน)</span>
+                                            <p className="text-sm text-blue-600 mt-2">
+                                                เมื่อกดยืนยัน ระบบจะทำการมอบหมายงานนี้ให้กับทุกคนในระบบโดยอัตโนมัติ 
+                                                <br/>(คุณสามารถเข้าไปเพิ่มรายละเอียดงานย่อย/หัวข้อในหน้าแก้ไขได้ภายหลัง)
+                                            </p>
                                         </div>
                                     ) : (
-                                        !memo.main_text && (
-                                            <div className="text-gray-400 text-center py-5 shrink-0">
-                                                ไม่พบข้อมูลการมอบหมายงานในเอกสารนี้
+                                        memo.assignments && memo.assignments.length > 0 ? (
+                                            <div className="mt-2 shrink-0">
+                                                <strong className="text-base" style={{ color: "var(--header)" }}>การมอบหมายงาน/ความรับผิดชอบ:</strong>
+                                                <div className="flex flex-col gap-4 mt-3">
+                                                    {memo.assignments.map((assignment: ResponsibilityAssignment, idx: number) => (
+                                                        <div key={idx} className="bg-white p-4 rounded-lg shadow-inner border border-gray-100 shrink-0 text-black">
+                                                            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-gray-100 pb-3 mb-3">
+                                                                <p className="font-bold text-base text-green-700">
+                                                                    สกัดจากเอกสาร: {assignment.responsible_person || 'ไม่ระบุ'}
+                                                                </p>
+                                                                
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-xs font-bold text-blue-600 shrink-0">มอบหมายให้:</span>
+                                                                    <select 
+                                                                        className="p-2 border border-blue-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-full sm:w-auto min-h-10 shrink-0 text-black"
+                                                                        value={assignment.user_id || ""}
+                                                                        onChange={(e) => handleUserSelect(index, idx, e.target.value)}
+                                                                    >
+                                                                        <option value="">-- เลือกระบุบุคคล --</option>
+                                                                        {users.map(u => (
+                                                                            <option key={u.id || u._id} value={u.id || u._id}>
+                                                                                {u.name} {u.role ? `(${u.role})` : ''}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div className="pl-4 border-l-2 border-gray-200">
+                                                                <div className="flex flex-row items-center justify-between mt-2 mb-2">
+                                                                    <strong>สิ่งที่ต้องดำเนินการ / หัวข้อที่รับผิดชอบ:</strong>
+                                                                    <button type="button" onClick={() => handleAddTopic(index, idx)} className="text-xs bg-blue-500 text-white px-2 py-1.5 rounded hover:bg-blue-600 font-medium">
+                                                                        + เพิ่มงานที่ต้องทำ
+                                                                    </button>
+                                                                </div>
+                                                                <ul className="list-none pl-1 mt-2 text-gray-700 flex flex-col gap-2">
+                                                                    {assignment.topics && assignment.topics.length > 0 ? (
+                                                                        assignment.topics.map((topic: string, topicIdx: number) => (
+                                                                            <li key={topicIdx} className="flex gap-2 items-center">
+                                                                                <span className="text-gray-500 text-lg font-bold w-4">•</span>
+                                                                                <input 
+                                                                                    type="text"
+                                                                                    className="border border-gray-300 p-2 rounded flex-1 text-sm outline-none bg-white focus:ring-1 focus:ring-blue-400 w-full"
+                                                                                    placeholder="ระบุสิ่งที่ต้องดำเนินการ..."
+                                                                                    value={topic}
+                                                                                    onChange={(e) => handleTopicChange(index, idx, topicIdx, e.target.value)}
+                                                                                />
+                                                                                <button type="button" onClick={() => handleRemoveTopic(index, idx, topicIdx)} className="text-red-500 hover:bg-red-50 p-2 rounded text-lg font-bold shrink-0">✕</button>
+                                                                            </li>
+                                                                        ))
+                                                                    ) : (
+                                                                        <li className="text-gray-400 text-sm">- ยังไม่มีสิ่งที่ต้องดำเนินการ -</li>
+                                                                    )}
+                                                                </ul>
+                                                            </div>
+
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
+                                        ) : (
+                                            !memo.main_text && (
+                                                <div className="text-gray-400 text-center py-5 shrink-0">
+                                                    ไม่พบข้อมูลการมอบหมายงานในเอกสารนี้
+                                                </div>
+                                            )
                                         )
                                     )}
                                 </div>
