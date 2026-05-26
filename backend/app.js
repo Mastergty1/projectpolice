@@ -73,4 +73,11 @@ app.use("/api/v1/documents", documents);
 app.use("/api/v1/tasks", tasks); // เปิดใช้งาน API tasks
 app.set("query parser", "extended");
 
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Project Police API is running securely."
+  });
+});
+
 module.exports = app;
