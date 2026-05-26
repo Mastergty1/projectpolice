@@ -24,9 +24,10 @@ router
 // @route   PUT /api/v1/users/me/password
 router.put("/me/password", protect, changePassword);
 
-// --- Admin Only Routes ---
+// --- Public / Admin Routes ---
 // @route   GET /api/v1/users
-router.get("/", protect, authorize("admin", "dentist"), getUsers);
+// 💡 แก้ไข: เอา protect ออกเพื่อให้ Frontend ดึงรายชื่อได้โดยไม่ต้องล็อกอินไปเติมที่ Dropdown
+router.get("/", getUsers);
 
 // @route   GET /api/v1/users/:id
 // @route   PUT /api/v1/users/:id

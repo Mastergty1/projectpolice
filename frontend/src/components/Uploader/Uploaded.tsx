@@ -83,7 +83,6 @@ export default function Uploaded({ extractedData }: UploadedProps) {
 
     useEffect(() => {
         if (extractedData && extractedData.memos) {
-            // 💡 1. กรองข้อมูล: ถ้า 'ที่', 'วันที่', 'เรื่อง', 'เรียน' ไม่ครบ หรือเป็นค่าว่าง จะไม่เอาเข้ามาใน List
             const filteredMemos = extractedData.memos.filter(memo => {
                 const hasAt = memo.ที่ && memo.ที่.trim() !== "" && memo.ที่.trim() !== "-";
                 const hasDate = memo.วันที่ && memo.วันที่.trim() !== "" && memo.วันที่.trim() !== "-";
@@ -96,18 +95,76 @@ export default function Uploaded({ extractedData }: UploadedProps) {
         }
     }, [extractedData]);
 
+    // 💡 แก้ไข: ใช้วิธี Immutable ด้วยการ .map() แทนเพื่อเปลี่ยน Reference ให้ React รู้ตัวและสั่งเรนเดอร์ UI
     const handleUserSelect = (memoIndex: number, assignIndex: number, userId: string) => {
-        const newMemos = [...memosData];
-        if (newMemos[memoIndex].assignments) {
-            newMemos[memoIndex].assignments![assignIndex].user_id = userId;
-        }
-        setMemosData(newMemos);
+        setMemosData(prevMemos => prevMemos.map((memo, mIdx) => {
+            if (mIdx !== memoIndex) return memo;
+            return {
+                ...memo,
+                assignments: memo.assignments?.map((assign, aIdx) => {
+                    if (aIdx !== assignIndex) return assign;
+                    return { ...assign, user_id: userId };
+                })
+            };
+        }));
     };
 
     const handleMemoChange = (index: number, field: keyof MemoData, value: string) => {
-        const newMemos = [...memosData];
-        newMemos[index] = { ...newMemos[index], [field]: value };
-        setMemosData(newMemos);
+        setMemosData(prevMemos => prevMemos.map((memo, mIdx) => {
+            if (mIdx !== index) return memo;
+            return { ...memo, [field]: value };
+        }));
+    };
+
+    // 💡 แก้ไข: ฟังก์ชันเพิ่มหัวข้อแบบป้องกันข้อผิดพลาดกรณี Property ว่างเปล่า
+    const handleAddTopic = (memoIndex: number, assignIndex: number) => {
+        setMemosData(prevMemos => prevMemos.map((memo, mIdx) => {
+            if (mIdx !== memoIndex) return memo;
+            return {
+                ...memo,
+                assignments: memo.assignments?.map((assign, aIdx) => {
+                    if (aIdx !== assignIndex) return assign;
+                    return {
+                        ...assign,
+                        topics: [...(assign.topics || []), ""]
+                    };
+                })
+            };
+        }));
+    };
+
+    // 💡 แก้ไข: ฟังก์ชันแก้ไขเนื้อหาใน Text Input ของแต่ละหัวข้อ
+    const handleTopicChange = (memoIndex: number, assignIndex: number, topicIndex: number, value: string) => {
+        setMemosData(prevMemos => prevMemos.map((memo, mIdx) => {
+            if (mIdx !== memoIndex) return memo;
+            return {
+                ...memo,
+                assignments: memo.assignments?.map((assign, aIdx) => {
+                    if (aIdx !== assignIndex) return assign;
+                    return {
+                        ...assign,
+                        topics: (assign.topics || []).map((topic, tIdx) => tIdx === topicIndex ? value : topic)
+                    };
+                })
+            };
+        }));
+    };
+
+    // 💡 แก้ไข: ฟังก์ชันลบหัวข้อแบบไร้บัคอ้างอิงตกค้าง
+    const handleRemoveTopic = (memoIndex: number, assignIndex: number, topicIndex: number) => {
+        setMemosData(prevMemos => prevMemos.map((memo, mIdx) => {
+            if (mIdx !== memoIndex) return memo;
+            return {
+                ...memo,
+                assignments: memo.assignments?.map((assign, aIdx) => {
+                    if (aIdx !== assignIndex) return assign;
+                    return {
+                        ...assign,
+                        topics: (assign.topics || []).filter((_, tIdx) => tIdx !== topicIndex)
+                    };
+                })
+            };
+        }));
     };
 
     const handleConfirm = async () => {
@@ -164,10 +221,8 @@ export default function Uploaded({ extractedData }: UploadedProps) {
         <div className="flex flex-col w-full h-full gap-6 min-h-75 flex-1">
             <h1 className={styles.Header}>งานติดตามที่ตรวจอ่านได้</h1>
             
-            {/* 💡 2. ปรับโครงสร้าง CSS ให้ Wrapper ควบคุมการล้นได้ เพื่อล็อคส่วนหัวไม่ให้จม */}
             <div className={`${styles.ContentWrapper} flex flex-col flex-1 min-h-0 overflow-hidden`}>
                 
-                {/* 📌 Header (Dropdown) ล็อคติดด้านบนเสมอ */}
                 <div className="bg-(--container) shrink-0 border-b border-gray-400 z-10 w-full" style={{ borderRadius: '0.2rem 0.2rem 0 0' }}>
                     <div className="p-4 sm:px-6 py-3">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-6 flex-wrap shrink-0">
@@ -201,7 +256,6 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                     </div>
                 </div>
 
-                {/* 📌 ส่วนเนื้อหา List ที่สามารถ Scroll เลื่อนขึ้นลงได้อย่างอิสระ */}
                 <div className="flex-1 overflow-y-auto p-4 sm:p-6 w-full min-h-0 bg-(--wrapper)" style={{ borderRadius: '0 0 0.2rem 0.2rem' }}>
                     {memosData.length > 0 ? (
                         <div className="flex flex-col gap-8">
@@ -275,17 +329,34 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                         </div>
                                                         
                                                         <div className="pl-4 border-l-2 border-gray-200">
-                                                            <strong>หัวข้อที่ต้องรับผิดชอบ:</strong>
-                                                            <ul className="list-disc pl-5 mt-2 text-gray-700 flex flex-col gap-1">
+                                                            <div className="flex flex-row items-center justify-between mt-2 mb-2">
+                                                                <strong>สิ่งที่ต้องดำเนินการ / หัวข้อที่รับผิดชอบ:</strong>
+                                                                {/* ใส่ type="button" เพื่อป้องกันการ Trigger พฤติกรรม Form นอกแผน */}
+                                                                <button type="button" onClick={() => handleAddTopic(index, idx)} className="text-xs bg-blue-500 text-white px-2 py-1.5 rounded hover:bg-blue-600 font-medium">
+                                                                    + เพิ่มงานที่ต้องทำ
+                                                                </button>
+                                                            </div>
+                                                            <ul className="list-none pl-1 mt-2 text-gray-700 flex flex-col gap-2">
                                                                 {assignment.topics && assignment.topics.length > 0 ? (
                                                                     assignment.topics.map((topic: string, topicIdx: number) => (
-                                                                        <li key={topicIdx}>{topic}</li>
+                                                                        <li key={topicIdx} className="flex gap-2 items-center">
+                                                                            <span className="text-gray-500 text-lg font-bold w-4">•</span>
+                                                                            <input 
+                                                                                type="text"
+                                                                                className="border border-gray-300 p-2 rounded flex-1 text-sm outline-none bg-white focus:ring-1 focus:ring-blue-400 w-full"
+                                                                                placeholder="ระบุสิ่งที่ต้องดำเนินการ..."
+                                                                                value={topic}
+                                                                                onChange={(e) => handleTopicChange(index, idx, topicIdx, e.target.value)}
+                                                                            />
+                                                                            <button type="button" onClick={() => handleRemoveTopic(index, idx, topicIdx)} className="text-red-500 hover:bg-red-50 p-2 rounded text-lg font-bold shrink-0">✕</button>
+                                                                        </li>
                                                                     ))
                                                                 ) : (
-                                                                    <li>- ไม่พบหัวข้อความรับผิดชอบ -</li>
+                                                                    <li className="text-gray-400 text-sm">- ยังไม่มีสิ่งที่ต้องดำเนินการ -</li>
                                                                 )}
                                                             </ul>
                                                         </div>
+
                                                     </div>
                                                 ))}
                                             </div>
@@ -332,5 +403,5 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                 </button>
             </div>
         </div>
-    )
+    );
 }

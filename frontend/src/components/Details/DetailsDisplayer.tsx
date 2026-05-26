@@ -27,45 +27,101 @@ export default function DetailsDisplayer({
         fetchUsers();
     }, []);
 
-    const handleUserSelect = (assignIndex: number, userId: string) => {
-        const newAssignments = [...taskData.assignments];
-        newAssignments[assignIndex].user_id = userId;
-        
-        const selectedUser = users.find(u => String(u.id || u._id) === String(userId));
-        if (selectedUser) {
-            newAssignments[assignIndex].personInCharge = selectedUser.name;
-        } else {
-            newAssignments[assignIndex].personInCharge = "ไม่ระบุ";
-        }
+    const handleAddAssignment = () => {
+        setTaskData((prev: any) => {
+            const newAssignments = [...(prev.assignments || [])];
+            newAssignments.push({
+                user_id: "",
+                personInCharge: "ไม่ระบุ",
+                role_or_name: "เพิ่มด้วยตนเอง",
+                topics: []
+            });
+            return { ...prev, assignments: newAssignments };
+        });
+    };
 
-        setTaskData({ ...taskData, assignments: newAssignments });
+    const handleDeleteAssignment = (assignIndex: number) => {
+        setTaskData((prev: any) => {
+            const newAssignments = [...(prev.assignments || [])];
+            newAssignments.splice(assignIndex, 1);
+            return { ...prev, assignments: newAssignments };
+        });
+    };
+
+    const handleUserSelect = (assignIndex: number, userId: string) => {
+        setTaskData((prev: any) => {
+            const newAssignments = [...(prev.assignments || [])];
+            const assign = { ...newAssignments[assignIndex] };
+            
+            assign.user_id = userId;
+            const selectedUser = users.find(u => String(u.id || u._id) === String(userId));
+            assign.personInCharge = selectedUser ? selectedUser.name : "ไม่ระบุ";
+            
+            newAssignments[assignIndex] = assign;
+            return { ...prev, assignments: newAssignments };
+        });
+    };
+
+    const handleAddTopic = (assignIndex: number) => {
+        setTaskData((prev: any) => {
+            const newAssignments = [...(prev.assignments || [])];
+            const assign = { ...newAssignments[assignIndex] };
+            assign.topics = [...(assign.topics || []), { detail: "", is_completed: false }];
+            newAssignments[assignIndex] = assign;
+            return { ...prev, assignments: newAssignments };
+        });
+    };
+
+    const handleDeleteTopic = (assignIndex: number, topicIndex: number) => {
+        setTaskData((prev: any) => {
+            const newAssignments = [...(prev.assignments || [])];
+            const assign = { ...newAssignments[assignIndex] };
+            assign.topics = (assign.topics || []).filter((_: any, idx: number) => idx !== topicIndex);
+            newAssignments[assignIndex] = assign;
+            return { ...prev, assignments: newAssignments };
+        });
     };
 
     const handleTopicChange = (assignIndex: number, topicIndex: number, textValue: string) => {
-        const newAssignments = [...taskData.assignments];
-        newAssignments[assignIndex].topics[topicIndex].detail = textValue;
-        setTaskData({ ...taskData, assignments: newAssignments });
+        setTaskData((prev: any) => {
+            const newAssignments = [...(prev.assignments || [])];
+            const assign = { ...newAssignments[assignIndex] };
+            const newTopics = [...(assign.topics || [])];
+            newTopics[topicIndex] = { ...newTopics[topicIndex], detail: textValue };
+            assign.topics = newTopics;
+            newAssignments[assignIndex] = assign;
+            return { ...prev, assignments: newAssignments };
+        });
     };
 
     const handleToggleComplete = async (assignIndex: number, topicIndex: number) => {
-        const newAssignments = [...taskData.assignments];
-        const currentStatus = newAssignments[assignIndex].topics[topicIndex].is_completed || false;
-        newAssignments[assignIndex].topics[topicIndex].is_completed = !currentStatus;
-        
-        setTaskData({ ...taskData, assignments: newAssignments });
+        let newAssignmentsData: any = null;
 
-        if (!isEditing && (taskData.id || taskData._id)) {
+        setTaskData((prev: any) => {
+            const newAssignments = [...(prev.assignments || [])];
+            const assign = { ...newAssignments[assignIndex] };
+            const newTopics = [...(assign.topics || [])];
+            
+            const currentStatus = newTopics[topicIndex].is_completed || false;
+            newTopics[topicIndex] = { ...newTopics[topicIndex], is_completed: !currentStatus };
+            
+            assign.topics = newTopics;
+            newAssignments[assignIndex] = assign;
+            newAssignmentsData = newAssignments;
+            return { ...prev, assignments: newAssignments };
+        });
+
+        if (!isEditing && (taskData.id || taskData._id) && newAssignmentsData) {
             try {
                 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
                 await fetch(`${backendUrl}/api/v1/tasks/${taskData.id || taskData._id}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
-                    // 💡 ส่งข้อมูลทั้งหมดกลับไปกันโดนลบ
                     body: JSON.stringify({ 
                         name: taskData.name, 
                         date: taskData.date, 
                         notes: taskData.notes,
-                        assignments: newAssignments 
+                        assignments: newAssignmentsData 
                     }),
                 });
             } catch (error) {
@@ -74,20 +130,6 @@ export default function DetailsDisplayer({
         }
     };
 
-    const handleAddTopic = (assignIndex: number) => {
-        const newAssignments = [...taskData.assignments];
-        if (!newAssignments[assignIndex].topics) {
-            newAssignments[assignIndex].topics = [];
-        }
-        newAssignments[assignIndex].topics.push({ detail: "", is_completed: false });
-        setTaskData({ ...taskData, assignments: newAssignments });
-    };
-
-    const handleDeleteTopic = (assignIndex: number, topicIndex: number) => {
-        const newAssignments = [...taskData.assignments];
-        newAssignments[assignIndex].topics.splice(topicIndex, 1);
-        setTaskData({ ...taskData, assignments: newAssignments });
-    };
 
     return (
         <div className="flex flex-col w-full h-full gap-6 min-h-120">
@@ -96,7 +138,7 @@ export default function DetailsDisplayer({
                     <div className={styles.ContentHeaderScrollable}>
                         
                         <div className="mb-6">
-                            <h2 className="text-xl font-bold mb-2 flex items-center justify-between" style={{ color: "var(--header)" }}>
+                            <h2 className={styles.Header} style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
                                 รายละเอียดจากเอกสาร (ข้อความเต็ม)
                             </h2>
                             {taskData?.document_link && (
@@ -104,109 +146,147 @@ export default function DetailsDisplayer({
                                     href={taskData.document_link} 
                                     target="_blank" 
                                     rel="noopener noreferrer" 
-                                    className="mb-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition w-fit"
+                                    className={styles.Button}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1rem', textDecoration: 'none' }}
                                 >
                                     📄 เปิดดูไฟล์เอกสารต้นฉบับ
                                 </a>
                             )}
-                            <div className="p-4 rounded-md mt-2" style={{ backgroundColor: "var(--wrapper)", color: "var(--header)", whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
+                            <div className={styles.TextArea} style={{ padding: '1rem', whiteSpace: "pre-wrap", lineHeight: "1.6", color: 'var(--header)' }}>
                                 {taskData?.main_text || "ไม่พบข้อความเนื้อหาในเอกสาร"}
                             </div>
                         </div>
 
-                        <hr className="border-gray-500 mb-6 opacity-30" />
+                        <hr className={styles.Line} style={{ marginBottom: '1.5rem', opacity: 0.3 }} />
 
-                        <h2 className="text-xl font-bold mb-4" style={{ color: "var(--header)" }}>งานติดตามที่ตรวจอ่านได้</h2>
+                        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                            <h2 className={styles.Header} style={{ fontSize: '1.5rem' }}>งานติดตามที่ตรวจอ่านได้</h2>
+                            
+                            {isEditing && (
+                                <button 
+                                    onClick={handleAddAssignment}
+                                    className={styles.Button}
+                                    style={{ fontSize: '1rem', padding: '0.4rem 0.8rem', margin: 0 }}
+                                >
+                                    + เพิ่มการมอบหมายงาน
+                                </button>
+                            )}
+                        </div>
                         
                         <div className="flex flex-col gap-6">
                             {taskData?.assignments?.length > 0 ? taskData.assignments.map((assign: any, index: number) => {
                                 const isAssignCompleted = assign.topics?.length > 0 && assign.topics.every((t: any) => t.is_completed);
 
                                 return (
-                                    <div key={index} className={`flex flex-col gap-4 p-5 rounded-lg border-2 shadow-sm transition ${isAssignCompleted ? "bg-green-50 border-green-300" : ""}`} style={!isAssignCompleted ? { backgroundColor: "var(--button)", borderColor: "var(--wrapper)" } : {}}>
+                                    <div key={index} className={styles.TaskWrapper} style={{ 
+                                        padding: '1.25rem', 
+                                        display: 'flex', 
+                                        flexDirection: 'column', 
+                                        gap: '1rem',
+                                        backgroundColor: isAssignCompleted ? 'var(--greenBG)' : 'var(--button)',
+                                        borderColor: isAssignCompleted ? 'var(--greenBorder)' : 'var(--wrapper)'
+                                    }}>
                                         
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex flex-row items-center gap-2">
-                                                <h3 className="font-semibold text-lg" style={{ color: isAssignCompleted ? "#166534" : "var(--header)" }}>สิ่งที่ต้องดำเนินการ:</h3>
-                                                {isAssignCompleted && (
-                                                    <span className="px-2 py-1 bg-green-600 text-white text-xs font-bold rounded shadow-sm">
-                                                        ✅ งานส่วนนี้เสร็จสิ้นแล้ว
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3" style={{ borderBottom: '1px solid var(--wrapper)' }}>
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                                <label className="font-bold text-lg" style={{ color: isAssignCompleted ? 'var(--greenText)' : 'var(--header)' }}>สำหรับ (ผู้รับผิดชอบ):</label>
+                                                {isEditing ? (
+                                                    <select 
+                                                        className={styles.CustomSelect}
+                                                        style={{ padding: '0.4rem 0.8rem', width: 'auto' }}
+                                                        value={assign.user_id || ""}
+                                                        onChange={(e) => handleUserSelect(index, e.target.value)}
+                                                    >
+                                                        <option value="">-- เลือกระบุบุคคล --</option>
+                                                        {users.map(u => (
+                                                            <option key={u.id || u._id} value={u.id || u._id}>
+                                                                {u.name} {u.role ? `(${u.role})` : ''}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                ) : (
+                                                    <span className={styles.TextArea} style={{ padding: '0.4rem 0.8rem', fontWeight: 'bold' }}>
+                                                        {assign.personInCharge || "ไม่ระบุ"}
                                                     </span>
                                                 )}
                                             </div>
+                                            
+                                            {isEditing && (
+                                                <button 
+                                                    onClick={() => handleDeleteAssignment(index)}
+                                                    className={`${styles.Clickable} ${styles.Red}`}
+                                                    style={{ minHeight: '2rem', padding: '0.4rem 0.8rem', width: 'auto', fontSize: '0.9rem' }}
+                                                >
+                                                    ลบมอบหมายงานนี้
+                                                </button>
+                                            )}
+                                        </div>
 
-                                            <ul className="list-none ml-0 flex flex-col gap-3" style={{ color: isAssignCompleted ? "#166534" : "var(--header)" }}>
+                                        <div className="flex flex-col gap-3">
+                                            <div className="flex flex-row items-center justify-between gap-2">
+                                                <div className="flex flex-row items-center gap-2">
+                                                    <h3 className="font-bold" style={{ color: isAssignCompleted ? 'var(--greenText)' : 'var(--header)' }}>สิ่งที่ต้องดำเนินการ:</h3>
+                                                    {isAssignCompleted && (
+                                                        <span className={`${styles.Green}`} style={{ padding: '0.2rem 0.5rem', borderRadius: '0.3rem', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                                            ✅ เสร็จสิ้นแล้ว
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {isEditing && (
+                                                    <button 
+                                                        className={styles.Button}
+                                                        style={{ fontSize: '0.9rem', padding: '0.3rem 0.6rem', margin: 0 }}
+                                                        onClick={() => handleAddTopic(index)}
+                                                    >
+                                                        + เพิ่มหัวข้อย่อย
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            <ul className="list-none ml-0 flex flex-col gap-3" style={{ color: isAssignCompleted ? 'var(--greenText)' : 'var(--header)' }}>
                                                 {assign.topics?.length > 0 ? assign.topics.map((topic: any, i: number) => (
-                                                    <li key={i} className="text-sm flex items-start gap-2">
+                                                    <li key={i} className="text-sm flex items-start sm:items-center gap-2">
                                                         
                                                         <input 
                                                             type="checkbox"
-                                                            className="mt-1 w-5 h-5 cursor-pointer accent-blue-600"
+                                                            style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer', flexShrink: 0, marginTop: '0.2rem' }}
                                                             checked={topic.is_completed || false}
                                                             onChange={() => handleToggleComplete(index, i)}
                                                         />
 
                                                         {isEditing ? (
-                                                            <div className="flex w-full gap-2 items-center flex-wrap sm:flex-nowrap">
+                                                            <div className="flex w-full gap-2 items-center">
                                                                 <input 
                                                                     type="text" 
-                                                                    className="p-2 border border-gray-300 rounded text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 w-full outline-none font-medium"
+                                                                    className={styles.CustomSelect}
+                                                                    style={{ padding: '0.4rem 0.8rem' }}
                                                                     value={topic.detail || ""}
                                                                     onChange={(e) => handleTopicChange(index, i, e.target.value)}
                                                                     placeholder="รายละเอียดงาน..."
                                                                 />
                                                                 <button 
-                                                                    className="px-3 py-2 bg-red-500 text-white rounded font-bold hover:bg-red-600 transition min-w-max"
+                                                                    className={`${styles.Clickable} ${styles.Red}`}
+                                                                    style={{ minHeight: '2rem', padding: '0.4rem 0.8rem', width: 'auto', flexShrink: 0 }}
                                                                     onClick={() => handleDeleteTopic(index, i)}
+                                                                    title="ลบหัวข้อนี้"
                                                                 >
-                                                                    ลบ
+                                                                    ✕
                                                                 </button>
                                                             </div>
                                                         ) : (
-                                                            <span className={`flex-1 text-base leading-relaxed ${topic.is_completed ? "line-through opacity-60" : ""}`}>
+                                                            <span className={`flex-1 text-base leading-relaxed ${topic.is_completed ? "opacity-60" : ""}`} style={{ textDecoration: topic.is_completed ? 'line-through' : 'none' }}>
                                                                 {topic.detail || "ไม่มีรายละเอียดเฉพาะ"}
                                                             </span>
                                                         )}
                                                     </li>
-                                                )) : <li className="text-gray-500">ไม่มีรายละเอียดเฉพาะ</li>}
+                                                )) : <li className="text-sm" style={{ color: 'var(--greyText)' }}>- ไม่มีรายละเอียดเฉพาะ -</li>}
                                             </ul>
-                                            
-                                            {isEditing && (
-                                                <button 
-                                                    className="mt-2 px-4 py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 transition w-fit text-sm shadow"
-                                                    onClick={() => handleAddTopic(index)}
-                                                >
-                                                    + เพิ่มหัวข้อย่อย
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        <div className="flex flex-col gap-2 mt-2 pt-4 border-t border-gray-300 border-opacity-40">
-                                            <label className="font-semibold" style={{ color: isAssignCompleted ? "#166534" : "var(--header)" }}>สำหรับ (ผู้รับผิดชอบ)</label>
-                                            {isEditing ? (
-                                                <select 
-                                                    className="p-2 border border-blue-300 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 w-full sm:w-auto text-black font-semibold"
-                                                    value={assign.user_id || ""}
-                                                    onChange={(e) => handleUserSelect(index, e.target.value)}
-                                                >
-                                                    <option value="">-- เลือกระบุบุคคล --</option>
-                                                    {users.map(u => (
-                                                        <option key={u.id || u._id} value={u.id || u._id}>
-                                                            {u.name} {u.role ? `(${u.role})` : ''}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            ) : (
-                                                <p className="text-gray-100 bg-(--wrapper) p-2 rounded border border-gray-600 font-medium inline-block w-fit" style={isAssignCompleted ? { backgroundColor: "#15803d", borderColor: "#14532d", color: "#fff" } : {}}>
-                                                    {assign.personInCharge || "ไม่ระบุ"}
-                                                </p>
-                                            )}
                                         </div>
 
                                     </div>
                                 );
                             }) : (
-                                <p style={{ color: "var(--header)" }}>ไม่มีข้อมูลงานที่ตรวจพบ</p>
+                                <p style={{ color: "var(--header)" }}>ไม่มีข้อมูลการมอบหมายงาน</p>
                             )}
                         </div>
                         

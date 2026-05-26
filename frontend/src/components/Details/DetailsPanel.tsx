@@ -32,27 +32,13 @@ export default function DetailsPanel({
     onDeleteTask
 }: TaskItemProps) {
     const [taskStatus, setStatus] = useState<TaskStatus>((taskData?.status as TaskStatus) || "following");
-    const [users, setUsers] = useState<any[]>([]);
+    
+    // ไม่ต้องดึง Users ในไฟล์นี้แล้วเพราะรายชื่อผู้รับผิดชอบถูกดึงสรุปมาจากฝั่งซ้าย (DetailsDisplayer) แทน
 
     useEffect(() => {
         if (taskData?.status) setStatus(taskData.status as TaskStatus);
     }, [taskData?.status]);
 
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
-                const res = await fetch(`${backendUrl}/api/v1/users`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setUsers(data.data || []);
-                }
-            } catch (err) {
-                console.error("Fetch users failed", err);
-            }
-        };
-        fetchUsers();
-    }, []);
 
     const parsedDate = new Date(taskData?.date || "");
     const isValidDate = !isNaN(parsedDate.getTime());
@@ -88,7 +74,6 @@ export default function DetailsPanel({
         else timeRemainingDisplay = `เหลืออีก ${diffTotalHours} ชม. ${diffTotalMinutes % 60} นาที`;
     }
 
-    // 💡 แก้ไข: ถ้าค่าเป็น YYYY-MM-DDTHH:mm มาอยู่แล้วไม่ต้องแปลงอีก (ป้องกันการเพี้ยน)
     const formatForInput = (dateStr: string) => {
         if (!dateStr) return "";
         if (typeof dateStr === 'string' && dateStr.length === 16 && dateStr.includes("T")) {
@@ -129,7 +114,8 @@ export default function DetailsPanel({
                                 {isEditing ? (
                                     <input 
                                         type="text" 
-                                        className="p-2 text-black border-2 border-blue-400 rounded w-full text-base mb-2 outline-none bg-white font-semibold" 
+                                        className={styles.CustomSelect}
+                                        style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}
                                         value={taskData?.name || ""} 
                                         onChange={(e) => setTaskData({ ...taskData, name: e.target.value })} 
                                     />
@@ -140,47 +126,34 @@ export default function DetailsPanel({
                                     <div className={styles.DetailedContainer}>
                                         
                                         <div className="flex flex-row items-center flex-wrap gap-2">
-                                            <strong>ผู้รับผิดชอบ: &nbsp; </strong> 
-                                            {isEditing ? (
-                                                <select 
-                                                    className="p-1 text-black text-sm border-2 border-blue-400 rounded outline-none bg-white min-w-50"
-                                                    value={taskData?.personInCharge || ""}
-                                                    onChange={(e) => setTaskData({ ...taskData, personInCharge: e.target.value })}
-                                                >
-                                                    <option value="">-- เลือกระบุบุคคล --</option>
-                                                    {users.map(u => (
-                                                        <option key={u.id || u._id} value={u.name}>
-                                                            {u.name} {u.role ? `(${u.role})` : ''}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            ) : (
-                                                <span>{taskData?.personInCharge || "ไม่ระบุ"}</span>
-                                            )}
+                                            <strong>ผู้รับผิดชอบรวม: &nbsp; </strong> 
+                                            <span className={styles.TextArea} style={{ padding: '0.2rem 0.6rem', fontWeight: 'bold' }}>
+                                                {taskData?.personInCharge || "ไม่ระบุ"}
+                                            </span>
                                         </div>
                                         
                                         {isEditing ? (
-                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-1">
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
                                                 <strong>เปลี่ยนกำหนดส่ง: </strong>
                                                 <input 
                                                     type="datetime-local" 
-                                                    className="p-1 text-black text-sm border-2 border-blue-400 rounded outline-none bg-white" 
+                                                    className={styles.CustomSelect}
+                                                    style={{ width: 'auto', padding: '0.4rem 0.8rem' }}
                                                     value={taskData?.date ? formatForInput(taskData.date) : ""} 
                                                     onChange={(e) => {
-                                                        // 💡 แก้ไขบัคเวลาลด! บันทึก String ตรงๆ (เช่น "2024-12-10T12:00") โดยไม่ใช้ .toISOString()
                                                         setTaskData({ ...taskData, date: e.target.value });
                                                     }} 
                                                 />
                                             </div>
                                         ) : (
-                                            <div className="flex flex-col gap-1 mt-2">
+                                            <div className="flex flex-col gap-1 mt-3">
                                                 <p className="flex flex-row">
                                                     <strong>กำหนดส่ง: &nbsp; </strong> 
                                                     {isValidDate ? `${day} ${monthYear} เวลา ${timeText} น.` : "ไม่ระบุ"}
                                                 </p>
-                                                <p className="flex flex-row text-sm text-gray-500" style={{ color: "var(--header)" }}>
+                                                <p className="flex flex-row text-sm" style={{ color: "var(--header)" }}>
                                                     <strong>สถานะเวลา: &nbsp; </strong>  
-                                                    <span className={`font-semibold ${diffTotalMinutes < 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                                                    <span style={{ fontWeight: 'bold', color: diffTotalMinutes < 0 ? 'var(--redText)' : 'var(--blueText)' }}>
                                                         {timeRemainingDisplay}
                                                     </span>
                                                 </p>
@@ -191,7 +164,7 @@ export default function DetailsPanel({
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-4 mt-4">
+                        <div className="flex flex-col gap-4 mt-6 pt-6" style={{ borderTop: '1px solid var(--wrapper)' }}>
                             <div className={styles.InteractionContainer}>
                                 <label className="min-w-17.5"><strong>สถานะ : </strong></label>
                                 <div className={styles.SelectWrapper}>
@@ -235,15 +208,16 @@ export default function DetailsPanel({
                                     />
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-2 mt-2">
                                 <label><strong>บันทึกเพิ่มเติม : </strong></label>
                                 <textarea 
-                                    className={`${styles.TextArea} p-2 text-black border-2 border-gray-300 focus:border-blue-400 outline-none bg-white`}
+                                    className={styles.TextArea}
+                                    style={{ padding: '0.6rem', color: 'var(--header)', outline: 'none' }}
                                     rows={4} 
                                     value={taskData?.notes || ""} 
                                     onChange={(e) => setTaskData({ ...taskData, notes: e.target.value })}
                                 ></textarea>
-                                <button className={styles.Clickable} onClick={onUpdateTask}>บันทึกบันทึกเพิ่มเติม</button>
+                                <button className={styles.Clickable} onClick={onUpdateTask}>บันทึกข้อมูลและบันทึกเพิ่มเติม</button>
                             </div>
                         </div>
                     </div>
@@ -260,7 +234,7 @@ export default function DetailsPanel({
                             className={`${styles.Clickable} ${styles.Green}`} 
                             onClick={onUpdateTask}
                         >
-                            ตกลง
+                            ตกลง (บันทึกข้อมูล)
                         </button>
                     ) : (
                         <button 
@@ -270,7 +244,7 @@ export default function DetailsPanel({
                             แก้ไขข้อมูล
                         </button>
                     )}
-                    <button className={`${styles.Clickable} ${styles.Red}`} onClick={onDeleteTask}>ลบ</button>
+                    <button className={`${styles.Clickable} ${styles.Red}`} onClick={onDeleteTask}>ลบงานติดตามนี้</button>
                 </div>
             </div>
         </div>

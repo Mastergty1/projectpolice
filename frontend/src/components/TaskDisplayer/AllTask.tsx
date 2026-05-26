@@ -46,7 +46,6 @@ export default function AllTask() {
         try {
             const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
             
-            // 1. ยิง API ของจริงไปอัปเดตที่ Database
             const response = await fetch(`${backendUrl}/api/v1/tasks/${id}/status`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
@@ -57,7 +56,6 @@ export default function AllTask() {
                 throw new Error("Failed to update status in database");
             }
 
-            // 2. อัปเดตหน้า UI หลังจาก Database ยืนยันว่าบันทึกสำเร็จ
             if (newStatus === "completed") {
                 setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
                 return;
@@ -72,11 +70,14 @@ export default function AllTask() {
         }
     };
 
-    // รายชื่อคนทั้งหมดสำหรับ Dropdown (กรองชื่อซ้ำออก)
-    const uniquePersons = Array.from(new Set(tasks.map(t => t.personInCharge).filter(Boolean)));
+    // 💡 แก้ไขข้อ 3: แยกชื่อที่ติดกันด้วยคอมม่า (,) ออกเป็นแต่ละคนแบบไม่ซ้ำ
+    const allPersons = tasks.flatMap(t => {
+        if (!t.personInCharge) return [];
+        return t.personInCharge.split(',').map((s: string) => s.trim()).filter(Boolean);
+    });
+    const uniquePersons = Array.from(new Set(allPersons));
 
     const filteredTasks = tasks.filter((task) => {
-        // ซ่อนงานที่ completed เสมอ
         if (task.status === "completed") {
             return false;
         }
@@ -84,10 +85,11 @@ export default function AllTask() {
         const matchStatus =
             statusFilter === "all" || task.status === statusFilter;
 
+        // 💡 แก้ไขให้ค้นหาชื่อแบบแยกทีละคนเวลากรอง
         const matchPerson =
             personFilter === "all" ||
             (task.personInCharge &&
-                task.personInCharge.includes(personFilter));
+                task.personInCharge.split(',').map((s: string) => s.trim()).includes(personFilter));
 
         return matchStatus && matchPerson;
     });

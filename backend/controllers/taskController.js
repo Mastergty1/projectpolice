@@ -1,16 +1,5 @@
 const pool = require('../config/db');
 
-// 💡 1. สคริปต์อัตโนมัติ: สร้างคอลัมน์ is_completed สำหรับงานย่อย (เพิ่มไว้จากรอบก่อน)
-pool.query(`ALTER TABLE task_topics ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT FALSE;`)
-  .then(() => console.log("✅ Database verified: 'is_completed' column is ready."))
-  .catch(err => console.error("⚠️ Auto-migrate warning (is_completed):", err.message));
-
-// 💡 2. สคริปต์อัตโนมัติ: เปลี่ยนคอลัมน์ due_date ให้เก็บ "เวลา" ได้ด้วย (แก้บัคเวลาเด้งกลับเป็น 00:00)
-pool.query(`ALTER TABLE tasks ALTER COLUMN due_date TYPE TIMESTAMP USING due_date::TIMESTAMP;`)
-  .then(() => console.log("✅ Database verified: 'due_date' column is now TIMESTAMP (supports time)."))
-  .catch(err => console.error("⚠️ Auto-migrate warning (due_date):", err.message));
-
-
 exports.getAllTasks = async (req, res) => {
   try {
     const query = `
