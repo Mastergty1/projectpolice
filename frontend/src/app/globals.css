@@ -47,7 +47,7 @@
 }
 
 body {
-  background: var(--background);
+  background-color: #ffffff !important;
   color: #111827 !important;
   font-family: Sarabun, Arial, Helvetica, sans-serif;
 }

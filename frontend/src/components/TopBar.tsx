@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 export default function TopBar() {
     return (
-        <div className="flex justify-between items-center w-full px-6 py-4 bg-[#3F1818] shadow-md z-50 relative">
+        <div className="flex justify-between items-center w-full px-6 py-4 shadow-md z-50 relative" style={{ backgroundColor: '#3F1818', color: '#FFFFFF' }}>
             <Link href="/" aria-label="กลับหน้าหลัก ระบบติดตามงานมอบหมาย">
                 <div className="flex items-center gap-4 group">
                     <Image 
@@ -14,16 +14,14 @@ export default function TopBar() {
                         className="transition-transform group-hover:scale-110" 
                         priority
                     />
-                    {/* 💡 แก้ไข: บังคับสีขาวบริสุทธิ์เพื่อหลีกเลี่ยง Contrast Error */}
-                    <strong style={{ color: '#FFFFFF', fontSize: '1.25rem', fontWeight: 'bold' }}>
+                    <strong style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
                         ระบบติดตามงานมอบหมาย
                     </strong>
                 </div>
             </Link>
 
             <Link href="/help" aria-label="ไปหน้าช่วยเหลือการใช้งาน">
-                {/* 💡 แก้ไข: บังคับสีขาวบริสุทธิ์ */}
-                <button className="flex items-center gap-2 hover:bg-white/10 px-4 py-2 rounded-lg transition-colors" style={{ minHeight: '44px', color: '#FFFFFF' }}>
+                <button className="flex items-center gap-2 hover:bg-white/10 px-4 py-2 rounded-lg transition-colors" style={{ minHeight: '44px' }}>
                     <Image 
                         src="/window.svg" 
                         alt="ไอคอนช่วยเหลือ" 
