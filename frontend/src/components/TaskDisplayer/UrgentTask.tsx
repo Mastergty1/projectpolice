@@ -14,11 +14,9 @@ export default function UrgentTask() {
     const [tasks, setTasks] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // State สำหรับ Dropdown Filters
     const [statusFilter, setStatusFilter] = useState("all");
     const [personFilter, setPersonFilter] = useState("all");
 
-    // ดึงข้อมูลงานด่วนจาก Database
     useEffect(() => {
         const fetchUrgentTasks = async () => {
             try {
@@ -44,19 +42,14 @@ export default function UrgentTask() {
     const handleStatusChange = async (id: string, newStatus: TaskStatus) => {
         try {
             const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
-            
-            // 1. ยิง API ของจริงไปอัปเดตที่ Database
             const response = await fetch(`${backendUrl}/api/v1/tasks/${id}/status`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status: newStatus }),
             });
 
-            if (!response.ok) {
-                throw new Error("Failed to update status in database");
-            }
+            if (!response.ok) throw new Error("Failed to update status in database");
 
-            // 2. อัปเดตหน้า UI หลังจาก Database ยืนยันว่าบันทึกสำเร็จ (ยกเลิกการซ่อนงาน completed)
             setTasks((prevTasks) =>
                 prevTasks.map((task) => task.id === id ? { ...task, status: newStatus } : task)
             );
@@ -66,15 +59,31 @@ export default function UrgentTask() {
         }
     };
 
-    // รายชื่อคนทั้งหมดสำหรับ Dropdown (กรองชื่อซ้ำออก)
-    const uniquePersons = Array.from(new Set(tasks.map(t => t.personInCharge).filter(Boolean)));
+    // 💡 แก้ไข 1: แยกชื่อที่ติดกันด้วยลูกน้ำออก เพื่อให้ Dropdown แสดงเป็นรายบุคคล
+    const allPersons = tasks.flatMap(t => {
+        if (!t.personInCharge) return [];
+        return t.personInCharge.split(',').map((s: string) => s.trim()).filter(Boolean);
+    });
+    const uniquePersons = Array.from(new Set(allPersons));
 
-    // กรองข้อมูลตามที่เลือกก่อนส่งไปแสดงผล
     const filteredTasks = tasks.filter((task) => {
         const matchStatus = statusFilter === "all" || task.status === statusFilter;
-        // ใช้ includes เผื่อกรณีที่มีชื่อคนรับผิดชอบหลายคนต่อกันด้วยลูกน้ำ
-        const matchPerson = personFilter === "all" || (task.personInCharge && task.personInCharge.includes(personFilter));
+        
+        // 💡 แก้ไข 3: ถ้างานนี้มอบหมายให้ "ทุกหน่วยงาน" ทุกคนจะต้องมองเห็นแม้อยู่ใน Filter ตัวเอง
+        const matchPerson =
+            personFilter === "all" ||
+            (task.personInCharge && task.personInCharge.includes("ทุกหน่วยงาน")) ||
+            (task.personInCharge && task.personInCharge.split(',').map((s: string) => s.trim()).includes(personFilter));
+
         return matchStatus && matchPerson;
+    }).sort((a, b) => {
+        // 💡 แก้ไข 2: จัดเรียงงานที่ completed ไปไว้ท้ายสุด และเรียงตามวันที่ใกล้กำหนดส่ง
+        if (a.status === "completed" && b.status !== "completed") return 1;
+        if (a.status !== "completed" && b.status === "completed") return -1;
+        
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        return dateA - dateB;
     });
 
     return (
@@ -93,7 +102,6 @@ export default function UrgentTask() {
                                 <option value="all">ทั้งหมด</option>
                                 <option value="following">กำลังติดตาม</option>
                                 <option value="problem">เกิดปัญหา</option>
-                                {/* เพิ่มสถานะเสร็จสิ้นลงใน Dropdown */}
                                 <option value="completed">เสร็จสิ้น</option>
                             </select>
 

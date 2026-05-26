@@ -16,7 +16,6 @@ export default function AllTask() {
     const [tasks, setTasks] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // State สำหรับ Dropdown Filters
     const [statusFilter, setStatusFilter] = useState("all");
     const [personFilter, setPersonFilter] = useState("all");
 
@@ -45,18 +44,14 @@ export default function AllTask() {
     const handleStatusChange = async (id: string, newStatus: TaskStatus) => {
         try {
             const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
-            
             const response = await fetch(`${backendUrl}/api/v1/tasks/${id}/status`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status: newStatus }),
             });
 
-            if (!response.ok) {
-                throw new Error("Failed to update status in database");
-            }
+            if (!response.ok) throw new Error("Failed to update status in database");
             
-            // ยกเลิกการซ่อนเมื่อสถานะเป็น completed เพื่อให้แสดงในหน้ารายการต่อไป
             setTasks((prevTasks) =>
                 prevTasks.map((task) => task.id === id ? { ...task, status: newStatus } : task)
             );
@@ -66,7 +61,6 @@ export default function AllTask() {
         }
     };
 
-    // แยกชื่อที่ติดกันด้วยคอมม่า (,) ออกเป็นแต่ละคนแบบไม่ซ้ำ
     const allPersons = tasks.flatMap(t => {
         if (!t.personInCharge) return [];
         return t.personInCharge.split(',').map((s: string) => s.trim()).filter(Boolean);
@@ -74,17 +68,23 @@ export default function AllTask() {
     const uniquePersons = Array.from(new Set(allPersons));
 
     const filteredTasks = tasks.filter((task) => {
-        // ยกเลิกการ return false เมื่อสถานะเป็น completed เพื่อให้แสดงงานที่เสร็จแล้ว
-        const matchStatus =
-            statusFilter === "all" || task.status === statusFilter;
+        const matchStatus = statusFilter === "all" || task.status === statusFilter;
 
-        // ให้ค้นหาชื่อแบบแยกทีละคนเวลากรอง
+        // 💡 แก้ไข 3: ถ้างานนี้มอบหมายให้ "ทุกหน่วยงาน" ทุกคนจะต้องมองเห็นแม้อยู่ใน Filter ตัวเอง
         const matchPerson =
             personFilter === "all" ||
-            (task.personInCharge &&
-                task.personInCharge.split(',').map((s: string) => s.trim()).includes(personFilter));
+            (task.personInCharge && task.personInCharge.includes("ทุกหน่วยงาน")) ||
+            (task.personInCharge && task.personInCharge.split(',').map((s: string) => s.trim()).includes(personFilter));
 
         return matchStatus && matchPerson;
+    }).sort((a, b) => {
+        // 💡 แก้ไข 2: จัดเรียงงานที่ completed ไปไว้ท้ายสุด
+        if (a.status === "completed" && b.status !== "completed") return 1;
+        if (a.status !== "completed" && b.status === "completed") return -1;
+        
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        return dateA - dateB;
     });
 
     return (
@@ -108,7 +108,6 @@ export default function AllTask() {
                                 <option value="all">ทั้งหมด</option>
                                 <option value="following">กำลังติดตาม</option>
                                 <option value="problem">เกิดปัญหา</option>
-                                {/* เพิ่มสถานะเสร็จสิ้นลงใน Dropdown */}
                                 <option value="completed">เสร็จสิ้น</option>
                             </select>
 
