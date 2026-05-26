@@ -7,7 +7,7 @@ export default function TopBar() {
             <Link href="/" aria-label="กลับหน้าหลัก ระบบติดตามงานมอบหมาย">
                 <div className="flex items-center gap-4 group">
                     <Image 
-                        src="/globe.svg" 
+                        src="/police.png" 
                         alt="โลโก้ระบบติดตามงานมอบหมาย" 
                         width={40} 
                         height={40} 
