@@ -92,10 +92,21 @@ export default function AllTask() {
             <div className="flex flex-col sm:flex-row justify-between gap-4">
                 <h1 className={styles.Header}>งานติดตามทั้งหมด</h1>
                 {/* 💡 แก้ไข: เพิ่มพื้นที่กด (minHeight) ให้ผ่านเกณฑ์ทัชสกรีน และเพิ่ม aria-label */}
-                <Link href={'/addFile'} aria-label="ไปหน้าเพิ่มงานติดตามใหม่" style={{ display: 'inline-block' }}>
-                    <button className={styles.Button} style={{ minHeight: '44px', padding: '0.5rem 1.5rem' }}>
-                        + เพิ่มงานติดตาม
-                    </button>
+                <Link 
+                    href={'/addFile'} 
+                    aria-label="ไปหน้าเพิ่มงานติดตามใหม่" 
+                    className={styles.Button} 
+                    style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        minHeight: '48px', /* บังคับความสูงให้ผ่านเกณฑ์ 100% */
+                        padding: '0 24px',
+                        margin: '4px 0', /* เพิ่มระยะห่างกันนิ้วเบียด */
+                        textDecoration: 'none'
+                    }}
+                >
+                    + เพิ่มงานติดตาม
                 </Link>
             </div>
 
