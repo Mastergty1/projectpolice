@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 export default function TopBar() {
     return (
-        <div className="flex justify-between items-center w-full px-6 py-4 shadow-md z-50 relative" style={{ backgroundColor: '#3F1818', color: '#FFFFFF' }}>
+        <div id="main-topbar" className="flex justify-between items-center w-full px-6 py-4 shadow-md z-50 relative bg-[#3F1818]">
             <Link href="/" aria-label="กลับหน้าหลัก ระบบติดตามงานมอบหมาย">
                 <div className="flex items-center gap-4 group">
                     <Image 
