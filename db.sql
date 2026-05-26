@@ -89,6 +89,7 @@ CREATE TABLE task_topics (
   assignment_id INT REFERENCES task_assignments(id) ON DELETE CASCADE,
   detail TEXT NOT NULL,     -- ข้อความงานย่อย
   status VARCHAR(50) DEFAULT 'pending',
+  is_completed BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT NOW()
 );
 

@@ -1,6 +1,16 @@
 const pool = require('../config/db');
 
-// 1. ดึงงานทั้งหมดไปแสดงผล
+// 💡 1. สคริปต์อัตโนมัติ: สร้างคอลัมน์ is_completed สำหรับงานย่อย (เพิ่มไว้จากรอบก่อน)
+pool.query(`ALTER TABLE task_topics ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT FALSE;`)
+  .then(() => console.log("✅ Database verified: 'is_completed' column is ready."))
+  .catch(err => console.error("⚠️ Auto-migrate warning (is_completed):", err.message));
+
+// 💡 2. สคริปต์อัตโนมัติ: เปลี่ยนคอลัมน์ due_date ให้เก็บ "เวลา" ได้ด้วย (แก้บัคเวลาเด้งกลับเป็น 00:00)
+pool.query(`ALTER TABLE tasks ALTER COLUMN due_date TYPE TIMESTAMP USING due_date::TIMESTAMP;`)
+  .then(() => console.log("✅ Database verified: 'due_date' column is now TIMESTAMP (supports time)."))
+  .catch(err => console.error("⚠️ Auto-migrate warning (due_date):", err.message));
+
+
 exports.getAllTasks = async (req, res) => {
   try {
     const query = `
@@ -24,7 +34,6 @@ exports.getAllTasks = async (req, res) => {
   }
 };
 
-// 2. ดึงเฉพาะงานด่วน
 exports.getUrgentTasks = async (req, res) => {
   try {
     const query = `
@@ -49,21 +58,15 @@ exports.getUrgentTasks = async (req, res) => {
   }
 };
 
-// 3. อัปเดตสถานะงาน
 exports.updateTaskStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-
     const result = await pool.query(
       `UPDATE tasks SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
       [status, id]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Task not found' });
-    }
-
+    if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Task not found' });
     res.status(200).json({ success: true, data: result.rows[0] });
   } catch (err) {
     console.error("Update status error:", err.message);
@@ -71,7 +74,6 @@ exports.updateTaskStatus = async (req, res) => {
   }
 };
 
-// 4. บันทึกงานทั้งหมดหลังจากผู้ใช้กดยืนยัน (รับข้อมูลจากหน้า Uploaded)
 exports.confirmTasks = async (req, res) => {
   const client = await pool.connect();
   try {
@@ -83,14 +85,7 @@ exports.confirmTasks = async (req, res) => {
         const taskRes = await client.query(
           `INSERT INTO tasks (document_id, title, memo_no, memo_date, main_text, due_date)
            VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-          [
-            documentId, 
-            memo.เรื่อง || 'ไม่ระบุชื่อเรื่อง', 
-            memo.ที่, 
-            memo.วันที่, 
-            memo.main_text, 
-            memo.due_date || null 
-          ]
+          [ documentId, memo.เรื่อง || 'ไม่ระบุชื่อเรื่อง', memo.ที่, memo.วันที่, memo.main_text, memo.due_date || null ]
         );
         const taskId = taskRes.rows[0].id;
 
@@ -109,8 +104,8 @@ exports.confirmTasks = async (req, res) => {
             if (assign.topics && assign.topics.length > 0) {
               for (const topic of assign.topics) {
                 await client.query(
-                  `INSERT INTO task_topics (assignment_id, detail) VALUES ($1, $2)`,
-                  [assignmentId, topic]
+                  `INSERT INTO task_topics (assignment_id, detail, is_completed) VALUES ($1, $2, $3)`,
+                  [assignmentId, topic, false]
                 );
               }
             }
@@ -129,7 +124,6 @@ exports.confirmTasks = async (req, res) => {
   }
 };
 
-// 5. อัปเดตรายละเอียดงาน (แก้ไขชื่อ, กำหนดส่ง, บันทึกเพิ่มเติม และรายการย่อยในตารางแยก)
 exports.updateTaskDetail = async (req, res) => {
   const client = await pool.connect();
   try {
@@ -137,39 +131,50 @@ exports.updateTaskDetail = async (req, res) => {
     const { id } = req.params;
     const { name, date, notes, assignments } = req.body;
 
-    // 1. อัปเดตตาราง Tasks หล้ก
+    // แปลงค่ากรณีวันที่ส่งมาว่างเปล่า
+    const validDate = (date === "" || !date) ? null : date;
+
     await client.query(
       `UPDATE tasks 
-       SET title = $1, due_date = $2, notes = $3, updated_at = NOW() 
+       SET title = COALESCE($1, title), due_date = COALESCE($2, due_date), notes = COALESCE($3, notes), updated_at = NOW() 
        WHERE id = $4`,
-      [name, date, notes, id]
+      [name, validDate, notes, id]
     );
 
-    // 2. 💡 วนลูปอัปเดตข้อมูลพนักงานที่รับผิดชอบงานย่อย และข้อมูลรายละเอียดของหัวข้อย่อย
     if (assignments && Array.isArray(assignments)) {
       for (const assign of assignments) {
-        const userId = assign.user_id ? parseInt(assign.user_id) : null;
+        if (!assign.assignment_id) continue;
         
-        // อัปเดต user_id ของใบมอบหมายงานใบนี้
+        const userId = assign.user_id ? parseInt(assign.user_id) : null;
         await client.query(
-          `UPDATE task_assignments 
-           SET user_id = $1 
-           WHERE id = $2 AND task_id = $3`,
+          `UPDATE task_assignments SET user_id = $1 WHERE id = $2 AND task_id = $3`,
           [userId, assign.assignment_id, id]
         );
 
-        // อัปเดตตัวข้อความภายในรายละเอียด (topics)
         if (assign.topics && Array.isArray(assign.topics)) {
+          const keepTopicIds = assign.topics.filter(t => t.topic_id).map(t => parseInt(t.topic_id));
+          
+          if (keepTopicIds.length > 0) {
+            await client.query(`DELETE FROM task_topics WHERE assignment_id = $1 AND NOT (id = ANY($2::int[]))`, [assign.assignment_id, keepTopicIds]);
+          } else {
+            await client.query(`DELETE FROM task_topics WHERE assignment_id = $1`, [assign.assignment_id]);
+          }
+
           for (const topic of assign.topics) {
             if (topic.topic_id) {
               await client.query(
-                `UPDATE task_topics 
-                 SET detail = $1 
-                 WHERE id = $2 AND assignment_id = $3`,
-                [topic.detail, topic.topic_id, assign.assignment_id]
+                `UPDATE task_topics SET detail = $1, is_completed = $2 WHERE id = $3`,
+                [topic.detail, topic.is_completed || false, topic.topic_id]
+              );
+            } else {
+              await client.query(
+                `INSERT INTO task_topics (assignment_id, detail, is_completed) VALUES ($1, $2, $3)`,
+                [assign.assignment_id, topic.detail, topic.is_completed || false]
               );
             }
           }
+        } else {
+           await client.query(`DELETE FROM task_topics WHERE assignment_id = $1`, [assign.assignment_id]);
         }
       }
     }
@@ -185,7 +190,6 @@ exports.updateTaskDetail = async (req, res) => {
   }
 };
 
-// ดึงข้อมูลงานตาม ID 
 exports.getTaskById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -194,7 +198,7 @@ exports.getTaskById = async (req, res) => {
         t.id, 
         t.title AS name, 
         t.status, 
-        TO_CHAR(t.due_date, 'YYYY-MM-DD') AS date, 
+        TO_CHAR(t.due_date, 'YYYY-MM-DD"T"HH24:MI') AS date, 
         t.main_text,
         t.notes,      
         t.memo_no, 
@@ -204,17 +208,17 @@ exports.getTaskById = async (req, res) => {
           json_agg(
             json_build_object(
               'assignment_id', ta.id,
-              'user_id', ta.user_id,             -- 💡 ดึง id ไปทำ default value ใน Dropdown
+              'user_id', ta.user_id,             
               'role_or_name', ta.role_or_name,   
               'personInCharge', COALESCE(u.name, ta.role_or_name),
               'topics', (
                 SELECT COALESCE(
                   json_agg(
                     json_build_object(
-                      'topic_id', tt.id,          -- 💡 ดึง ID หัวข้อย่อยมาใช้เพื่ออัปเดตลงฐานข้อมูล
+                      'topic_id', tt.id,          
                       'detail', tt.detail,
-                      'status', tt.status
-                    )
+                      'is_completed', COALESCE(tt.is_completed, false)
+                    ) ORDER BY tt.id ASC
                   ), '[]'::json)
                 FROM task_topics tt 
                 WHERE tt.assignment_id = ta.id
@@ -234,7 +238,6 @@ exports.getTaskById = async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
-
     const task = rows[0];
     task.personInCharge = task.assignments.map(a => a.personInCharge).join(', ') || 'ไม่ระบุ';
 
@@ -245,7 +248,6 @@ exports.getTaskById = async (req, res) => {
   }
 };
 
-// ลบงาน
 exports.deleteTask = async (req, res) => {
   const client = await pool.connect();
   try {
@@ -258,7 +260,6 @@ exports.deleteTask = async (req, res) => {
     if (assignmentIds.length > 0) {
       await client.query('DELETE FROM task_topics WHERE assignment_id = ANY($1)', [assignmentIds]);
     }
-
     await client.query('DELETE FROM task_assignments WHERE task_id = $1', [id]);
     const result = await client.query('DELETE FROM tasks WHERE id = $1 RETURNING *', [id]);
 

@@ -32,27 +32,73 @@ export default function DetailsPanel({
     onDeleteTask
 }: TaskItemProps) {
     const [taskStatus, setStatus] = useState<TaskStatus>((taskData?.status as TaskStatus) || "following");
+    const [users, setUsers] = useState<any[]>([]);
 
     useEffect(() => {
         if (taskData?.status) setStatus(taskData.status as TaskStatus);
     }, [taskData?.status]);
 
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
+                const res = await fetch(`${backendUrl}/api/v1/users`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setUsers(data.data || []);
+                }
+            } catch (err) {
+                console.error("Fetch users failed", err);
+            }
+        };
+        fetchUsers();
+    }, []);
+
     const parsedDate = new Date(taskData?.date || "");
-    const day = parsedDate.getDate();
-    const monthYear = parsedDate.toLocaleDateString("th-TH", { month: "long", year: "numeric" });
+    const isValidDate = !isNaN(parsedDate.getTime());
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    parsedDate.setHours(0, 0, 0, 0);
+    const day = isValidDate ? parsedDate.getDate() : "-";
+    const monthYear = isValidDate ? parsedDate.toLocaleDateString("th-TH", { month: "long", year: "numeric" }) : "ไม่ระบุ";
+    const timeText = isValidDate ? parsedDate.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) : "";
 
-    const diffTime = parsedDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const now = new Date();
+    const diffTime = isValidDate ? parsedDate.getTime() - now.getTime() : 0;
+    const diffTotalMinutes = Math.floor(diffTime / (1000 * 60));
+    const diffTotalHours = Math.floor(diffTotalMinutes / 60);
+    const diffDays = Math.floor(diffTotalHours / 24);
 
     let theme = styles.DateGreen;
-    if (diffDays < 0) theme = styles.DateGrey;
+    if (!isValidDate) theme = styles.DateGrey;
+    else if (diffTotalMinutes < 0) theme = styles.DateGrey;
     else if (diffDays === 0) theme = styles.DateRed;
-    else if (diffDays === 1) theme = styles.DateOrange;
+    else if (diffDays <= 2) theme = styles.DateOrange;
     else if (diffDays <= 7) theme = styles.DateYellow;
+
+    let timeRemainingDisplay = "";
+    if (!isValidDate) {
+        timeRemainingDisplay = "ไม่ระบุกำหนดการ";
+    } else if (diffTotalMinutes < 0) {
+        const absMinutes = Math.abs(diffTotalMinutes);
+        const absHours = Math.floor(absMinutes / 60);
+        const rDays = Math.floor(absHours / 24);
+        if (rDays > 0) timeRemainingDisplay = `เกินกำหนด ${rDays} วัน`;
+        else timeRemainingDisplay = `เกินกำหนด ${absHours} ชม. ${absMinutes % 60} นาที`;
+    } else {
+        if (diffDays >= 1) timeRemainingDisplay = `เหลืออีก ${diffDays} วัน`;
+        else timeRemainingDisplay = `เหลืออีก ${diffTotalHours} ชม. ${diffTotalMinutes % 60} นาที`;
+    }
+
+    // 💡 แก้ไข: ถ้าค่าเป็น YYYY-MM-DDTHH:mm มาอยู่แล้วไม่ต้องแปลงอีก (ป้องกันการเพี้ยน)
+    const formatForInput = (dateStr: string) => {
+        if (!dateStr) return "";
+        if (typeof dateStr === 'string' && dateStr.length === 16 && dateStr.includes("T")) {
+            return dateStr; 
+        }
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return "";
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
 
     const statusOption: StatusOption[] = [
         { value: "following", label: "กำลังติดตาม" },
@@ -66,7 +112,7 @@ export default function DetailsPanel({
         completed: { color: "var(--greenText)", bg: "var(--greenBG)", border: "var(--greenBorder)" },
     } as const;
 
-    const themeStyle = selectThemeMap[taskStatus];
+    const themeStyle = selectThemeMap[taskStatus] || selectThemeMap["following"];
 
     return (
         <div className="flex flex-col w-full h-full gap-6 justify-between min-h-140">
@@ -76,8 +122,8 @@ export default function DetailsPanel({
                         <div className={styles.InfoContainer}>
                             <div className={`${styles.DateDisplayer} ${theme}`}>
                                 <span>กำหนดติดตาม</span>
-                                <span className={styles.DateNumber}>{isNaN(day) ? "-" : day}</span>
-                                <span className={styles.DateMonth}>{monthYear === "Invalid Date" ? "ไม่ระบุ" : monthYear}</span>
+                                <span className={styles.DateNumber}>{day}</span>
+                                <span className={styles.DateMonth}>{monthYear}</span>
                             </div>
                             <div className={styles.Content}>
                                 {isEditing ? (
@@ -92,26 +138,53 @@ export default function DetailsPanel({
                                 )}
                                 <div className={styles.DetailContainer}>
                                     <div className={styles.DetailedContainer}>
-                                        <p className="flex flex-row"><strong>ผู้รับผิดชอบ: &nbsp; </strong> {taskData?.personInCharge}</p>
+                                        
+                                        <div className="flex flex-row items-center flex-wrap gap-2">
+                                            <strong>ผู้รับผิดชอบ: &nbsp; </strong> 
+                                            {isEditing ? (
+                                                <select 
+                                                    className="p-1 text-black text-sm border-2 border-blue-400 rounded outline-none bg-white min-w-50"
+                                                    value={taskData?.personInCharge || ""}
+                                                    onChange={(e) => setTaskData({ ...taskData, personInCharge: e.target.value })}
+                                                >
+                                                    <option value="">-- เลือกระบุบุคคล --</option>
+                                                    {users.map(u => (
+                                                        <option key={u.id || u._id} value={u.name}>
+                                                            {u.name} {u.role ? `(${u.role})` : ''}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <span>{taskData?.personInCharge || "ไม่ระบุ"}</span>
+                                            )}
+                                        </div>
                                         
                                         {isEditing ? (
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <strong>เปลี่ยนวันที่: </strong>
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-1">
+                                                <strong>เปลี่ยนกำหนดส่ง: </strong>
                                                 <input 
-                                                    type="date" 
+                                                    type="datetime-local" 
                                                     className="p-1 text-black text-sm border-2 border-blue-400 rounded outline-none bg-white" 
-                                                    value={taskData?.date || ""} 
-                                                    onChange={(e) => setTaskData({ ...taskData, date: e.target.value })} 
+                                                    value={taskData?.date ? formatForInput(taskData.date) : ""} 
+                                                    onChange={(e) => {
+                                                        // 💡 แก้ไขบัคเวลาลด! บันทึก String ตรงๆ (เช่น "2024-12-10T12:00") โดยไม่ใช้ .toISOString()
+                                                        setTaskData({ ...taskData, date: e.target.value });
+                                                    }} 
                                                 />
                                             </div>
                                         ) : (
-                                            <p className="flex flex-row"><strong>กำหนดเวลา: &nbsp; </strong>  
-                                            {isNaN(diffDays) ? "ไม่ระบุกำหนดการ" : diffDays < 0
-                                                ? `เกินกำหนด ${Math.abs(diffDays)} วัน`
-                                                : diffDays === 0
-                                                ? "วันนี้"
-                                                : `เหลืออีก ${diffDays} วัน`}
-                                            </p>
+                                            <div className="flex flex-col gap-1 mt-2">
+                                                <p className="flex flex-row">
+                                                    <strong>กำหนดส่ง: &nbsp; </strong> 
+                                                    {isValidDate ? `${day} ${monthYear} เวลา ${timeText} น.` : "ไม่ระบุ"}
+                                                </p>
+                                                <p className="flex flex-row text-sm text-gray-500" style={{ color: "var(--header)" }}>
+                                                    <strong>สถานะเวลา: &nbsp; </strong>  
+                                                    <span className={`font-semibold ${diffTotalMinutes < 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                                                        {timeRemainingDisplay}
+                                                    </span>
+                                                </p>
+                                            </div>
                                         )}
                                     </div>
                                 </div>

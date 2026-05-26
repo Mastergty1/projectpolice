@@ -14,9 +14,12 @@ export default function TaskPage() {
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false); // 💡 รวมศูนย์โหมดแก้ไขไว้ที่นี่
 
+    // 💡 กำหนด URL ของ Backend ให้เหมือนกับคอมโพเนนต์อื่น ๆ
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
+
     const fetchTask = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/tasks/${id}`);
+            const res = await fetch(`${backendUrl}/api/v1/tasks/${id}`);
             if (!res.ok) throw new Error("Failed to fetch");
             const data = await res.json();
             if (data.success) {
@@ -35,7 +38,7 @@ export default function TaskPage() {
 
     const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
         try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/tasks/${taskId}/status`, {
+            await fetch(`${backendUrl}/api/v1/tasks/${taskId}/status`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status: newStatus }),
@@ -49,7 +52,7 @@ export default function TaskPage() {
     const handleUpdateTask = async () => {
         try {
             // 💡 ส่งข้อมูลของงานหลัก และรายการ Assignments ที่แก้ไขแล้วไปยังเซิร์ฟเวอร์
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/tasks/${id}`, {
+            const res = await fetch(`${backendUrl}/api/v1/tasks/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -73,7 +76,7 @@ export default function TaskPage() {
     const handleDeleteTask = async () => {
         if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบงานนี้?")) return;
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/tasks/${id}`, {
+            const res = await fetch(`${backendUrl}/api/v1/tasks/${id}`, {
                 method: "DELETE"
             });
             const data = await res.json();
