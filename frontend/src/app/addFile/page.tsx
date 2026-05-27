@@ -10,8 +10,8 @@ export default function AddFilePage() {
     const [progress, setProgress] = useState<number>(0);
 
     return (
-        <div className="flex flex-col md:flex-row justify-between w-full md:h-full p-16 pt-8 gap-12">
-            <div className="flex flex-1">
+        <div className="flex flex-col md:flex-row justify-between w-full md:h-full p-16 pt-8 gap-12 overflow-hidden">
+            <div className="flex flex-1 min-h-0">
                 {/* ส่งฟังก์ชันไปให้ Uploader เพื่อรับข้อมูลกลับมา */}
                 <FileUploader 
                     setExtractedData={setExtractedData} 
@@ -19,7 +19,7 @@ export default function AddFilePage() {
                     setProgress={setProgress}
                 />
             </div>
-            <div className="flex flex-2">
+            <div className="flex flex-2 min-h-0 ">
                 {/* ส่งข้อมูลที่ได้ ไปให้ Uploaded แสดงผลทางขวา */}
                 <Uploaded extractedData={extractedData} /> 
             </div>

@@ -290,7 +290,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
     };
 
     return(
-        <div className="flex flex-col w-full h-full gap-4 flex-1 overflow-hidden pb-4">
+        <div className="flex flex-col w-full h-full gap-4 flex-1 overflow-hidden pb-4 min-h-0">
             
             <h1 className={styles.Header} style={{ flexShrink: 0 }}>งานติดตามที่ตรวจอ่านได้</h1>
             
@@ -339,7 +339,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                 </div>
                             </div>
 
-                            <div className="p-4 sm:p-6 w-full bg-(--wrapper)" style={{ borderRadius: '0 0 0.2rem 0.2rem' }}>
+                            <div className="p-4 sm:p-6 w-full bg-(--wrapper) overflow-y-auto" style={{ borderRadius: '0 0 0.2rem 0.2rem', maxHeight: '60vh' }}>
                                 {file.memos.length > 0 ? (
                                     <div className="flex flex-col gap-8">
                                         {file.memos.map((memo, index) => (
