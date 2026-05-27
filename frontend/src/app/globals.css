@@ -65,3 +65,15 @@ span {
 #main-topbar span {
     color: #FFFFFF ;
 }
+
+*::-webkit-scrollbar {
+  width: 5px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--shadow);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--wrapper);
+}
