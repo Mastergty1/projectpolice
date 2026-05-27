@@ -73,12 +73,21 @@ export default function FileUploader({ setExtractedData, progress, setProgress }
             });
 
             if (response.status === 200) {
-                setMessage({ text: "แสกนข้อมูลสำเร็จ! กรุณาตรวจสอบและมอบหมายงานทางขวามือ", type: "success" });
-                setFiles([]); 
+                const results = response.data.results;
+                // ตรวจสอบว่ามีไฟล์ไหนที่ Backend แจ้งสถานะเป็น error กลับมาหรือไม่
+                const hasError = results && results.some((r: any) => r.status === "error");
                 
-                // 💡 แก้ไขบัคส่งหลายไฟล์: ส่ง response.data.results ทั้งหมดไปให้หน้า Uploaded จัดการต่อ
-                if (response.data && response.data.results) {
-                    setExtractedData(response.data.results);
+                if (hasError) {
+                    // ดึงข้อความ Error มาแสดง
+                    const errorMsg = results.find((r: any) => r.status === "error")?.error;
+                    setMessage({ text: `พบข้อผิดพลาด: ${errorMsg}`, type: "error" });
+                } else {
+                    setMessage({ text: "แสกนข้อมูลสำเร็จ! กรุณาตรวจสอบและมอบหมายงานทางขวามือ", type: "success" });
+                }
+                
+                setFiles([]); 
+                if (results) {
+                    setExtractedData(results);
                 }
             }
         } catch (error: any) {

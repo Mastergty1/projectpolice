@@ -292,10 +292,11 @@ export default function Uploaded({ extractedData }: UploadedProps) {
     };
 
     return(
-        <div className="flex flex-col w-full h-full gap-6 min-h-75 flex-1">
+        <div className="flex flex-col w-full h-full gap-6 flex-1">
             <h1 className={styles.Header}>งานติดตามที่ตรวจอ่านได้</h1>
+            <div className="relative flex-1 w-full min-h-75">
             
-            <div className="flex flex-col gap-8 overflow-y-auto pr-1 flex-1 min-h-0">
+                <div className="absolute inset-0 overflow-y-auto pr-2 pb-6 flex flex-col gap-8">
                 {filesData.length > 0 ? (
                     filesData.map((file, fileIdx) => (
                         <div key={fileIdx} className={`${styles.ContentWrapper} flex flex-col shrink-0 overflow-hidden shadow-md`} style={{ minHeight: 'auto' }}>
@@ -492,6 +493,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                         <span>ยังไม่มีข้อมูล กรุณาอัพโหลดเอกสารเพื่อสแกน</span>
                     </div>
                 )}
+            </div>
             </div>
             
             <div className="flex flex-col md:flex-row md:justify-end gap-4 mt-2 flex-wrap shrink-0">

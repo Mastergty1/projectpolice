@@ -109,6 +109,11 @@ exports.extractDataWithGemini = async (filePath, mimeType) => {
 
   } catch (error) {
     console.error("Gemini OCR Error:", error.message);
+
+    if (error.message.includes('429') || error.message.toLowerCase().includes('quota')) {
+      throw new Error(`โควตา AI เต็มชั่วคราว: กรุณารอประมาณ 1 นาทีแล้วกดอัพโหลดใหม่อีกครั้ง`);
+    }
+    
     throw new Error(`Gemini Processing Failed: ${error.message}`);
   }
 };
