@@ -95,7 +95,6 @@ export default function Uploaded({ extractedData }: UploadedProps) {
             const initialized = extractedData
                 .filter(file => file.status === "success")
                 .map(file => {
-                    // 💡 ระบบคัดกรองแบบเคร่งครัด (Strict Filter) กลับมาแล้ว
                     const strictFilteredMemos = (file.extractedData || []).filter(memo => {
                         const hasAt = memo.ที่ && memo.ที่.trim() !== "" && memo.ที่.trim() !== "-";
                         const hasDate = memo.วันที่ && memo.วันที่.trim() !== "" && memo.วันที่.trim() !== "-";
@@ -226,7 +225,6 @@ export default function Uploaded({ extractedData }: UploadedProps) {
     };
 
     const handleConfirm = async () => {
-        // ตรวจสอบว่าในไฟล์ที่รอดการคัดกรองมาทั้งหมด เลือกการตั้งค่าครบหรือไม่
         const validFiles = filesData.filter(file => file.memos.length > 0);
         
         if (validFiles.length === 0) {
@@ -292,11 +290,12 @@ export default function Uploaded({ extractedData }: UploadedProps) {
     };
 
     return(
-        <div className="flex flex-col w-full h-full gap-6 flex-1">
-            <h1 className={styles.Header}>งานติดตามที่ตรวจอ่านได้</h1>
-            <div className="relative flex-1 w-full min-h-75">
+        <div className="flex flex-col w-full h-full gap-4 flex-1 overflow-hidden pb-4">
             
-                <div className="absolute inset-0 overflow-y-auto pr-2 pb-6 flex flex-col gap-8">
+            <h1 className={styles.Header} style={{ flexShrink: 0 }}>งานติดตามที่ตรวจอ่านได้</h1>
+            
+            <div className="flex-1 w-full overflow-y-auto pr-2 pb-4 flex flex-col gap-8 min-h-0">
+                
                 {filesData.length > 0 ? (
                     filesData.map((file, fileIdx) => (
                         <div key={fileIdx} className={`${styles.ContentWrapper} flex flex-col shrink-0 overflow-hidden shadow-md`} style={{ minHeight: 'auto' }}>
@@ -307,7 +306,6 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                         <span>สแกนจากไฟล์: <span className="text-blue-700 underline font-extrabold">{file.filename}</span></span>
                                     </div>
                                     
-                                    {/* ซ่อนแถบเครื่องมือด้านบนหากไม่มี memo ผ่านเข้ามาเลย */}
                                     {file.memos.length > 0 && (
                                         <div className="flex flex-col sm:flex-row sm:items-center gap-6 flex-wrap shrink-0">
                                             <div className="flex items-center gap-3">
@@ -494,9 +492,8 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                     </div>
                 )}
             </div>
-            </div>
             
-            <div className="flex flex-col md:flex-row md:justify-end gap-4 mt-2 flex-wrap shrink-0">
+            <div className="flex flex-col md:flex-row md:justify-end gap-4 flex-wrap shrink-0">
                 <button className={styles.Button} style={{ background: "var(--wrapper)", borderColor: "var(--shadow)" }} onClick={() => router.push('/')}>
                     กลับหน้าหลัก
                 </button>
