@@ -7,6 +7,7 @@ import TopBar from "@/components/TopBar";
 // 💡 1. นำเข้า Component ใหม่ที่เราเพิ่งสร้าง
 import BackendWakeupLoader from "@/components/BackendWakeupLoader"; 
 
+
 const sarabun = Sarabun({
   subsets: ["latin", "thai"],
   weight: ["400", "700"],
@@ -25,7 +26,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th">
+    <html lang="th" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            const t = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', t);
+          `
+        }} />
+      </head>
+
       <body className={`${sarabun.variable} font-sans antialiased`}>
         
         <div className="flex flex-col h-screen">
@@ -33,7 +43,7 @@ export default function RootLayout({
             <TopBar />
           </header>
 
-          <main role="main" className="flex-1 overflow-auto bg-white">
+          <main role="main" className="flex-1 overflow-auto" style={{ backgroundColor: 'var(--background)' }}>
             
             {/* 💡 2. นำมาครอบเนื้อหาของหน้าเว็บ (children) ไว้ */}
             <BackendWakeupLoader>
