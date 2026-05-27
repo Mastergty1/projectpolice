@@ -8,7 +8,7 @@ type TaskStatus = "following" | "problem" | "completed";
 
 export default function UrgentTask() {
     const initialTaskData = [
-        { id: "1", name: "ชื่องานด่วนมาก", personInCharge: "ไม่มีข้อมูล", date: "2026-05-21", status: "following" },
+        { id: "0", name: "ชื่องานด่วนมาก", personInCharge: "นี้เป็นขอมูลทดสอบ", date: "2026-05-21", status: "following" },
     ];
 
     const [tasks, setTasks] = useState<any[]>([]);
@@ -67,6 +67,7 @@ export default function UrgentTask() {
     const uniquePersons = Array.from(new Set(allPersons));
 
     const filteredTasks = tasks.filter((task) => {
+        if (task.status === "completed") return false; // กรองงานที่ completed ออกก่อน
         const matchStatus = statusFilter === "all" || task.status === statusFilter;
         
         // 💡 แก้ไข 3: ถ้างานนี้มอบหมายให้ "ทุกหน่วยงาน" ทุกคนจะต้องมองเห็นแม้อยู่ใน Filter ตัวเอง
