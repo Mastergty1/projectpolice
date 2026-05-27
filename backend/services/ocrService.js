@@ -23,7 +23,7 @@ function fileToGenerativePart(filePath, mimeType) {
 // ฟังก์ชันหลักที่ใช้ประมวลผลด้วย Gemini
 exports.extractDataWithGemini = async (filePath, mimeType) => {
   try {
-    // แนะนำให้ใช้รุ่น 1.5-flash แทน 3.5 เพื่อหลีกเลี่ยง Error 404 Not Found
+    // 💡 แก้ไขบัค: เปลี่ยนมาใช้ 1.5-pro เพื่อความแม่นยำสูงสุดในการอ่านเอกสารภาษาไทย
     const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" }); 
 
     const prompt = `
@@ -73,16 +73,37 @@ exports.extractDataWithGemini = async (filePath, mimeType) => {
 
     const filePart = fileToGenerativePart(filePath, mimeType);
 
-    console.log("กำลังส่งไฟล์ให้ Gemini ประมวลผลและสกัดข้อมูลความรับผิดชอบ...");
-    const result = await model.generateContent([prompt, filePart]);
-    const responseText = result.response.text();
+    let parsedData = null;
+    let maxRetries = 2; // 💡 กำหนดให้ AI รีเช็คตัวเองได้สูงสุด 2 รอบถ้าหาข้อมูลไม่เจอ
 
-    const cleanJsonString = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-    const parsedData = JSON.parse(cleanJsonString);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      console.log(`กำลังส่งไฟล์ให้ Gemini ประมวลผล... (รอบที่ ${attempt}/${maxRetries})`);
+      const result = await model.generateContent([prompt, filePart]);
+      const responseText = result.response.text();
+
+      const cleanJsonString = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+      parsedData = JSON.parse(cleanJsonString);
+
+      const memos = parsedData.memos || [];
+      
+      // ตรวจสอบว่าแสกนเจอข้อมูลสำคัญครบหรือไม่
+      const isComplete = memos.length > 0 && memos.every(memo => 
+        memo["ที่"] && memo["ที่"] !== "-" &&
+        memo["วันที่"] && memo["วันที่"] !== "-" &&
+        memo["เรื่อง"] && memo["เรื่อง"] !== "-" &&
+        memo["เรียน"] && memo["เรียน"] !== "-"
+      );
+
+      if (isComplete) {
+        console.log("ข้อมูลครบถ้วนสมบูรณ์!");
+        break; // ถ้าข้อมูลครบแล้วให้ออกจากการวนลูปเลย
+      } else if (attempt < maxRetries) {
+        console.log("⚠️ ข้อมูลสำคัญหายไป กำลังสั่งให้ AI รีเช็คและแสกนใหม่อีกครั้ง...");
+      }
+    }
 
     return {
       text: parsedData.full_text || "",
-      // ส่งกลับไปเป็น Array เสมอ เพื่อให้ Controller บันทึกลงฐานข้อมูล SQL
       extractedData: parsedData.memos || [] 
     };
 

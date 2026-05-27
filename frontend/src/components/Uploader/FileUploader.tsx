@@ -3,9 +3,8 @@
 import { useState, useRef, DragEvent, ChangeEvent } from "react";
 import styles from "./fileUploader.module.css";
 import axios from "axios";
-import { useRouter } from "next/navigation"; // 💡 นำเข้า useRouter เพื่อใช้เปลี่ยนหน้า
+import { useRouter } from "next/navigation";
 
-// กำหนด Type ของ Props ที่รับมาจาก page.tsx
 interface FileUploaderProps {
     setExtractedData: (data: any) => void;
     progress: number;
@@ -13,7 +12,7 @@ interface FileUploaderProps {
 }
 
 export default function FileUploader({ setExtractedData, progress, setProgress }: FileUploaderProps) {
-    const router = useRouter(); // 💡 เรียกใช้งาน router
+    const router = useRouter();
     const [files, setFiles] = useState<File[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
@@ -48,8 +47,8 @@ export default function FileUploader({ setExtractedData, progress, setProgress }
 
         setIsUploading(true);
         setMessage(null);
-        setProgress(0); // รีเซ็ตหลอด
-        setExtractedData(null); // รีเซ็ตข้อมูลเดิม
+        setProgress(0); 
+        setExtractedData(null); 
 
         const formData = new FormData();
         files.forEach((file) => {
@@ -59,7 +58,6 @@ export default function FileUploader({ setExtractedData, progress, setProgress }
         try {
             const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
             
-            // ใช้ axios แทน fetch เพื่อทำ Progress bar
             const response = await axios.post(`${backendUrl}/api/v1/documents/process`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
                 onUploadProgress: (progressEvent) => {
@@ -78,22 +76,17 @@ export default function FileUploader({ setExtractedData, progress, setProgress }
                 setMessage({ text: "แสกนข้อมูลสำเร็จ! กรุณาตรวจสอบและมอบหมายงานทางขวามือ", type: "success" });
                 setFiles([]); 
                 
-                const resultData = response.data.results[0];
-                if (resultData && resultData.extractedData) {
-                    // 💡 ส่งข้อมูลรวมถึง documentId ไปให้ฝั่งขวา
-                    setExtractedData({
-                        documentId: resultData.documentId,
-                        memos: resultData.extractedData
-                    });
+                // 💡 แก้ไขบัคส่งหลายไฟล์: ส่ง response.data.results ทั้งหมดไปให้หน้า Uploaded จัดการต่อ
+                if (response.data && response.data.results) {
+                    setExtractedData(response.data.results);
                 }
-                // 💡 ลบ setTimeout ที่เป็น router.push("/") ออกไปเลยครับ
             }
         } catch (error: any) {
             console.error("Upload error:", error);
             setMessage({ text: `เกิดข้อผิดพลาด: ${error.response?.data?.message || "ไม่สามารถเชื่อมต่อได้"}`, type: "error" });
         } finally {
             setIsUploading(false);
-            setProgress(0); // สแกนจบ ซ่อนหลอดโหลด
+            setProgress(0); 
         }
     };
 
@@ -129,14 +122,12 @@ export default function FileUploader({ setExtractedData, progress, setProgress }
 
             <input type="file" multiple ref={fileInputRef} onChange={handleFileChange} className="hidden" style={{ display: 'none' }} />
 
-            {/* แสดงข้อความสถานะ */}
             {message && (
                 <div className={`text-sm text-center ${message.type === "success" ? "text-green-600 font-bold" : "text-red-600"}`}>
                     {message.text}
                 </div>
             )}
 
-            {/* แสดงหลอด Progress Bar */}
             {progress > 0 && progress < 100 && (
                 <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
