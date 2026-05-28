@@ -205,7 +205,7 @@ style={{ border: "1px solid var(--wrapper)", backgroundColor: "var(--button)", c
                     <option value="" disabled>-- เลือกรายชื่อผู้รับผิดชอบ --</option>
                     <option value="ทุกหน่วยงาน" style={{ fontWeight: 'bold', color: "var(--blueText)" }}>ทุกหน่วยงาน (ส่วนกลาง)</option>
                     {users.map(u => (
-                      <option key={u.id} value={u.id} style={{ color: "black" }}>{u.name}</option>
+                      <option key={u.id} value={u.id} style={{ color: "var(--header)" }}>{u.name}</option>
                     ))}
                   </select>
 
