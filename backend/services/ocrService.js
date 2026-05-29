@@ -10,6 +10,9 @@ if (!apiKey) {
 
 const genAI = new GoogleGenerativeAI(apiKey);
 
+// 💡 เพิ่มฟังก์ชันหน่วงเวลา (Delay) ไว้ใช้ตอน Server AI ทำงานหนัก
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 // ฟังก์ชันแปลงไฟล์เป็นรูปแบบที่ Gemini รองรับ (Inline Data)
 function fileToGenerativePart(filePath, mimeType) {
   return {
@@ -23,7 +26,7 @@ function fileToGenerativePart(filePath, mimeType) {
 // ฟังก์ชันหลักที่ใช้ประมวลผลด้วย Gemini
 exports.extractDataWithGemini = async (filePath, mimeType) => {
   try {
-    // 💡 แก้ไขบัค: เปลี่ยนมาใช้ 1.5-pro เพื่อความแม่นยำสูงสุดในการอ่านเอกสารภาษาไทย
+    // 💡 แก้ไขบัค: เปลี่ยนมาใช้ 1.5-pro เพื่อความแม่นยำสูงสุดในการอ่านเอกสารภาษาไทย (ตามคอมเมนต์ของคุณ)
     const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" }); 
 
     const prompt = `
@@ -74,31 +77,52 @@ exports.extractDataWithGemini = async (filePath, mimeType) => {
     const filePart = fileToGenerativePart(filePath, mimeType);
 
     let parsedData = null;
-    let maxRetries = 2; // 💡 กำหนดให้ AI รีเช็คตัวเองได้สูงสุด 2 รอบถ้าหาข้อมูลไม่เจอ
+    let maxRetries = 3; // 💡 ปรับเป็น 3 รอบ เผื่อกรณี Server 503
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       console.log(`กำลังส่งไฟล์ให้ Gemini ประมวลผล... (รอบที่ ${attempt}/${maxRetries})`);
-      const result = await model.generateContent([prompt, filePart]);
-      const responseText = result.response.text();
-
-      const cleanJsonString = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-      parsedData = JSON.parse(cleanJsonString);
-
-      const memos = parsedData.memos || [];
       
-      // ตรวจสอบว่าแสกนเจอข้อมูลสำคัญครบหรือไม่
-      const isComplete = memos.length > 0 && memos.every(memo => 
-        memo["ที่"] && memo["ที่"] !== "-" &&
-        memo["วันที่"] && memo["วันที่"] !== "-" &&
-        memo["เรื่อง"] && memo["เรื่อง"] !== "-" &&
-        memo["เรียน"] && memo["เรียน"] !== "-"
-      );
+      try {
+        const result = await model.generateContent([prompt, filePart]);
+        const responseText = result.response.text();
 
-      if (isComplete) {
-        console.log("ข้อมูลครบถ้วนสมบูรณ์!");
-        break; // ถ้าข้อมูลครบแล้วให้ออกจากการวนลูปเลย
-      } else if (attempt < maxRetries) {
-        console.log("⚠️ ข้อมูลสำคัญหายไป กำลังสั่งให้ AI รีเช็คและแสกนใหม่อีกครั้ง...");
+        const cleanJsonString = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        parsedData = JSON.parse(cleanJsonString);
+
+        const memos = parsedData.memos || [];
+        
+        // ตรวจสอบว่าแสกนเจอข้อมูลสำคัญครบหรือไม่
+        const isComplete = memos.length > 0 && memos.every(memo => 
+          memo["ที่"] && memo["ที่"] !== "-" &&
+          memo["วันที่"] && memo["วันที่"] !== "-" &&
+          memo["เรื่อง"] && memo["เรื่อง"] !== "-" &&
+          memo["เรียน"] && memo["เรียน"] !== "-"
+        );
+
+        if (isComplete) {
+          console.log("ข้อมูลครบถ้วนสมบูรณ์!");
+          break; // ถ้าข้อมูลครบแล้วให้ออกจากการวนลูปเลย
+        } else if (attempt < maxRetries) {
+          console.log("⚠️ ข้อมูลสำคัญหายไป กำลังสั่งให้ AI รีเช็คและแสกนใหม่อีกครั้ง...");
+        }
+
+      } catch (innerError) {
+        console.error(`พบข้อผิดพลาดระหว่างเรียก API (รอบที่ ${attempt}):`, innerError.message);
+        
+        // ถ้าเป็นการเรียกครั้งสุดท้ายแล้ว ให้ throw โยน error ออกไปเลย
+        if (attempt === maxRetries) {
+          throw innerError; 
+        }
+
+        // 💡 ถ้าเจอ 503 หรือ 429 ให้ทำการหน่วงเวลา (Delay) แล้ววนลูปทำใหม่
+        if (innerError.message.includes('503') || innerError.message.includes('429')) {
+          const waitTime = attempt * 3000; // รอบที่ 1 รอ 3 วิ, รอบที่ 2 รอ 6 วิ
+          console.log(`⏳ เซิร์ฟเวอร์ AI ทำงานหนักชั่วคราว รอ ${waitTime/1000} วินาทีแล้วลองใหม่...`);
+          await delay(waitTime);
+        } else {
+          // ถ้าเป็น Error แบบอื่น (เช่น JSON parse พัง) ให้โยนออกไปจัดการด้านนอก
+          throw innerError;
+        }
       }
     }
 
@@ -108,10 +132,15 @@ exports.extractDataWithGemini = async (filePath, mimeType) => {
     };
 
   } catch (error) {
-    console.error("Gemini OCR Error:", error.message);
+    console.error("Gemini OCR Final Error:", error.message);
 
     if (error.message.includes('429') || error.message.toLowerCase().includes('quota')) {
       throw new Error(`โควตา AI เต็มชั่วคราว: กรุณารอประมาณ 1 นาทีแล้วกดอัพโหลดใหม่อีกครั้ง`);
+    }
+    
+    // 💡 ดักจับ 503 กรณีที่ทำครบ 3 รอบแล้วยังล่มอยู่ ให้ส่งข้อความที่เป็นมิตรกลับไปที่ UI
+    if (error.message.includes('503')) {
+       throw new Error(`ระบบ AI ทำงานหนักเกินไป (503 Service Unavailable): กรุณารอสักครู่แล้วกดอัปโหลดใหม่อีกครั้ง`);
     }
     
     throw new Error(`Gemini Processing Failed: ${error.message}`);
