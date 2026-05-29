@@ -2,16 +2,11 @@
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   name VARCHAR(50) NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  phone VARCHAR(20) NOT NULL,
   password VARCHAR(255) NOT NULL,
   role VARCHAR(20) DEFAULT 'user',
-  years_of_experience INT CHECK (years_of_experience >= 0 AND years_of_experience <= 100),
-  area_of_expertise VARCHAR(50),
   reset_password_token VARCHAR(255),
   reset_password_expire TIMESTAMP,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
+
 );
 
 -- 1. เก็บไฟล์ต้นฉบับ
