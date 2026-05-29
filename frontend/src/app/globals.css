@@ -82,14 +82,14 @@ span {
 }
 
 [data-theme="dark"] {
-  --background: #281C1C;
-  --foreground: #DDD0AE;
+  --background: #14121F;
+  --foreground: #AED3DD;
   --header-bg: #1a0808;
   --header: #ffffff;
-  --wrapper: #382B2B;
-  --container: #4F3D38;
-  --button: #7A6455;
-  --shadow: #555555;
+  --wrapper: #13131E;
+  --container: #202130;
+  --button: #34334E;
+  --shadow: #0f0d17;
 
   --blueText:#94fff6;
   
