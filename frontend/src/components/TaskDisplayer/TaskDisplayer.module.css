@@ -22,7 +22,7 @@
 
 .ContentContainer{
     background-color: var(--container);
-    font-size: 1.25rem;
+    font-size: 1rem;
     
     display: flex;
     flex-direction: column;

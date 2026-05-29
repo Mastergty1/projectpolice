@@ -28,7 +28,7 @@
 
 }
 
-@container(max-width: 375px){
+@container(max-width: 400px){
     .InfoContainer{
         flex-direction: column;
     }
@@ -43,6 +43,7 @@
     text-align: center;
     justify-content: center;
     flex-shrink: 0;
+    min-width: 150px;
 }
 
 .DateNumber{
@@ -58,7 +59,7 @@
 .Content{
     padding: 1rem;
     color: var(--foreground);
-    font-size: 1.2rem;
+    font-size: 1rem;
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
@@ -67,7 +68,7 @@
 .Header{
     color: var(--header);
     font-weight: bold;
-    font-size: 2rem;
+    font-size: 1.25rem;
 }
 
 

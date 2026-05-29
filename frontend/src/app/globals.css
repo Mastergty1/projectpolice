@@ -30,6 +30,8 @@
   --greyBG:#696969;
   --greyBorder:#5f5f5f;
 
+  --blueText:#1447e6;
+
 
 }
 
@@ -51,7 +53,7 @@ body {
   background-color: #ffffff ;
   color: #111827 ;
   font-family: Sarabun, Arial, Helvetica, sans-serif;
-  font-size: 1.25rem;
+  font-size: 1rem;
 }
 
 
@@ -80,15 +82,37 @@ span {
 }
 
 [data-theme="dark"] {
-  --background: #313233;
-  --foreground: #ededed;
-  --header-bg: #1a0808;
-  --header: #F5F5F5;
-  --wrapper: #2a2a2a;
-  --container: #1e1e1e;
-  --button: #0f0f0f;
-  --shadow: #555555;
-  --redText: #ff6b6b;
+  --background: #14121F;
+  --foreground: #AED3DD;
+  --header-bg: #202130;
+  --header: #ffffff;
+  --wrapper: #13131E;
+  --container: #202130;
+  --button: #34334E;
+  --shadow: #0f0d17;
+
+  --blueText:#94fff6;
+
+  --redText: #fcb4b4;
+  --redBG: #9f3234;
+  --redBorder: #ff9191;
+
+  --orangeText:#ffaf5f;
+  --orangeBG:#8b3916;
+  --orangeBorder:#fb9057;
+
+  --yellowText: #ffea5f;
+  --yellowBG: #8b6216;
+  --yellowBorder: #fbc957;
+
+  --greenText: #72fac8;
+  --greenBG: #1a6553;
+  --greenBorder: #57fb8e;
+
+  --greyText:#eaeaea;
+  --greyBG:#696969;
+  --greyBorder:#5f5f5f;
+  
 }
 
 body {
