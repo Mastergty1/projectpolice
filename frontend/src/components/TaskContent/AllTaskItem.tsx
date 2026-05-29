@@ -5,7 +5,6 @@ import Select from "react-select";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-// 💡 เพิ่ม Type ของผู้รับผิดชอบที่แนบสีมาจาก Backend
 type AssigneeData = {
   name: string;
   color: string;
@@ -13,10 +12,10 @@ type AssigneeData = {
 
 type TaskItemProps = {
   date: string;
-  createdAt?: string; // รับค่าวันที่สร้างงาน
+  createdAt?: string; 
   name: string;
   personInCharge: string;
-  assigneesData?: AssigneeData[]; // รับข้อมูลผู้รับผิดชอบแบบมีสี
+  assigneesData?: AssigneeData[]; 
   status: string;
   id: string;
   onStatusChange: (id: string, status: TaskStatus) => void;
@@ -34,8 +33,8 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
     const parsedDate = new Date(date);
     const day = parsedDate.getDate();
     const monthYear = parsedDate.toLocaleDateString("th-TH", {
-    month: "long",
-    year: "numeric",
+        month: "long",
+        year: "numeric",
     });
 
     const today = new Date();
@@ -51,7 +50,6 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
     let theme;
     let progressColor = "bg-green-500"; 
 
-    // กำหนด Theme และสีของหลอด Progress Bar ตามความเร่งด่วน
     if (diffDays < 0) {
         urgency = "late"; theme = styles.DateGrey; progressColor = "bg-gray-500";
     } else if (diffDays === 0) {
@@ -64,23 +62,33 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
         urgency = "later"; theme = styles.DateGreen; progressColor = "bg-green-500";
     }
 
-    // 💡 คำนวณความคืบหน้าของ Progress Bar (จาก 0% ถึง 100%)
+    // 💡 คำนวณความคืบหน้าของ Progress Bar สมเหตุสมผลด้วยเปอร์เซ็นต์
     let progressPercent = 0;
-    if (createdAt) {
-        const startDate = new Date(createdAt).getTime();
-        const endDate = parsedDate.getTime();
-        const now = new Date().getTime();
+    const nowTime = new Date().getTime();
+    const dueTime = parsedDate.getTime();
 
-        if (endDate > startDate) {
-            progressPercent = ((now - startDate) / (endDate - startDate)) * 100;
-            progressPercent = Math.max(0, Math.min(100, progressPercent));
-        } else {
-            progressPercent = 100; // ถ้าระยะเวลาเป็น 0 หรือติดลบ แปลว่าถึงกำหนดแล้ว
+    if (createdAt) {
+        const createdTime = new Date(createdAt).getTime();
+        
+        // ตรวจสอบเพื่อป้องกัน NaN
+        if (!isNaN(createdTime) && !isNaN(dueTime)) {
+            const totalDuration = dueTime - createdTime; // เวลาส่ง - เวลาสร้าง
+            const elapsed = nowTime - createdTime;       // เวลาปัจจุบัน - เวลาสร้าง
+            
+            if (totalDuration > 0) {
+                progressPercent = (elapsed / totalDuration) * 100;
+            } else {
+                progressPercent = 100; // กรณีระยะเวลาติดลบหรือ 0 (ถึงกำหนดแล้วตั้งแต่สร้าง)
+            }
         }
     } else {
-        // Fallback กรณีไม่มี createdAt จาก backend ให้คำนวณคร่าวๆ จากวันที่เหลือ
-        progressPercent = diffDays <= 0 ? 100 : Math.max(10, 100 - (diffDays * 5));
+        // Fallback กรณีไม่มี Date สร้าง ให้ประเมินจากวันเหลือโดยประมาณการ
+        progressPercent = diffDays <= 0 ? 100 : Math.max(0, 100 - (diffDays * 10));
     }
+
+    // ป้องกันค่าแปลกๆ และบังคับให้อยู่ในช่วง 0 - 100 เสมอ
+    if (isNaN(progressPercent)) progressPercent = 0;
+    progressPercent = Math.max(0, Math.min(100, progressPercent));
 
     const [taskStatus, setStatus] = useState<TaskStatus>((status as TaskStatus) || "following");
 
@@ -104,9 +112,8 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
 
     const themeStyle = selectThemeMap[taskStatus] || selectThemeMap.following;
 
-    // 💡 ฟังก์ชันคำนวณสีตัวอักษรให้อ่านง่าย (ถ้าพื้นหลังสว่างตัวอักษรสีเข้มดำ, ถ้าพื้นหลังมืดตัวอักษรสีขาว)
     const getTextColor = (bgColor: string) => {
-        if (!bgColor || !bgColor.startsWith('#')) return '#1f2937'; // ค่าเริ่มต้นเป็นสีเทาเข้ม
+        if (!bgColor || !bgColor.startsWith('#')) return '#1f2937'; 
         const hex = bgColor.replace('#', '');
         const r = parseInt(hex.substring(0, 2), 16);
         const g = parseInt(hex.substring(2, 4), 16);
@@ -127,9 +134,8 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
 
                 <div className={`${styles.Content} w-full`}>
                 <h1 className={styles.Header} title={name}>{name}</h1>
-                <div className={`${styles.DetailContainer} mt-2 w-full pr-4`}>
+                <div className={`${styles.DetailContainer} mt-2 w-full pr-4 flex flex-col`}>
                     
-                    {/* 💡 แสดงรายชื่อผู้รับผิดชอบเป็นกล่องสีโดยดึงข้อมูลสีมาจาก User (assigneesData) */}
                     <div className="flex flex-col sm:flex-row sm:items-start gap-2 mb-2">
                         <strong className="mt-0.5 whitespace-nowrap text-sm">ผู้รับผิดชอบ: </strong> 
                         <div className="flex flex-wrap gap-1.5">
@@ -144,7 +150,6 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
                                     </span>
                                 ))
                             ) : (
-                                // กรณีไม่มีข้อมูลสีแนบมา (Fallback) ให้ตัดคำปกติ
                                 personInCharge.split(',').map((person, idx) => (
                                     <span key={idx} className="px-2.5 py-0.5 rounded-md text-xs sm:text-sm font-bold whitespace-nowrap shadow-sm bg-gray-200 text-gray-700">
                                         {person.trim()}
@@ -163,8 +168,8 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
                             : `เหลืออีก ${diffDays} วัน`}
                     </p>
 
-                    {/* 💡 หลอดความคืบหน้า (Progress Bar) */}
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1 border border-gray-300 overflow-hidden">
+                    {/* 💡 บังคับความยาวหลอดคงที่ และกางเต็มร้อยเปอร์เซ็นของ Container */}
+                    <div className="w-full shrink-0 block bg-gray-200 rounded-full h-2.5 mt-2 border border-gray-300 overflow-hidden">
                         <div 
                             className={`h-full rounded-full transition-all duration-500 ease-in-out ${progressColor}`} 
                             style={{ width: `${progressPercent}%` }}

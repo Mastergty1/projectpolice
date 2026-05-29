@@ -1,6 +1,17 @@
 import styles from "./Details.module.css"
 import { useState, useEffect } from "react";
 
+// ฟังก์ชันคำนวณสีตัวอักษรให้อ่านง่าย
+const getTextColor = (bgColor: string) => {
+    if (!bgColor || !bgColor.startsWith('#')) return '#1f2937'; 
+    const hex = bgColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return (yiq >= 128) ? '#1f2937' : '#ffffff';
+};
+
 export default function DetailsDisplayer({ 
     taskData, 
     setTaskData, 
@@ -179,6 +190,11 @@ export default function DetailsDisplayer({
                         <div className="flex flex-col gap-6">
                             {taskData?.assignments?.length > 0 ? taskData.assignments.map((assign: any, index: number) => {
                                 const isAssignCompleted = assign.topics?.length > 0 && assign.topics.every((t: any) => t.is_completed);
+                                
+                                // คำนวณสีประจำตัวของผู้ใช้งาน
+                                const assignedUser = users.find(u => String(u.id || u._id) === String(assign.user_id));
+                                const userColor = assignedUser?.color || '#e5e7eb'; // สีเริ่มต้น (เทา)
+                                const userTextColor = getTextColor(userColor);
 
                                 return (
                                     <div key={index} className={styles.TaskWrapper} style={{ 
@@ -208,7 +224,10 @@ export default function DetailsDisplayer({
                                                         ))}
                                                     </select>
                                                 ) : (
-                                                    <span className={styles.TextArea} style={{ padding: '0.4rem 0.8rem', fontWeight: 'bold' }}>
+                                                    <span 
+                                                        className="px-3 py-1 rounded-md text-sm sm:text-base font-bold shadow-sm border border-black/10" 
+                                                        style={{ backgroundColor: userColor, color: userTextColor }}
+                                                    >
                                                         {assign.personInCharge || "ไม่ระบุ"}
                                                     </span>
                                                 )}
