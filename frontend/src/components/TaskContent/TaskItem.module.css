@@ -76,7 +76,7 @@
 
     /* 💡 เพิ่มส่วนนี้เพื่อตัดคำไม่ให้เกิน 2 บรรทัด */
     display: -webkit-box;
-    line-clamp: 2; /* standard property for compatibility */
+    -webkit-line-clamp: 2; /* จำนวนบรรทัดสูงสุดที่ต้องการ */
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis; /* ใส่จุดไข่ปลา ... เมื่อข้อความยาวเกิน */
