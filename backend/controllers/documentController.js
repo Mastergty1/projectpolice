@@ -11,6 +11,10 @@ exports.processDocuments = async (req, res) => {
   if (!files || files.length === 0) return res.status(400).json({ success: false, message: 'No files uploaded.' });
   const results = [];
   
+  // ดึง ID และ ชื่อ จาก req.user ที่ได้จาก protect middleware
+  const userId = req.user ? req.user.id : null;
+  const userName = req.user ? req.user.name : "Unknown"; // ปรับ .name ให้ตรงกับชื่อฟิลด์ใน User model ของคุณ
+
   for (const file of files) {
     const client = await pool.connect();
     try {
@@ -20,23 +24,25 @@ exports.processDocuments = async (req, res) => {
       const hash = generateHash(text + Date.now().toString());
       const driveData = await uploadToDrive(file, DRIVE_FOLDER_ID);
 
-      // บันทึกเฉพาะเอกสารลง Database ก่อน (ยังไม่แยกงาน)
+      // เพิ่มฟิลด์ created_by และส่ง userId เข้าไปใน Database
       const docRes = await client.query(
-        `INSERT INTO documents (filename, content, content_hash, keywords_found, drive_file_id, drive_web_view_link)
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-        [file.originalname, text, hash, JSON.stringify(extractedData), driveData.id, driveData.webViewLink]
+        `INSERT INTO documents (filename, content, content_hash, keywords_found, drive_file_id, drive_web_view_link, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+        [file.originalname, text, hash, JSON.stringify(extractedData), driveData.id, driveData.webViewLink, userId]
       );
       
       await client.query('COMMIT'); 
       
-      // 💡 FIX: แยก Try Catch การลบไฟล์ออกมา เพื่อไม่ให้การลบไฟล์ที่พลาด ดึงให้คำสั่งหลักดูเหมือน Error ทั้งที่ Commit ไปแล้ว
       try { await fs.unlink(file.path); } catch (e) { console.error("Warning: Cannot delete file", e.message); }
 
-      // ส่ง ID และข้อมูลที่แสกนกลับไปให้เว็บแสดงผลเพื่อกดยืนยัน
+      // ตั้งค่า default ชื่อคนรับผิดชอบให้เป็นชื่อคนอัพโหลด
+      let dataWithDefaultUser = extractedData || {};
+      dataWithDefaultUser.assignee = userName; // ปรับคีย์ 'assignee' ให้ตรงกับ Frontend ที่คุณใช้งาน
+
       results.push({
         filename: file.originalname,
         status: 'success',
-        extractedData: extractedData, 
+        extractedData: dataWithDefaultUser, // ส่งข้อมูลที่มีชื่อ Default กลับไป
         documentId: docRes.rows[0].id, 
         viewLink: driveData.webViewLink
       });

@@ -4,8 +4,7 @@ const User = require("../models/User");
 const sendTokenResponse = (user, statusCode, res) => {
   const token = User.getSignedJwtToken(user.id);
 
-  // 💡 FIX: ป้องกันบัคเวลาลืมตั้ง JWT_COOKIE_EXPIRE ซึ่งจะทำให้ Date เป็น NaN
-  const expireDays = parseInt(process.env.JWT_COOKIE_EXPIRE, 10) || 30; // ตั้ง default ไว้ที่ 30 วัน
+  const expireDays = parseInt(process.env.JWT_COOKIE_EXPIRE, 10) || 30;
 
   const options = {
     expires: new Date(Date.now() + expireDays * 24 * 60 * 60 * 1000),
@@ -16,9 +15,15 @@ const sendTokenResponse = (user, statusCode, res) => {
     options.secure = true;
   }
 
+  // 💡 แก้ไข: เพิ่มการส่ง object user กลับไปด้วย
   res.status(statusCode).cookie("token", token, options).json({
     success: true,
     token,
+    user: {
+      id: user.id,
+      name: user.name,
+      role: user.role
+    }
   });
 };
 

@@ -19,7 +19,8 @@ CREATE TABLE documents (
   drive_file_id       VARCHAR(255),
   drive_web_view_link TEXT,
   status              VARCHAR(20) DEFAULT 'pending',
-  created_at          TIMESTAMP DEFAULT NOW()
+  created_at          TIMESTAMP DEFAULT NOW(),
+  created_by          INT REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- 2. ผลการวิเคราะห์แต่ละเอกสาร

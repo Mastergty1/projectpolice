@@ -26,8 +26,12 @@ const LoginPage = () => {
 
             if (response.ok) {
                 document.cookie = `token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Strict; Secure`;
+                
+                // 💡 เพิ่ม 2 บรรทัดนี้: บันทึกข้อมูลลง LocalStorage เพื่อให้หน้าอื่นๆ (เช่น Uploaded.tsx) ดึงไปใช้ได้
+                localStorage.setItem("user_id", data.user.id);
+                localStorage.setItem("token", data.token); // เซฟ token ไว้เผื่อแนบไปกับ axios ตอนอัพโหลดไฟล์
+
                 // ใช้ window.location.href เพื่อบังคับโหลดหน้าใหม่ทั้งหมด
-                // จะทำให้ TopBar เริ่มทำงานใหม่และดึงชื่อผู้ใช้มาแสดงได้ทันที
                 window.location.href = '/';
             } else {
                 alert(data.msg || 'Login failed');
