@@ -1,39 +1,38 @@
 const pool = require('../config/db');
+const User = require('../models/User'); // เพิ่มบรรทัดนี้
 
-// @desc    Get all users
-// @route   GET /api/v1/users
-// @access  Public/Private
-exports.getUsers = async (req, res, next) => {
+// (โค้ด getUsers, getUser เดิม คงไว้)
+
+// @desc    Update my profile (Name, Color)
+// @route   PUT /api/v1/users/profile
+// @access  Private
+exports.updateMyProfile = async (req, res, next) => {
     try {
-        // ดึงเฉพาะ id และ name 
-        const { rows } = await pool.query('SELECT id, name FROM users ORDER BY id ASC');
-        res.status(200).json({
-            success: true,
-            count: rows.length,
-            data: rows
-        });
+        const { name, color } = req.body;
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (color) updateData.color = color;
+
+        // ใช้ dynamic update จาก User model
+        const user = await User.findByIdAndUpdate(req.user.id, updateData);
+        res.status(200).json({ success: true, data: user });
     } catch (err) {
         res.status(400).json({ success: false, message: err.message });
     }
 };
 
-// @desc    Get single user
-// @route   GET /api/v1/users/:id
-exports.getUser = async (req, res, next) => {
+// @desc    Change password
+// @route   PUT /api/v1/users/password
+// @access  Private
+exports.changePassword = async (req, res, next) => {
     try {
-        const { rows } = await pool.query('SELECT id, name FROM users WHERE id = $1', [req.params.id]);
-        if (rows.length === 0) {
-            return res.status(404).json({ success: false, message: `User not found` });
+        const { password } = req.body;
+        if (!password) {
+            return res.status(400).json({ success: false, message: "Please provide a new password" });
         }
-        res.status(200).json({ success: true, data: rows[0] });
+        await User.updatePassword(req.user.id, password);
+        res.status(200).json({ success: true, message: "Password updated successfully" });
     } catch (err) {
         res.status(400).json({ success: false, message: err.message });
     }
 };
-
-// ปิดการใช้งานชั่วคราว
-exports.updateUser = async (req, res, next) => { res.status(501).json({ success: false, message: "Not Implemented" }); };
-exports.deleteUser = async (req, res, next) => { res.status(501).json({ success: false, message: "Not Implemented" }); };
-exports.getMyProfile = async (req, res, next) => { res.status(501).json({ success: false, message: "Not Implemented" }); };
-exports.updateMyProfile = async (req, res, next) => { res.status(501).json({ success: false, message: "Not Implemented" }); };
-exports.changePassword = async (req, res, next) => { res.status(501).json({ success: false, message: "Not Implemented" }); };
