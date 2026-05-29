@@ -30,6 +30,8 @@
   --greyBG:#696969;
   --greyBorder:#5f5f5f;
 
+  --blueText:#1447e6;
+
 
 }
 
@@ -80,15 +82,17 @@ span {
 }
 
 [data-theme="dark"] {
-  --background: #313233;
-  --foreground: #ededed;
+  --background: #281C1C;
+  --foreground: #DDD0AE;
   --header-bg: #1a0808;
-  --header: #F5F5F5;
-  --wrapper: #2a2a2a;
-  --container: #1e1e1e;
-  --button: #0f0f0f;
+  --header: #ffffff;
+  --wrapper: #382B2B;
+  --container: #4F3D38;
+  --button: #7A6455;
   --shadow: #555555;
-  --redText: #ff6b6b;
+
+  --blueText:#94fff6;
+  
 }
 
 body {

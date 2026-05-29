@@ -355,7 +355,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <strong className="w-12 shrink-0">วันที่:</strong>
-                                                        <input type="text" className="border border-(--wrapper) p-1.5 rounded flex-1 font-bold text-blue-700 focus:ring-2 focus:ring-blue-400 outline-none bg-(--button)" value={memo.วันที่ || ''} onChange={(e) => handleMemoChange(fileIdx, index, "วันที่", e.target.value)} />
+                                                        <input type="text" className="border border-(--wrapper) p-1.5 rounded flex-1 font-bold text-(--blueText) focus:ring-2 focus:ring-blue-400 outline-none bg-(--button)" value={memo.วันที่ || ''} onChange={(e) => handleMemoChange(fileIdx, index, "วันที่", e.target.value)} />
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <strong className="w-12 shrink-0">เวลา:</strong>
@@ -363,11 +363,11 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <strong className="w-12 shrink-0">เรื่อง:</strong>
-                                                        <input type="text" className="border border-(--wrapper) p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-(--button)" value={memo.เรื่อง || ''} onChange={(e) => handleMemoChange(fileIdx, index, "เรื่อง", e.target.value)} />
+                                                        <input type="text" className="border border-(--wrapper) p-1.5 rounded flex-1 focus:ring-2 focus:ring-(--blueText) outline-none bg-(--button)" value={memo.เรื่อง || ''} onChange={(e) => handleMemoChange(fileIdx, index, "เรื่อง", e.target.value)} />
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <strong className="w-12 shrink-0">เรียน:</strong>
-                                                        <input type="text" className="border border-(--wrapper) p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-(--button)" value={memo.เรียน || ''} onChange={(e) => handleMemoChange(fileIdx, index, "เรียน", e.target.value)} />
+                                                        <input type="text" className="border border-(--wrapper) p-1.5 rounded flex-1 focus:ring-2 focus:ring-(--blueText) outline-none bg-(--button)" value={memo.เรียน || ''} onChange={(e) => handleMemoChange(fileIdx, index, "เรียน", e.target.value)} />
                                                     </div>
                                                     
                                                     <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">
@@ -388,7 +388,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                 <div className="p-2 shrink-0 text-foreground">
                                                     <strong style={{ color: "var(--header)" }}>เนื้อหา:</strong>
                                                     <textarea 
-                                                        className="mt-2 w-full border rounded p-3 text-gray-800 focus:ring-2 focus:ring-blue-400 outline-none bg-(--button) border-(--wrapper)" 
+                                                        className="mt-2 w-full border rounded p-3 text-(--foreground) focus:ring-2 focus:ring-(--blueText) outline-none bg-(--button) border-(--wrapper)" 
                                                         rows={5} 
                                                         value={memo.main_text || ''} 
                                                         onChange={(e) => handleMemoChange(fileIdx, index, "main_text", e.target.value)} 
@@ -397,8 +397,8 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                 
                                                 {file.assigneeMode === 'all' ? (
                                                     <div className="mt-4 shrink-0 p-5 bg-blue-50 border border-blue-200 rounded-lg text-center shadow-sm">
-                                                        <span className="text-blue-700 font-bold text-lg">📢 มอบหมายให้ทุกหน่วยงาน (ทุกคน)</span>
-                                                        <p className="text-sm text-blue-600 mt-2">
+                                                        <span className="text-(--blueText) font-bold text-lg">📢 มอบหมายให้ทุกหน่วยงาน (ทุกคน)</span>
+                                                        <p className="text-sm text-(--blueText) mt-2">
                                                             เมื่อกดยืนยัน ระบบจะทำการมอบหมายงานนี้ให้กับทุกคนในระบบโดยอัตโนมัติ 
                                                             <br/>(คุณสามารถเข้าไปเพิ่มรายละเอียดงานย่อย/หัวข้อในหน้าแก้ไขได้ภายหลัง)
                                                         </p>
@@ -416,9 +416,9 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                                             </p>
                                                                             
                                                                             <div className="flex items-center gap-2">
-                                                                                <span className="text-xs font-bold text-blue-600 shrink-0">มอบหมายให้:</span>
+                                                                                <span className="text-xs font-bold text-(--blueText) shrink-0">มอบหมายให้:</span>
                                                                                 <select 
-                                                                                    className="p-2 border border-blue-300 rounded text-sm bg-(--button) focus:outline-none focus:ring-1 focus:ring-blue-500 w-full sm:w-auto min-h-10 shrink-0 text-black"
+                                                                                    className="p-2 border border-(--blueText) rounded text-sm bg-(--button) focus:outline-none focus:ring-1 focus:ring-blue-500 w-full sm:w-auto min-h-10 shrink-0 text-black"
                                                                                     value={assignment.user_id || ""}
                                                                                     onChange={(e) => handleUserSelect(fileIdx, index, idx, e.target.value)}
                                                                                 >
