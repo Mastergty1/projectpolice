@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import TaskDisplayer from "./TaskDisplayer";
 import styles from "./TaskDisplayer.module.css";
 import Link from "next/link";
+import PersonMultiSelect from "./PersonMultiSelect";
 
 type TaskStatus = "following" | "problem" | "completed";
 
@@ -175,58 +176,11 @@ export default function AllTask() {
                         </div>
 
                         {/* 💡 Group 2: สำหรับ (ปรับใช้ Class จาก CSS Module แทน Inline Style) */}
-                        <div className={styles.FilterGroup} ref={dropdownRef}>
-                            <strong>สำหรับ:</strong>
-                            <div className={styles.MultiSelectContainer}>
-                                <div 
-                                    className={styles.MultiSelectTrigger} 
-                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                >
-                                    <span className={styles.TriggerText}>
-                                        {personFilter.length === 0 
-                                            ? "ทุกคน" 
-                                            : `เลือกแล้ว (${personFilter.length} คน): ${personFilter.join(', ')}`}
-                                    </span>
-                                    <span className={styles.ArrowIcon} style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'none' }}>
-                                        ▼
-                                    </span>
-                                </div>
-
-                                {/* หน้าต่างรายการชื่อที่จะโผล่ขึ้นมาตอนกดเลือก */}
-                                {isDropdownOpen && (
-                                    <div className={styles.MultiSelectMenu}>
-                                        {/* ตัวเลือก ล้างการเลือกทั้งหมด */}
-                                        {personFilter.length > 0 && (
-                                            <div 
-                                                onClick={() => setPersonFilter([])}
-                                                className={styles.ClearAllButton}
-                                            >
-                                                ✕ ล้างทั้งหมด (เลือกทุกคน)
-                                            </div>
-                                        )}
-                                        {/* วนลูปรายชื่อพร้อมช่องติ๊กถูก */}
-                                        {uniquePersons.map((person, idx) => {
-                                            const isChecked = personFilter.includes(person);
-                                            return (
-                                                <label 
-                                                    key={idx} 
-                                                    className={styles.CheckboxOption}
-                                                    style={{ backgroundColor: isChecked ? 'var(--greenBG)' : 'transparent' }} // ไฮไลท์สีฟ้าอ่อนเมื่อถูกติ๊ก
-                                                >
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={isChecked}
-                                                        onChange={() => handlePersonToggle(person)}
-                                                        className={styles.CheckboxInput}
-                                                    />
-                                                    <span>{person}</span>
-                                                </label>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        <PersonMultiSelect 
+                            uniquePersons={uniquePersons}
+                            personFilter={personFilter}
+                            setPersonFilter={setPersonFilter}
+                        />
                     </div>
                     <hr className={styles.Line} />
                     
