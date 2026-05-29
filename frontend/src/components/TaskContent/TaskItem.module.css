@@ -32,6 +32,10 @@
     .InfoContainer{
         flex-direction: column;
     }
+
+    .DateDisplayer{
+        flex-direction: row;
+    }
 }
 
 .DateDisplayer{
@@ -142,6 +146,17 @@
     .ButtonContainer{
         flex-direction: column;
         min-width: none;
+    }
+
+    .DateDisplayer{
+        flex-direction: row;
+        font-size: 1rem !important;
+        gap: 0.2rem;
+        padding: 0rem;
+    }
+
+    .DateNumber{
+        font-size: 1rem;
     }
 }
 
