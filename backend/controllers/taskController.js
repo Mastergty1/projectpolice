@@ -73,7 +73,6 @@ exports.confirmTasks = async (req, res) => {
 
     if (memos && memos.length > 0) {
       for (const memo of memos) {
-        // 💡 แก้ไข: เพิ่ม is_urgent เข้าไปบันทึกลง Database
         const taskRes = await client.query(
           `INSERT INTO tasks (document_id, title, memo_no, memo_date, main_text, due_date, is_urgent)
            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
@@ -84,14 +83,16 @@ exports.confirmTasks = async (req, res) => {
             memo.วันที่, 
             memo.main_text, 
             memo.due_date || null,
-            memo.isUrgent || false // ดึงค่าจากที่ติ๊กในหน้า Uploaded
+            memo.isUrgent || false
           ]
         );
         const taskId = taskRes.rows[0].id;
 
         if (memo.assignments && memo.assignments.length > 0) {
           for (const assign of memo.assignments) {
-            const userId = assign.user_id ? parseInt(assign.user_id) : null; 
+            // 💡 FIX: ป้องกัน Error NaN เข้าสู่ Database
+            const parsedId = parseInt(assign.user_id, 10);
+            const userId = !isNaN(parsedId) ? parsedId : null; 
             const personStr = assign.responsible_person || '';
 
             const assignRes = await client.query(
@@ -129,13 +130,11 @@ exports.updateTaskDetail = async (req, res) => {
   try {
     await client.query('BEGIN');
     const { id } = req.params;
-    // 💡 แก้ไข: รับค่า isUrgent มาด้วยตอนแก้ไข
     const { name, date, notes, assignments, isUrgent } = req.body;
 
     const validDate = (date === "" || !date) ? null : date;
     const urgentValue = isUrgent !== undefined ? isUrgent : null; 
 
-    // 💡 แก้ไข: นำ is_urgent ไปอัปเดตลง Database ด้วย
     await client.query(
       `UPDATE tasks 
        SET title = COALESCE($1, title), 
@@ -151,14 +150,20 @@ exports.updateTaskDetail = async (req, res) => {
       for (const assign of assignments) {
         if (!assign.assignment_id) continue;
         
-        const userId = assign.user_id ? parseInt(assign.user_id) : null;
+        // 💡 FIX: ป้องกัน NaN
+        const parsedId = parseInt(assign.user_id, 10);
+        const userId = !isNaN(parsedId) ? parsedId : null;
+        
         await client.query(
           `UPDATE task_assignments SET user_id = $1 WHERE id = $2 AND task_id = $3`,
           [userId, assign.assignment_id, id]
         );
 
         if (assign.topics && Array.isArray(assign.topics)) {
-          const keepTopicIds = assign.topics.filter(t => t.topic_id).map(t => parseInt(t.topic_id));
+          const keepTopicIds = assign.topics
+                                .filter(t => t.topic_id)
+                                .map(t => parseInt(t.topic_id, 10))
+                                .filter(n => !isNaN(n)); // 💡 FIX: คัดเอาเฉพาะไอดีที่เป็นตัวเลขจริงๆ
           
           if (keepTopicIds.length > 0) {
             await client.query(`DELETE FROM task_topics WHERE assignment_id = $1 AND NOT (id = ANY($2::int[]))`, [assign.assignment_id, keepTopicIds]);
@@ -204,7 +209,7 @@ exports.getTaskById = async (req, res) => {
         t.id, 
         t.title AS name, 
         t.status, 
-        t.is_urgent AS "isUrgent", -- 💡 แก้ไข: ดึงค่า isUrgent ออกมาส่งให้ Frontend ด้วย
+        t.is_urgent AS "isUrgent", 
         TO_CHAR(t.due_date, 'YYYY-MM-DD"T"HH24:MI') AS date, 
         t.main_text,
         t.notes,      
@@ -265,7 +270,8 @@ exports.deleteTask = async (req, res) => {
     const assignmentIds = assignmentsRes.rows.map(row => row.id);
 
     if (assignmentIds.length > 0) {
-      await client.query('DELETE FROM task_topics WHERE assignment_id = ANY($1)', [assignmentIds]);
+      // 💡 FIX: Cast type เป็น int array ::int[] ป้องกัน SQL type parsing issue
+      await client.query('DELETE FROM task_topics WHERE assignment_id = ANY($1::int[])', [assignmentIds]);
     }
     await client.query('DELETE FROM task_assignments WHERE task_id = $1', [id]);
     const result = await client.query('DELETE FROM tasks WHERE id = $1 RETURNING *', [id]);
@@ -305,12 +311,12 @@ exports.createTask = async (req, res) => {
       `INSERT INTO tasks (title, memo_no, memo_date, main_text, due_date, is_urgent, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
       [
-        title||'ไม่ระบุชื่อเรื่อง', 
+        title || 'ไม่ระบุชื่อเรื่อง', 
         memo_no, 
-        memo_date||null, 
+        memo_date || null, 
         main_text, 
-        due_date||null, 
-        is_urgent||false,
+        due_date || null, 
+        is_urgent || false,
         'following'
       ]
     );
@@ -318,8 +324,10 @@ exports.createTask = async (req, res) => {
 
     if (assignments && assignments.length > 0) {
       for (const assign of assignments) {
-
-        const userId = assign.user_id ? parseInt(assign.user_id) : null;
+        
+        // 💡 FIX: ป้องกัน TypeError
+        const parsedId = parseInt(assign.user_id, 10);
+        const userId = !isNaN(parsedId) ? parsedId : null;
         const roleOrName = assign.role_or_name || null;
 
         const assignRes = await client.query(

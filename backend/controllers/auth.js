@@ -4,8 +4,11 @@ const User = require("../models/User");
 const sendTokenResponse = (user, statusCode, res) => {
   const token = User.getSignedJwtToken(user.id);
 
+  // 💡 FIX: ป้องกันบัคเวลาลืมตั้ง JWT_COOKIE_EXPIRE ซึ่งจะทำให้ Date เป็น NaN
+  const expireDays = parseInt(process.env.JWT_COOKIE_EXPIRE, 10) || 30; // ตั้ง default ไว้ที่ 30 วัน
+
   const options = {
-    expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000),
+    expires: new Date(Date.now() + expireDays * 24 * 60 * 60 * 1000),
     httpOnly: true,
   };
 
@@ -30,7 +33,6 @@ exports.register = async (req, res, next) => {
       return res.status(400).json({ success: false, msg: "Please provide a name and password" });
     }
 
-    // ตรวจสอบชื่อซ้ำ (เปลี่ยนจากอีเมล)
     const existingUser = await User.findOne({ name });
     if (existingUser) {
       return res.status(400).json({ success: false, msg: "Name already in use" });

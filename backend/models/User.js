@@ -5,16 +5,18 @@ const jwt = require("jsonwebtoken");
 class User {
   // สร้างผู้ใช้งานใหม่
   static async create(userData) {
-    const { name, password } = userData;
+    const { name, password, color } = userData;
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+    // เพิ่มการบันทึกสี โดยกำหนดค่า Default ไว้ถ้าไม่ได้ส่งมา
+    const userColor = color || '#000000'; 
 
     const query = `
-      INSERT INTO users (name, password) 
-      VALUES ($1, $2) 
-      RETURNING id, name
+      INSERT INTO users (name, password, color) 
+      VALUES ($1, $2, $3) 
+      RETURNING id, name, color
     `;
-    const values = [name, hashedPassword];
+    const values = [name, hashedPassword, userColor];
 
     const { rows } = await pool.query(query, values);
     return rows[0];
@@ -22,7 +24,8 @@ class User {
 
   // หาข้อมูลผู้ใช้งานด้วย ID
   static async findById(id) {
-    const { rows } = await pool.query(`SELECT id, name FROM users WHERE id = $1`, [id]);
+    // 💡 FIX: เพิ่มการ SELECT color คืนค่ากลับไป
+    const { rows } = await pool.query(`SELECT id, name, color FROM users WHERE id = $1`, [id]);
     return rows[0];
   }
 
@@ -37,7 +40,8 @@ class User {
 
   // ดึงผู้ใช้งานทั้งหมด
   static async find() {
-    const { rows } = await pool.query(`SELECT id, name FROM users`);
+    // 💡 FIX: เพิ่มการ SELECT color
+    const { rows } = await pool.query(`SELECT id, name, color FROM users`);
     return rows;
   }
 
@@ -55,7 +59,7 @@ class User {
       UPDATE users 
       SET ${setString} 
       WHERE id = $1 
-      RETURNING id, name
+      RETURNING id, name, color -- 💡 FIX: คืนค่า color กลับไปด้วยหลังอัปเดตเสร็จ
     `;
     
     const { rows } = await pool.query(query, [id, ...values]);

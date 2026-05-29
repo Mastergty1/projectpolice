@@ -30,8 +30,16 @@ export default function MemoForm() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        // 💡 FIX: แนบ Token ไปกับ Request ป้องกันการติด Unauthorized
+        const token = typeof window !== 'undefined' ? localStorage.getItem("token") : "";
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
-        const res = await fetch(`${backendUrl}/api/v1/users`);
+        const res = await fetch(`${backendUrl}/api/v1/users`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          }
+        });
+        
         if (res.ok) {
           const result = await res.json();
           setUsers(result.data || []); 
@@ -132,10 +140,14 @@ export default function MemoForm() {
     };
 
     try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem("token") : "";
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
         const response = await fetch(`${backendUrl}/api/v1/tasks`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              ...(token ? { "Authorization": `Bearer ${token}` } : {})
+            },
             body: JSON.stringify(payload),
         });
         const result = await response.json();

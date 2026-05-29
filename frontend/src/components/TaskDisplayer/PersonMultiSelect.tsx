@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import styles from "./TaskDisplayer.module.css"; // เรียกใช้ CSS ตัวเดิมของคุณ
+import styles from "./TaskDisplayer.module.css"; 
 
 type PersonMultiSelectProps = {
     uniquePersons: string[];
@@ -15,7 +15,34 @@ export default function PersonMultiSelect({
     setPersonFilter
 }: PersonMultiSelectProps) {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    // 💡 FIX: เพิ่ม State เก็บรายชื่อคนจาก Database ทั้งหมด
+    const [dbUsers, setDbUsers] = useState<string[]>([]);
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // ดึง User ทั้งหมดจาก Database เพื่อโชว์ใน Dropdown
+    useEffect(() => {
+        const fetchAllUsers = async () => {
+            try {
+                const token = typeof window !== 'undefined' ? localStorage.getItem("token") : "";
+                const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
+                const res = await fetch(`${backendUrl}/api/v1/users`, {
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(token ? { "Authorization": `Bearer ${token}` } : {})
+                    }
+                });
+                if (res.ok) {
+                    const result = await res.json();
+                    if (result.success && result.data) {
+                        setDbUsers(result.data.map((u: any) => u.name));
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch all users for dropdown", err);
+            }
+        };
+        fetchAllUsers();
+    }, []);
 
     // ดักจับการคลิกนอกพื้นที่เพื่อปิด Dropdown
     useEffect(() => {
@@ -35,6 +62,9 @@ export default function PersonMultiSelect({
                 : [...prev, person]
         );
     };
+
+    // 💡 FIX: รวมรายชื่อทั้งจาก Task (uniquePersons) และจาก Database เข้าด้วยกัน โดยตัดตัวซ้ำออก
+    const allDisplayPersons = Array.from(new Set([...uniquePersons, ...dbUsers, 'ไม่ระบุ']));
 
     return (
         <div className={styles.FilterGroup} ref={dropdownRef}>
@@ -64,7 +94,7 @@ export default function PersonMultiSelect({
                                 ✕ ล้างทั้งหมด (เลือกทุกคน)
                             </div>
                         )}
-                        {uniquePersons.map((person, idx) => {
+                        {allDisplayPersons.map((person, idx) => {
                             const isChecked = personFilter.includes(person);
                             return (
                                 <label 

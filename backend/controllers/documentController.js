@@ -28,7 +28,9 @@ exports.processDocuments = async (req, res) => {
       );
       
       await client.query('COMMIT'); 
-      await fs.unlink(file.path);
+      
+      // 💡 FIX: แยก Try Catch การลบไฟล์ออกมา เพื่อไม่ให้การลบไฟล์ที่พลาด ดึงให้คำสั่งหลักดูเหมือน Error ทั้งที่ Commit ไปแล้ว
+      try { await fs.unlink(file.path); } catch (e) { console.error("Warning: Cannot delete file", e.message); }
 
       // ส่ง ID และข้อมูลที่แสกนกลับไปให้เว็บแสดงผลเพื่อกดยืนยัน
       results.push({
