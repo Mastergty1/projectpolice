@@ -81,33 +81,33 @@ export default function UserProfilePage() {
     };
 
     if (loading) {
-        return <div className="p-10 text-center text-[var(--foreground)]">กำลังโหลด...</div>;
+        return <div className="p-10 text-center text-foreground">กำลังโหลด...</div>;
     }
 
     return (
-        <div className="min-h-screen bg-[var(--background)] p-8">
+        <div className="min-h-screen bg-background p-8">
             <div className="max-w-2xl mx-auto space-y-8">
-                <h1 className="text-3xl font-bold text-[var(--header)]">จัดการโปรไฟล์ผู้ใช้งาน</h1>
+                <h1 className="text-3xl font-bold text-(--header)">จัดการโปรไฟล์ผู้ใช้งาน</h1>
 
                 {/* Form อัปเดตข้อมูลทั่วไป */}
-                <form onSubmit={handleUpdateProfile} className="bg-[var(--container)] p-6 rounded-2xl shadow-lg border border-[var(--shadow)] space-y-4">
-                    <h2 className="text-xl font-semibold text-[var(--foreground)] flex items-center gap-2 border-b border-[var(--shadow)] pb-2 mb-4">
+                <form onSubmit={handleUpdateProfile} className="bg-(--container) p-6 rounded-2xl shadow-lg border border-(--shadow) space-y-4">
+                    <h2 className="text-xl font-semibold text-foreground flex items-center gap-2 border-b border-(--shadow) pb-2 mb-4">
                         <UserIcon size={20} /> ข้อมูลทั่วไป
                     </h2>
                     
                     <div>
-                        <label className="block text-sm mb-1 text-[var(--foreground)]">ชื่อผู้ใช้งาน</label>
+                        <label className="block text-sm mb-1 text-foreground">ชื่อผู้ใช้งาน</label>
                         <input 
                             type="text" 
                             value={name} 
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full px-4 py-2 rounded-lg bg-[var(--button)] border border-[var(--shadow)] text-[var(--foreground)]"
+                            className="w-full px-4 py-2 rounded-lg bg-(--button) border border-(--shadow) text-foreground"
                             required
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm mb-1 text-[var(--foreground)] flex items-center gap-2">
+                        <label className="block text-sm mb-1 text-foreground items-center gap-2">
                             <Palette size={16} /> สีประจำตัว (Profile Color)
                         </label>
                         <div className="flex items-center gap-4">
@@ -115,30 +115,30 @@ export default function UserProfilePage() {
                                 type="color" 
                                 value={color} 
                                 onChange={(e) => setColor(e.target.value)}
-                                className="w-16 h-10 p-1 rounded bg-[var(--button)] border border-[var(--shadow)] cursor-pointer"
+                                className="w-16 h-10 p-1 rounded bg-(--button) border border-(--shadow) cursor-pointer"
                             />
-                            <span className="text-[var(--foreground)] opacity-70 uppercase">{color}</span>
+                            <span className="text-foreground opacity-70 uppercase">{color}</span>
                         </div>
                     </div>
 
-                    <button type="submit" className="flex items-center gap-2 bg-[var(--orangeBG)] text-white px-6 py-2 rounded-lg hover:opacity-90">
+                    <button type="submit" className="flex items-center gap-2 bg-(--orangeBG) text-white px-6 py-2 rounded-lg hover:opacity-90">
                         <Save size={18} /> บันทึกข้อมูล
                     </button>
                 </form>
 
                 {/* Form เปลี่ยนรหัสผ่าน */}
-                <form onSubmit={handleChangePassword} className="bg-[var(--container)] p-6 rounded-2xl shadow-lg border border-[var(--shadow)] space-y-4">
-                    <h2 className="text-xl font-semibold text-[var(--foreground)] flex items-center gap-2 border-b border-[var(--shadow)] pb-2 mb-4">
+                <form onSubmit={handleChangePassword} className="bg-(--container) p-6 rounded-2xl shadow-lg border border-(--shadow) space-y-4">
+                    <h2 className="text-xl font-semibold text-foreground flex items-center gap-2 border-b border-(--shadow) pb-2 mb-4">
                         <Lock size={20} /> เปลี่ยนรหัสผ่าน
                     </h2>
                     
                     <div>
-                        <label className="block text-sm mb-1 text-[var(--foreground)]">รหัสผ่านใหม่</label>
+                        <label className="block text-sm mb-1 text-foreground">รหัสผ่านใหม่</label>
                         <input 
                             type="password" 
                             value={password} 
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-2 rounded-lg bg-[var(--button)] border border-[var(--shadow)] text-[var(--foreground)]"
+                            className="w-full px-4 py-2 rounded-lg bg-(--button) border border-(--shadow) text-foreground"
                             placeholder="กรอกรหัสผ่านใหม่" 
                             required 
                             minLength={6}

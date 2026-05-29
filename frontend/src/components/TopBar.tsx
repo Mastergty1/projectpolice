@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import { LogOut, Settings, LogIn } from 'lucide-react';
 import DarkModeBtn from './DarkModeBtn';
 
@@ -11,7 +10,6 @@ export default function TopBar() {
     const [user, setUser] = useState<{ id: string; name: string; color?: string } | null>(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const router = useRouter();
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5003';
 
     // เช็คสถานะ Login
@@ -54,7 +52,8 @@ export default function TopBar() {
             });
             document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             setUser(null);
-            router.push('/login');
+            // ใช้ window.location.href ตอนออกจากระบบ เพื่อเคลียร์ State ให้สะอาดหมดจด
+            window.location.href = '/login';
         } catch (err) {
             console.error("Logout error", err);
         }
@@ -97,9 +96,8 @@ export default function TopBar() {
                     <div className="relative" ref={dropdownRef}>
                         <button 
                             onClick={() => setDropdownOpen(!dropdownOpen)}
-                            className="flex items-center gap-3 bg-[var(--button)] hover:opacity-80 px-4 py-2 rounded-lg transition-colors border border-[var(--shadow)]"
+                            className="flex items-center gap-3 bg-(--button) hover:opacity-80 px-4 py-2 rounded-lg transition-colors border border-(--shadow)"
                         >
-                            {/* 💡 เปลี่ยนเป็นรูป user.png และแสดงชื่อผู้ใช้ด้านข้าง */}
                             <Image 
                                 src="/user.png" 
                                 alt="รูปโปรไฟล์ผู้ใช้งาน" 
@@ -107,14 +105,13 @@ export default function TopBar() {
                                 height={24} 
                                 className="rounded-full object-cover"
                             />
-                            <span className="font-medium text-[var(--foreground)]">{user.name}</span>
+                            <span className="font-medium text-foreground!">{user.name}</span>
                         </button>
 
                         {/* Dropdown Menu */}
                         {dropdownOpen && (
-                            <div className="absolute right-0 mt-2 w-48 bg-[var(--container)] border border-[var(--shadow)] rounded-xl shadow-lg py-2 flex flex-col overflow-hidden">
-                                {/* ส่วนหัวของ Dropdown แสดงรูปและชื่อให้ชัดเจน */}
-                                <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--shadow)] bg-[var(--button)]/40">
+                            <div className="absolute right-0 mt-2 w-48 bg-(--container) border border-(--shadow) rounded-xl shadow-lg py-2 flex flex-col overflow-hidden">
+                                <div className="flex items-center gap-2 px-4 py-2 border-b border-(--shadow) bg-(--button)/40">
                                     <Image 
                                         src="/user.png" 
                                         alt="รูปโปรไฟล์ย่อ" 
@@ -122,12 +119,12 @@ export default function TopBar() {
                                         height={20} 
                                         className="rounded-full"
                                     />
-                                    <span className="font-semibold text-xs text-[var(--foreground)] truncate">{user.name}</span>
+                                    <span className="font-semibold text-xs text-foreground! truncate">{user.name}</span>
                                 </div>
                                 
                                 <Link 
                                     href="/user" 
-                                    className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--button)] text-[var(--foreground)] transition-colors"
+                                    className="flex items-center gap-3 px-4 py-3 hover:bg-(--button) text-foreground transition-colors"
                                     onClick={() => setDropdownOpen(false)}
                                 >
                                     <Settings size={18} /> จัดการโปรไฟล์
@@ -143,7 +140,7 @@ export default function TopBar() {
                     </div>
                 ) : (
                     <Link href="/login">
-                        <button className="flex items-center gap-2 bg-[var(--orangeBG)] hover:opacity-90 text-white px-5 py-2 rounded-lg transition-colors shadow-md font-medium">
+                        <button className="flex items-center gap-2 bg-(--orangeBG) hover:opacity-90 text-white px-5 py-2 rounded-lg transition-colors shadow-md font-medium">
                             <LogIn size={18} /> เข้าสู่ระบบ
                         </button>
                     </Link>

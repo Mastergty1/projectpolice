@@ -1,15 +1,13 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, Lock, User } from 'lucide-react'; // ลง lucide-react ด้วยนะครับ
+import { Eye, EyeOff, Lock, User } from 'lucide-react';
 
 const LoginPage = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    const router = useRouter();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -28,41 +26,42 @@ const LoginPage = () => {
 
             if (response.ok) {
                 document.cookie = `token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Strict; Secure`;
-                router.push('/');
+                // ใช้ window.location.href เพื่อบังคับโหลดหน้าใหม่ทั้งหมด
+                // จะทำให้ TopBar เริ่มทำงานใหม่และดึงชื่อผู้ใช้มาแสดงได้ทันที
+                window.location.href = '/';
             } else {
                 alert(data.msg || 'Login failed');
+                setLoading(false); // ปิดโหลดเมื่อล้มเหลว
             }
         } catch (error) {
             console.error('Error logging in:', error);
             alert('Something went wrong. Please try again later.');
-        } finally {
-            setLoading(false);
+            setLoading(false); // ปิดโหลดเมื่อมี Error
         }
     };
 
     return (
-        // ใช้ h-screen และ overflow-hidden เพื่อไม่ให้ scroll
-        <div className="h-screen w-full flex items-center justify-center bg-[var(--background)] overflow-hidden p-4">
+        <div className="h-screen w-full flex items-center justify-center bg-background overflow-hidden p-4">
             
             {/* Card Container */}
-            <div className="w-full max-w-md bg-[var(--container)] p-8 rounded-2xl shadow-2xl border border-[var(--shadow)] transition-all">
+            <div className="w-full max-w-md bg-(--container) p-8 rounded-2xl shadow-2xl border border-(--shadow) transition-all">
                 
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-[var(--header)] mb-2">ยินดีต้อนรับ</h1>
-                    <p className="text-[var(--foreground)] opacity-70">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
+                    <h1 className="text-3xl font-bold text-(--header) mb-2">ยินดีต้อนรับ</h1>
+                    <p className="text-foreground opacity-70">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
                     {/* Username Field */}
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2">
+                        <label className="text-sm font-medium text-foreground flex items-center gap-2">
                             <User size={16} /> ชื่อผู้ใช้งาน
                         </label>
                         <input
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl bg-[var(--button)] border border-[var(--shadow)] text-[var(--foreground)] focus:ring-2 focus:ring-[var(--header-bg)] outline-none transition-all"
+                            className="w-full px-4 py-3 rounded-xl bg-(--button) border border-(--shadow) text-foreground focus:ring-2 focus:ring-(--header-bg) outline-none transition-all"
                             placeholder="กรอกชื่อผู้ใช้งาน"
                             required
                         />
@@ -70,7 +69,7 @@ const LoginPage = () => {
 
                     {/* Password Field */}
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2">
+                        <label className="text-sm font-medium text-foreground flex items-center gap-2">
                             <Lock size={16} /> รหัสผ่าน
                         </label>
                         <div className="relative">
@@ -78,15 +77,14 @@ const LoginPage = () => {
                                 type={showPassword ? "text" : "password"}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-4 py-3 rounded-xl bg-[var(--button)] border border-[var(--shadow)] text-[var(--foreground)] focus:ring-2 focus:ring-[var(--header-bg)] outline-none transition-all"
+                                className="w-full px-4 py-3 rounded-xl bg-(--button) border border-(--shadow) text-foreground focus:ring-2 focus:ring-(--header-bg) outline-none transition-all"
                                 placeholder="กรอกรหัสผ่าน"
                                 required
                             />
-                            {/* Toggle Show/Hide Password */}
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--foreground)] opacity-50 hover:opacity-100 transition-opacity"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground opacity-50 hover:opacity-100 transition-opacity"
                             >
                                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                             </button>
@@ -97,8 +95,8 @@ const LoginPage = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full py-4 rounded-xl font-bold text-[var(--greenText)] transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98]
-                            ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--greenBG)]'}`}
+                        className={`w-full py-4 rounded-xl font-bold text-(--greenText) transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98]
+                            ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-(--greenBG)'}`}
                     >
                         {loading ? (
                             <div className="flex items-center justify-center gap-2">
@@ -110,8 +108,6 @@ const LoginPage = () => {
                         )}
                     </button>
                 </form>
-
-                {/* Footer Decor */}
             </div>
         </div>
     );
