@@ -66,7 +66,8 @@ CREATE TABLE tasks (
   is_urgent BOOLEAN DEFAULT FALSE,
   due_date DATE,
   created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
+  updated_at TIMESTAMP DEFAULT NOW(),
+  created_by INT REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- 2. ตาราง "ผู้รับผิดชอบ" (เชื่อมกับ Users)

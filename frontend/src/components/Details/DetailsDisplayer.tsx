@@ -141,6 +141,9 @@ export default function DetailsDisplayer({
                             <h2 className={styles.Header} style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
                                 รายละเอียดจากเอกสาร (ข้อความเต็ม)
                             </h2>
+                            <p className="text-sm text-gray-500 mb-4 font-medium flex items-center gap-2 bg-gray-50 w-fit px-3 py-1.5 rounded-full border border-gray-200">
+                                👤 เพิ่มเข้าระบบโดย: <span className="font-bold text-blue-700">{taskData?.creatorName || "ไม่ระบุ"}</span>
+                            </p>
                             {taskData?.document_link && (
                                 <a 
                                     href={taskData.document_link} 

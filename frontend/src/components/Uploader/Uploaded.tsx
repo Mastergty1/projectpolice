@@ -18,7 +18,7 @@ interface MemoData {
     เรียน?: string;
     main_text?: string;
     assignments?: ResponsibilityAssignment[];
-    sharedTopics?: string[]; // 💡 เพิ่มฟิลด์สำหรับเก็บหัวข้องานรวม (ไม่ต้องแยกรายคน)
+    sharedTopics?: string[]; 
     due_date?: string; 
     isUrgent?: boolean;
 }
@@ -36,7 +36,7 @@ interface FileData {
     filename: string;
     documentId: number;
     deadline: string;
-    selectedAssignees: string[]; // เก็บ user_id หลายคนแบบ Checklist
+    selectedAssignees: string[]; 
     memos: MemoData[];
 }
 
@@ -88,7 +88,8 @@ export default function Uploaded({ extractedData }: UploadedProps) {
     }, []);
 
     useEffect(() => {
-        const loggedInUserId = typeof window !== 'undefined' ? localStorage.getItem("user_id") || localStorage.getItem("userId") || "" : "";
+        // ดึง ID ผู้ใช้ที่ล็อกอินอยู่มาตั้งเป็นค่าเริ่มต้น
+        const loggedInUserId = typeof window !== 'undefined' ? String(localStorage.getItem("user_id") || localStorage.getItem("userId") || "") : "";
         
         if (extractedData && Array.isArray(extractedData)) {
             const initialized = extractedData
@@ -102,13 +103,12 @@ export default function Uploaded({ extractedData }: UploadedProps) {
 
                     const processedMemos = strictFilteredMemos.map(memo => {
                         const originalAssignments = memo.assignments || [];
-                        const allScannedTopics: string[] = []; // เก็บหัวข้อทั้งหมดมากองรวมกัน
+                        const allScannedTopics: string[] = []; 
 
                         originalAssignments.forEach(scanAssign => {
                             let rawTopics = scanAssign.topics || [];
                             if (!Array.isArray(rawTopics)) rawTopics = [String(rawTopics)];
                             
-                            // 💡 รวมหัวข้อที่แสกนเจอทั้งหมดเข้าไว้ด้วยกัน
                             if (rawTopics.length > 0) {
                                 allScannedTopics.push(...rawTopics);
                             }
@@ -133,19 +133,18 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                             }
                         });
 
-                        // กำจัดหัวข้อที่ซ้ำกัน
                         const uniqueTopics = Array.from(new Set(allScannedTopics));
 
                         return {
                             ...memo,
                             isUrgent: memo.isUrgent || false,
-                            // 💡 ใช้ sharedTopics แทน assignments แบบแยกคน ถ้าว่างเปล่าก็ให้มีช่องว่างรอไว้ 1 ช่อง
                             sharedTopics: uniqueTopics.length > 0 ? uniqueTopics : [""] 
                         };
                     });
 
                     const assigneesArray = Array.from(scannedAssignees);
-                    const finalAssignees = assigneesArray.length > 0 ? assigneesArray : (loggedInUserId ? [String(loggedInUserId)] : []);
+                    // 💡 ถ้าเอกสารสแกนไม่พบใครเลย ให้ตั้งค่าคนอัปโหลดเป็นผู้รับผิดชอบ Default
+                    const finalAssignees = assigneesArray.length > 0 ? assigneesArray : (loggedInUserId ? [loggedInUserId] : []);
 
                     return {
                         filename: file.filename,
@@ -173,7 +172,6 @@ export default function Uploaded({ extractedData }: UploadedProps) {
         }));
     };
 
-    // 💡 ฟังก์ชันจัดการหัวข้อย่อยแบบใหม่ (Shared Topics) ใช้ร่วมกันทุกคน
     const handleAddSharedTopic = (fileIndex: number, memoIndex: number) => {
         setFilesData(prev => prev.map((file, fIdx) => fIdx === fileIndex ? {
             ...file,
@@ -212,6 +210,10 @@ export default function Uploaded({ extractedData }: UploadedProps) {
         if (!isAllSet) return alert("⚠️ กรุณาเลือกระยะเวลาที่ต้องติดตามงาน และ ผู้รับผิดชอบ ให้ครบก่อนทำการบันทึกครับ");
 
         setIsSaving(true);
+        
+        // 💡 ดึง ID ผู้สร้างอีกครั้งตรงนี้เพื่อหลีกเลี่ยง Scope Error (Cannot find name 'loggedInUserId')
+        const currentUserId = typeof window !== 'undefined' ? String(localStorage.getItem("user_id") || localStorage.getItem("userId") || "") : "";
+
         try {
             for (const file of validFiles) {
                 const memosWithDueDate = file.memos.map(memo => {
@@ -219,7 +221,6 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                     if (!baseDate || isNaN(baseDate.getTime())) baseDate = new Date();
                     baseDate.setDate(baseDate.getDate() + parseInt(file.deadline));
                     
-                    // 💡 นำ Shared Topics ไปกระจายให้ผู้รับผิดชอบแต่ละคนตอนกดบันทึก
                     const validTopics = (memo.sharedTopics || []).filter(t => t.trim() !== "");
 
                     let finalAssignments = [];
@@ -246,7 +247,11 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                 const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003"}/api/v1/tasks/confirm`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ documentId: file.documentId, memos: memosWithDueDate })
+                    body: JSON.stringify({ 
+                        documentId: file.documentId, 
+                        memos: memosWithDueDate,
+                        createdBy: currentUserId // 💡 แนบ ID ของคนอัปโหลดไปให้ Backend
+                    })
                 });
                 
                 if (!res.ok) throw new Error(`เกิดข้อผิดพลาดในการบันทึกข้อมูลไฟล์: ${file.filename}`);
@@ -388,7 +393,6 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                     />
                                                 </div>
                                                 
-                                                {/* 💡 เปลี่ยนมาโชว์แค่บล็อคเดียว (Shared Topics) สำหรับทุกคน */}
                                                 {file.selectedAssignees.length > 0 ? (
                                                     <div className="mt-2 shrink-0">
                                                         <strong className="text-base" style={{ color: "var(--header)" }}>การมอบหมายงาน/ความรับผิดชอบ:</strong>

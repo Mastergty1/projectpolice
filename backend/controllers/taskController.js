@@ -103,13 +103,16 @@ exports.confirmTasks = async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const { documentId, memos } = req.body;
+    const { documentId, memos, createdBy } = req.body;
 
+    const parsedCreator = parseInt(createdBy, 10);
+    const validCreatorId = !isNaN(parsedCreator) ? parsedCreator : null;
+    
     if (memos && memos.length > 0) {
       for (const memo of memos) {
         const taskRes = await client.query(
-          `INSERT INTO tasks (document_id, title, memo_no, memo_date, main_text, due_date, is_urgent)
-           VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+          `INSERT INTO tasks (document_id, title, memo_no, memo_date, main_text, due_date, is_urgent, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
           [ 
             documentId, 
             memo.เรื่อง || 'ไม่ระบุชื่อเรื่อง', 
@@ -117,7 +120,8 @@ exports.confirmTasks = async (req, res) => {
             memo.วันที่, 
             memo.main_text, 
             memo.due_date || null,
-            memo.isUrgent || false
+            memo.isUrgent || false,
+            validCreatorId
           ]
         );
         const taskId = taskRes.rows[0].id;
@@ -249,6 +253,7 @@ exports.getTaskById = async (req, res) => {
         t.notes,      
         t.memo_no, 
         t.memo_date,
+        c.name AS "creatorName",
         d.drive_web_view_link AS document_link,
         COALESCE(
           json_agg(
@@ -275,9 +280,10 @@ exports.getTaskById = async (req, res) => {
       FROM tasks t
       LEFT JOIN task_assignments ta ON t.id = ta.task_id
       LEFT JOIN users u ON ta.user_id = u.id
-      LEFT JOIN documents d ON t.document_id = d.id 
+      LEFT JOIN documents d ON t.document_id = d.id
+      LEFT JOIN users c ON t.created_by = c.id
       WHERE t.id = $1
-      GROUP BY t.id, d.drive_web_view_link
+      GROUP BY t.id, d.drive_web_view_link, c.name
     `;
     const { rows } = await pool.query(query, [id]);
     
