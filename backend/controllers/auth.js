@@ -2,7 +2,6 @@ const User = require("../models/User");
 
 // Get token from model, create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {
-  // สร้าง token ผ่าน static method
   const token = User.getSignedJwtToken(user.id);
 
   const options = {
@@ -25,15 +24,19 @@ const sendTokenResponse = (user, statusCode, res) => {
 // @access  Public
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, phone, password, role } = req.body;
+    const { name, password } = req.body;
 
-    // ตรวจสอบอีเมลซ้ำ
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ success: false, msg: "Email already in use" });
+    if (!name || !password) {
+      return res.status(400).json({ success: false, msg: "Please provide a name and password" });
     }
 
-    const user = await User.create({ name, email, phone, password, role });
+    // ตรวจสอบชื่อซ้ำ (เปลี่ยนจากอีเมล)
+    const existingUser = await User.findOne({ name });
+    if (existingUser) {
+      return res.status(400).json({ success: false, msg: "Name already in use" });
+    }
+
+    const user = await User.create({ name, password });
     sendTokenResponse(user, 200, res);
   } catch (err) {
     console.log(err.stack);
@@ -46,13 +49,13 @@ exports.register = async (req, res, next) => {
 // @access  Public
 exports.login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { name, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ success: false, msg: "Please provide an email and password" });
+    if (!name || !password) {
+      return res.status(400).json({ success: false, msg: "Please provide a name and password" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ name });
     if (!user) {
       return res.status(400).json({ success: false, msg: "Invalid credentials" });
     }
