@@ -97,8 +97,8 @@ const LoginPage = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full py-4 rounded-xl font-bold text-white transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98]
-                            ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--orangeBG)] hover:opacity-90'}`}
+                        className={`w-full py-4 rounded-xl font-bold text-[var(--greenText)] transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98]
+                            ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--greenBG)]'}`}
                     >
                         {loading ? (
                             <div className="flex items-center justify-center gap-2">
