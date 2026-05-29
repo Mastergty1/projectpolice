@@ -90,7 +90,7 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                 </div>
 
                 <div className={styles.Content}>
-                <h1 className={styles.Header}>{name}</h1>
+                <h1 className={styles.Header} title={name}>{name}</h1>
                 <div className={styles.DetailContainer}>
                     <p className="flex flex-col sm:flex-row"><strong>ผู้รับผิดชอบ: &nbsp; </strong> {personInCharge}</p>
                     <p className="flex flex-col sm:flex-row"><strong>กำหนดเวลา: &nbsp; </strong>  
