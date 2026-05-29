@@ -6,7 +6,7 @@ CREATE TABLE users (
   role VARCHAR(20) DEFAULT 'user',
   reset_password_token VARCHAR(255),
   reset_password_expire TIMESTAMP,
-
+  color VARCHAR(7) DEFAULT '#3B82F6'
 );
 
 -- 1. เก็บไฟล์ต้นฉบับ
