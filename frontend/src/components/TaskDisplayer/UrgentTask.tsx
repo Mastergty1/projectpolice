@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import TaskDisplayer from "./TaskDisplayer";
 import styles from "./TaskDisplayer.module.css";
+import PersonMultiSelect from "./PersonMultiSelect";
 
 type TaskStatus = "following" | "problem" | "completed";
 
@@ -15,7 +16,9 @@ export default function UrgentTask() {
     const [isLoading, setIsLoading] = useState(true);
 
     const [statusFilter, setStatusFilter] = useState("all");
-    const [personFilter, setPersonFilter] = useState("all");
+    
+    // 💡 แก้ไขจุดที่ 1: เปลี่ยนมาเก็บเป็นอาร์เรย์ตามที่ PersonMultiSelect ต้องการ
+    const [personFilter, setPersonFilter] = useState<string[]>([]); 
 
     useEffect(() => {
         const fetchUrgentTasks = async () => {
@@ -59,7 +62,6 @@ export default function UrgentTask() {
         }
     };
 
-    // 💡 แก้ไข 1: แยกชื่อที่ติดกันด้วยลูกน้ำออก เพื่อให้ Dropdown แสดงเป็นรายบุคคล
     const allPersons = tasks.flatMap(t => {
         if (!t.personInCharge) return [];
         return t.personInCharge.split(',').map((s: string) => s.trim()).filter(Boolean);
@@ -70,20 +72,38 @@ export default function UrgentTask() {
         if (task.status === "completed") return false; // กรองงานที่ completed ออกก่อน
         const matchStatus = statusFilter === "all" || task.status === statusFilter;
         
-        // 💡 แก้ไข 3: ถ้างานนี้มอบหมายให้ "ทุกหน่วยงาน" ทุกคนจะต้องมองเห็นแม้อยู่ใน Filter ตัวเอง
+        // 💡 แก้ไขจุดที่ 2: ปรับ Logic การกรองบุคคลให้รองรับการเลือกแบบ Multi-select อาร์เรย์
+        const taskPersons = task.personInCharge 
+            ? task.personInCharge.split(',').map((s: string) => s.trim()) 
+            : [];
+
         const matchPerson =
-            personFilter === "all" ||
-            (task.personInCharge && task.personInCharge.includes("ทุกหน่วยงาน")) ||
-            (task.personInCharge && task.personInCharge.split(',').map((s: string) => s.trim()).includes(personFilter));
+            personFilter.length === 0 || // ไม่เลือกใครเลย = แสดงทั้งหมด
+            taskPersons.includes("ทุกหน่วยงาน") ||
+            taskPersons.some((p: string) => personFilter.includes(p)); // ตรงกับคนใดคนหนึ่งที่เลือก
 
         return matchStatus && matchPerson;
     }).sort((a, b) => {
-        // 💡 แก้ไข 2: จัดเรียงงานที่ completed ไปไว้ท้ายสุด และเรียงตามวันที่ใกล้กำหนดส่ง
         if (a.status === "completed" && b.status !== "completed") return 1;
         if (a.status !== "completed" && b.status === "completed") return -1;
         
-        const dateA = new Date(a.date).getTime();
-        const dateB = new Date(b.date).getTime();
+        // 💡 แก้ไขจุดที่ 3: ยกเซ็ตฟังก์ชันแปลงปี พ.ศ. / ค.ศ. มาใช้เพื่อไม่ให้การเรียงลำดับวันที่เพี้ยน
+        const parseTaskDate = (dateStr: string) => {
+            if (!dateStr) return 0;
+            const parts = dateStr.split('-');
+            let year = parseInt(parts[0], 10);
+            
+            if (year > 2400) {
+                year = year - 543;
+            }
+            
+            const normalizedDateStr = `${year}-${parts[1]}-${parts[2]}`;
+            const time = new Date(normalizedDateStr).getTime();
+            return isNaN(time) ? 0 : time;
+        };
+
+        const dateA = parseTaskDate(a.date);
+        const dateB = parseTaskDate(b.date);
         return dateA - dateB;
     });
 
@@ -110,22 +130,12 @@ export default function UrgentTask() {
                             </select>
                         </div>
 
-                        {/* Group 2: สำหรับ */}
-                        <div className={styles.FilterGroup}>
-                            <strong>สำหรับ:</strong>
-                            <select 
-                                className={styles.Dropdown}
-                                value={personFilter}
-                                onChange={(e) => setPersonFilter(e.target.value)}
-                                aria-label="ตัวกรองผู้รับผิดชอบ"
-                                style={{ minHeight: '44px' }}
-                            >
-                                <option value="all">ทุกคน</option>
-                                {uniquePersons.map((person: any, idx) => (
-                                    <option key={idx} value={person}>{person}</option>
-                                ))}
-                            </select>
-                        </div>
+                        {/* Dropdown ส่วนกลางที่เรียกมาใช้ได้อย่างสวยงาม */}
+                        <PersonMultiSelect 
+                            uniquePersons={uniquePersons}
+                            personFilter={personFilter}
+                            setPersonFilter={setPersonFilter}
+                        />
                     
                     </div>
                     <hr className={styles.Line}></hr>
