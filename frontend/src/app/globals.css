@@ -98,3 +98,13 @@ body {
   font-size: 1.25rem;
 }
 
+[data-theme="dark"] body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+[data-theme="dark"] #main-topbar,
+[data-theme="dark"] #main-topbar strong,
+[data-theme="dark"] #main-topbar span {
+  color: #ffffff;
+}
