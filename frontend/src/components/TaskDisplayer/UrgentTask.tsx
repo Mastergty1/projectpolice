@@ -8,8 +8,17 @@ import PersonMultiSelect from "./PersonMultiSelect";
 type TaskStatus = "following" | "problem" | "completed";
 
 export default function UrgentTask() {
+    // 💡 เพิ่มข้อมูลสีจำลองและวันที่สร้าง กรณีที่หลังบ้าน (Database) โหลดไม่ติด
     const initialTaskData = [
-        { id: "0", name: "ชื่องานด่วนมาก", personInCharge: "นี้เป็นขอมูลทดสอบ", date: "2026-05-21", status: "following" },
+        { 
+            id: "0", 
+            name: "ชื่องานด่วนมาก", 
+            personInCharge: "ผู้ดูแลระบบ", 
+            date: "2026-05-21", 
+            status: "following",
+            createdAt: new Date().toISOString(), // 💡 เพิ่ม createdAt
+            assigneesData: [{ name: "ผู้ดูแลระบบ", color: "#fca5a5" }] // 💡 เพิ่มข้อมูลสี
+        },
     ];
 
     const [tasks, setTasks] = useState<any[]>([]);
@@ -17,7 +26,6 @@ export default function UrgentTask() {
 
     const [statusFilter, setStatusFilter] = useState("all");
     
-    // 💡 แก้ไขจุดที่ 1: เปลี่ยนมาเก็บเป็นอาร์เรย์ตามที่ PersonMultiSelect ต้องการ
     const [personFilter, setPersonFilter] = useState<string[]>([]); 
 
     useEffect(() => {
@@ -72,7 +80,6 @@ export default function UrgentTask() {
         if (task.status === "completed") return false; // กรองงานที่ completed ออกก่อน
         const matchStatus = statusFilter === "all" || task.status === statusFilter;
         
-        // 💡 แก้ไขจุดที่ 2: ปรับ Logic การกรองบุคคลให้รองรับการเลือกแบบ Multi-select อาร์เรย์
         const taskPersons = task.personInCharge 
             ? task.personInCharge.split(',').map((s: string) => s.trim()) 
             : [];
@@ -87,7 +94,6 @@ export default function UrgentTask() {
         if (a.status === "completed" && b.status !== "completed") return 1;
         if (a.status !== "completed" && b.status === "completed") return -1;
         
-        // 💡 แก้ไขจุดที่ 3: ยกเซ็ตฟังก์ชันแปลงปี พ.ศ. / ค.ศ. มาใช้เพื่อไม่ให้การเรียงลำดับวันที่เพี้ยน
         const parseTaskDate = (dateStr: string) => {
             if (!dateStr) return 0;
             const parts = dateStr.split('-');
@@ -113,7 +119,6 @@ export default function UrgentTask() {
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
                     <div className={styles.ContentHeader}>
-                        {/* Group 1: สถานะ */}
                         <div className={styles.FilterGroup}>
                             <strong>สถานะ:</strong>
                             <select 
@@ -130,7 +135,6 @@ export default function UrgentTask() {
                             </select>
                         </div>
 
-                        {/* Dropdown ส่วนกลางที่เรียกมาใช้ได้อย่างสวยงาม */}
                         <PersonMultiSelect 
                             uniquePersons={uniquePersons}
                             personFilter={personFilter}

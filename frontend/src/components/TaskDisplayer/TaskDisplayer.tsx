@@ -1,14 +1,21 @@
 import AllTaskItem from "../TaskContent/AllTaskItem";
 import styles from "./TaskDisplayer.module.css";
 
+// 💡 เพิ่ม Type มารองรับข้อมูลสีที่ส่งมาจาก Backend
+type AssigneeData = {
+    name: string;
+    color: string;
+};
+
 type Task = {
     id: string;
     name: string;
     personInCharge: string;
     date: string;
     status: string;
+    createdAt?: string; // 💡 เพิ่มฟิลด์รับวันที่สร้าง
+    assigneesData?: AssigneeData[]; // 💡 เพิ่มฟิลด์รับข้อมูลสี
 };
-
 
 type Props = {
     tasks: Task[];
@@ -19,7 +26,6 @@ type Props = {
 };
 
 type TaskStatus = "following" | "problem" | "completed";
-
 
 export default function TaskDisplayer({
     tasks,
@@ -37,6 +43,8 @@ export default function TaskDisplayer({
                         personInCharge={task.personInCharge}
                         date={task.date}
                         status={task.status}
+                        createdAt={task.createdAt} // 💡 ส่งต่อวันที่สร้างงานให้หลอด Progress
+                        assigneesData={task.assigneesData} // 💡 ส่งต่อข้อมูลสีให้กล่องรายชื่อ
                         onStatusChange={onStatusChange}
                     />
                 ))}

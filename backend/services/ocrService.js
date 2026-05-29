@@ -27,7 +27,7 @@ function fileToGenerativePart(filePath, mimeType) {
 exports.extractDataWithGemini = async (filePath, mimeType) => {
   try {
     // 💡 แก้ไขบัค: เปลี่ยนมาใช้ 1.5-pro เพื่อความแม่นยำสูงสุดในการอ่านเอกสารภาษาไทย (ตามคอมเมนต์ของคุณ)
-    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" }); 
+    const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" }); 
 
     const prompt = `
     คุณเป็นผู้ช่วยผู้เชี่ยวชาญในการอ่านและสกัดข้อมูลจากเอกสารราชการไทย (Thai Official Documents) โดยเฉพาะบันทึกข้อความ (Memo)

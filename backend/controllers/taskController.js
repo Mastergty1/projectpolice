@@ -7,7 +7,24 @@ exports.getAllTasks = async (req, res) => {
         t.id AS id, 
         t.title AS name, 
         COALESCE(STRING_AGG(DISTINCT COALESCE(u.name, ta.role_or_name), ', '), 'ไม่ระบุ') AS "personInCharge", 
+        
+        /* 💡 ดึงชื่อและสีของ User ออกมาเป็น Array ของ JSON */
+        COALESCE(
+          (
+            SELECT json_agg(json_build_object('name', sub.name, 'color', sub.color))
+            FROM (
+              SELECT DISTINCT 
+                COALESCE(u2.name, ta2.role_or_name) AS name, 
+                COALESCE(u2.color, '#e5e7eb') AS color -- ถ้าไม่มีสีให้ใช้สีเทา
+              FROM task_assignments ta2
+              LEFT JOIN users u2 ON ta2.user_id = u2.id
+              WHERE ta2.task_id = t.id AND (u2.name IS NOT NULL OR ta2.role_or_name IS NOT NULL)
+            ) sub
+          ), '[]'::json
+        ) AS "assigneesData",
+
         TO_CHAR(t.due_date, 'YYYY-MM-DD') AS date, 
+        t.created_at AS "createdAt",
         t.status,
         t.is_urgent AS "isUrgent"
       FROM tasks t
@@ -31,7 +48,24 @@ exports.getUrgentTasks = async (req, res) => {
         t.id AS id, 
         t.title AS name, 
         COALESCE(STRING_AGG(DISTINCT COALESCE(u.name, ta.role_or_name), ', '), 'ไม่ระบุ') AS "personInCharge", 
+        
+        /* 💡 เพิ่มการดึงสี assigneesData สำหรับหน้างานเร่งด่วน */
+        COALESCE(
+          (
+            SELECT json_agg(json_build_object('name', sub.name, 'color', sub.color))
+            FROM (
+              SELECT DISTINCT 
+                COALESCE(u2.name, ta2.role_or_name) AS name, 
+                COALESCE(u2.color, '#e5e7eb') AS color
+              FROM task_assignments ta2
+              LEFT JOIN users u2 ON ta2.user_id = u2.id
+              WHERE ta2.task_id = t.id AND (u2.name IS NOT NULL OR ta2.role_or_name IS NOT NULL)
+            ) sub
+          ), '[]'::json
+        ) AS "assigneesData",
+
         TO_CHAR(t.due_date, 'YYYY-MM-DD') AS date, 
+        t.created_at AS "createdAt",
         t.status,
         t.is_urgent AS "isUrgent"
       FROM tasks t

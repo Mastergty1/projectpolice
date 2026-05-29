@@ -5,10 +5,18 @@ import Select from "react-select";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
+// 💡 เพิ่ม Type ของผู้รับผิดชอบที่แนบสีมาจาก Backend
+type AssigneeData = {
+  name: string;
+  color: string;
+};
+
 type TaskItemProps = {
   date: string;
+  createdAt?: string; // รับค่าวันที่สร้างงาน
   name: string;
   personInCharge: string;
+  assigneesData?: AssigneeData[]; // รับข้อมูลผู้รับผิดชอบแบบมีสี
   status: string;
   id: string;
   onStatusChange: (id: string, status: TaskStatus) => void;
@@ -21,7 +29,7 @@ type StatusOption = {
   label: string;
 };
 
-export default function AllTaskItem({date,name,personInCharge,status,id,onStatusChange}:TaskItemProps){
+export default function AllTaskItem({date, createdAt, name, personInCharge, assigneesData, status, id, onStatusChange}:TaskItemProps){
     
     const parsedDate = new Date(date);
     const day = parsedDate.getDate();
@@ -32,29 +40,46 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    parsedDate.setHours(0, 0, 0, 0);
+    
+    const dueDateForDiff = new Date(parsedDate);
+    dueDateForDiff.setHours(0, 0, 0, 0);
 
-    const diffTime = parsedDate.getTime() - today.getTime();
+    const diffTime = dueDateForDiff.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     let urgency = "";
     let theme;
+    let progressColor = "bg-green-500"; 
 
+    // กำหนด Theme และสีของหลอด Progress Bar ตามความเร่งด่วน
     if (diffDays < 0) {
-        urgency = "late";
-        theme = styles.DateGrey;
+        urgency = "late"; theme = styles.DateGrey; progressColor = "bg-gray-500";
     } else if (diffDays === 0) {
-        urgency = "today";
-        theme = styles.DateRed;
+        urgency = "today"; theme = styles.DateRed; progressColor = "bg-red-500";
     } else if (diffDays === 1) {
-        urgency = "tommorrow";
-        theme = styles.DateOrange;
+        urgency = "tommorrow"; theme = styles.DateOrange; progressColor = "bg-orange-500";
     } else if (diffDays <= 7) {
-        urgency = "this week";
-        theme = styles.DateYellow;
+        urgency = "this week"; theme = styles.DateYellow; progressColor = "bg-yellow-400";
     } else {
-        urgency = "later";
-        theme = styles.DateGreen;
+        urgency = "later"; theme = styles.DateGreen; progressColor = "bg-green-500";
+    }
+
+    // 💡 คำนวณความคืบหน้าของ Progress Bar (จาก 0% ถึง 100%)
+    let progressPercent = 0;
+    if (createdAt) {
+        const startDate = new Date(createdAt).getTime();
+        const endDate = parsedDate.getTime();
+        const now = new Date().getTime();
+
+        if (endDate > startDate) {
+            progressPercent = ((now - startDate) / (endDate - startDate)) * 100;
+            progressPercent = Math.max(0, Math.min(100, progressPercent));
+        } else {
+            progressPercent = 100; // ถ้าระยะเวลาเป็น 0 หรือติดลบ แปลว่าถึงกำหนดแล้ว
+        }
+    } else {
+        // Fallback กรณีไม่มี createdAt จาก backend ให้คำนวณคร่าวๆ จากวันที่เหลือ
+        progressPercent = diffDays <= 0 ? 100 : Math.max(10, 100 - (diffDays * 5));
     }
 
     const [taskStatus, setStatus] = useState<TaskStatus>((status as TaskStatus) || "following");
@@ -78,6 +103,17 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
     } as const;
 
     const themeStyle = selectThemeMap[taskStatus] || selectThemeMap.following;
+
+    // 💡 ฟังก์ชันคำนวณสีตัวอักษรให้อ่านง่าย (ถ้าพื้นหลังสว่างตัวอักษรสีเข้มดำ, ถ้าพื้นหลังมืดตัวอักษรสีขาว)
+    const getTextColor = (bgColor: string) => {
+        if (!bgColor || !bgColor.startsWith('#')) return '#1f2937'; // ค่าเริ่มต้นเป็นสีเทาเข้ม
+        const hex = bgColor.replace('#', '');
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        return (yiq >= 128) ? '#1f2937' : '#ffffff';
+    };
     
     return(
         <div className={styles.TaskWrapper}>
@@ -89,16 +125,52 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                     <span className={styles.DateMonth}>{monthYear}</span>
                 </div>
 
-                <div className={styles.Content}>
+                <div className={`${styles.Content} w-full`}>
                 <h1 className={styles.Header} title={name}>{name}</h1>
-                <div className={styles.DetailContainer}>
-                    <p className="flex flex-col sm:flex-row"><strong>ผู้รับผิดชอบ: &nbsp; </strong> {personInCharge}</p>
-                    <p className="flex flex-col sm:flex-row"><strong>กำหนดเวลา: &nbsp; </strong>  
-                    {diffDays < 0
-                        ? `เกินกำหนด ${Math.abs(diffDays)} วัน`
-                        : diffDays === 0
-                        ? "วันนี้"
-                        : `เหลืออีก ${diffDays} วัน`}</p>
+                <div className={`${styles.DetailContainer} mt-2 w-full pr-4`}>
+                    
+                    {/* 💡 แสดงรายชื่อผู้รับผิดชอบเป็นกล่องสีโดยดึงข้อมูลสีมาจาก User (assigneesData) */}
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-2 mb-2">
+                        <strong className="mt-0.5 whitespace-nowrap text-sm">ผู้รับผิดชอบ: </strong> 
+                        <div className="flex flex-wrap gap-1.5">
+                            {assigneesData && assigneesData.length > 0 ? (
+                                assigneesData.map((assignee, idx) => (
+                                    <span 
+                                        key={idx} 
+                                        style={{ backgroundColor: assignee.color, color: getTextColor(assignee.color) }} 
+                                        className="px-2.5 py-0.5 rounded-md text-xs sm:text-sm font-bold whitespace-nowrap shadow-sm border border-black/10"
+                                    >
+                                        {assignee.name}
+                                    </span>
+                                ))
+                            ) : (
+                                // กรณีไม่มีข้อมูลสีแนบมา (Fallback) ให้ตัดคำปกติ
+                                personInCharge.split(',').map((person, idx) => (
+                                    <span key={idx} className="px-2.5 py-0.5 rounded-md text-xs sm:text-sm font-bold whitespace-nowrap shadow-sm bg-gray-200 text-gray-700">
+                                        {person.trim()}
+                                    </span>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    <p className="flex flex-col sm:flex-row mb-1 text-sm">
+                        <strong>สถานะระยะเวลา: &nbsp; </strong>  
+                        {diffDays < 0
+                            ? `เกินกำหนด ${Math.abs(diffDays)} วัน`
+                            : diffDays === 0
+                            ? "ครบกำหนดวันนี้"
+                            : `เหลืออีก ${diffDays} วัน`}
+                    </p>
+
+                    {/* 💡 หลอดความคืบหน้า (Progress Bar) */}
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1 border border-gray-300 overflow-hidden">
+                        <div 
+                            className={`h-full rounded-full transition-all duration-500 ease-in-out ${progressColor}`} 
+                            style={{ width: `${progressPercent}%` }}
+                        ></div>
+                    </div>
+
                 </div>
                 </div>
                 </div>
@@ -108,7 +180,6 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                         <Select
                             instanceId={`task-status-${id}`}
                             options={statusOption}
-                            // 💡 แก้ไข: เพิ่ม aria-label ให้โปรแกรมอ่านหน้าจอทำงานได้
                             aria-label={`อัปเดตสถานะงานของ ${name}`}
                             value={statusOption.find((option) => option.value === taskStatus) || statusOption[0]}
                             isClearable={false}
@@ -128,7 +199,7 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                                     backgroundColor: themeStyle.bg,
                                     border: `2px solid ${themeStyle.border}`,
                                     color: themeStyle.color,
-                                    minHeight: "44px", // 💡 แก้ไข: เพิ่มขนาดพื้นที่กดให้ผ่านเกณฑ์เป้าหมายการสัมผัส (Touch target)
+                                    minHeight: "44px", 
                                     cursor: "pointer",
                                 }),
                                 menuPortal: (base) => ({ ...base, zIndex: 999999 }),
@@ -138,6 +209,7 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                                     whiteSpace: "normal",
                                     overflowWrap: "break-word",
                                     textAlign: "center",
+                                    fontWeight: "bold",
                                     color: themeStyle.color
                                 }),
                                 dropdownIndicator: (base) => ({ ...base, color: themeStyle.color }),
@@ -149,6 +221,7 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                                         ...base,
                                         backgroundColor: state.isFocused ? optionTheme.bg : "var(--button)",
                                         color: optionTheme.color,
+                                        fontWeight: "bold",
                                         cursor: "pointer",
                                         ":active": { backgroundColor: optionTheme.bg },
                                     };
@@ -157,7 +230,6 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                         />
                         </div>
 
-                    {/* 💡 แก้ไข: เพิ่ม aria-label ให้แยกความแตกต่างของลิงก์ได้ */}
                     <Link href={`/tasks/${id}`} aria-label={`ดูรายละเอียดของงาน ${name} รหัส ${id}`}>
                     <button className={styles.Clickable} tabIndex={-1} style={{ minHeight: "44px" }}> 
                         รายละเอียด 

@@ -145,7 +145,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                     });
 
                     const assigneesArray = Array.from(scannedAssignees);
-                    const finalAssignees = assigneesArray.length > 0 ? assigneesArray : (loggedInUserId ? [loggedInUserId] : []);
+                    const finalAssignees = assigneesArray.length > 0 ? assigneesArray : (loggedInUserId ? [String(loggedInUserId)] : []);
 
                     return {
                         filename: file.filename,
