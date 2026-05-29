@@ -147,7 +147,7 @@ export default function AllTaskItem({date,name,personInCharge,status,id,onStatus
                                     const optionTheme = selectThemeMap[optionStatus] || selectThemeMap.following;
                                     return {
                                         ...base,
-                                        backgroundColor: state.isFocused ? optionTheme.bg : "white",
+                                        backgroundColor: state.isFocused ? optionTheme.bg : "var(--button)",
                                         color: optionTheme.color,
                                         cursor: "pointer",
                                         ":active": { backgroundColor: optionTheme.bg },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import TaskDisplayer from "./TaskDisplayer";
 import styles from "./TaskDisplayer.module.css";
 import Link from "next/link";
@@ -17,7 +17,11 @@ export default function AllTask() {
     const [isLoading, setIsLoading] = useState(true);
 
     const [statusFilter, setStatusFilter] = useState("all");
-    const [personFilter, setPersonFilter] = useState("all");
+    
+    // 💡 เปลี่ยนมาเก็บเป็น Array สำหรับรองรับ Multi-select
+    const [personFilter, setPersonFilter] = useState<string[]>([]); 
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const fetchTasks = async () => {
@@ -39,6 +43,17 @@ export default function AllTask() {
             }
         };
         fetchTasks();
+    }, []);
+
+    // 💡 ปิด Dropdown อัตโนมัติเมื่อคลิกข้างนอกพื้นที่
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
     const handleStatusChange = async (id: string, newStatus: TaskStatus) => {
@@ -67,34 +82,60 @@ export default function AllTask() {
     });
     const uniquePersons = Array.from(new Set(allPersons));
 
+    // 💡 จัดการคลิกเลือก/เอาออก รายชื่อคนรับผิดชอบ
+    const handlePersonToggle = (person: string) => {
+        setPersonFilter((prev) =>
+            prev.includes(person)
+                ? prev.filter((p) => p !== person) // เอาออกถ้าติ๊กซ้ำ
+                : [...prev, person] // เพิ่มเข้าถ้ายังไม่มี
+        );
+    };
+
     const filteredTasks = tasks
     .filter((task) => {
-        // 1. กรองงานที่เป็น "completed" ออกไปทันที
-        if (task.status === "completed") return false;
-
-        // 2. เช็ค Status Filter ปกติ (เช่น "todo", "in_progress")
         const matchStatus = statusFilter === "all" || task.status === statusFilter;
 
-        // 💡 แก้ไข 3: ถ้างานนี้มอบหมายให้ "ทุกหน่วยงาน" ทุกคนจะต้องมองเห็นแม้อยู่ใน Filter ตัวเอง
+        // 💡 ปรับปรุงการ Filter: ค้นหาว่าในงานชิ้นนี้มีรายชื่อตรงกับคนที่เราเลือกไว้บ้างไหม
+        const taskPersons = task.personInCharge 
+            ? task.personInCharge.split(',').map((s: string) => s.trim()) 
+            : [];
+
         const matchPerson =
-            personFilter === "all" ||
-            (task.personInCharge && task.personInCharge.includes("ทุกหน่วยงาน")) ||
-            (task.personInCharge && task.personInCharge.split(',').map((s: string) => s.trim()).includes(personFilter));
+            personFilter.length === 0 || // ถ้าไม่ได้เลือกใครเลย = แสดงทั้งหมด (เหมือนตอนเป็น "all")
+            taskPersons.includes("ทุกหน่วยงาน") ||
+            taskPersons.some((p:string) => personFilter.includes(p)); // ถ้ามีคนรับผิดชอบตรงกับที่สุ่มเลือกแม้แต่คนเดียวให้แสดงผล
 
         return matchStatus && matchPerson;
     })
     .sort((a, b) => {
-        // เรียงลำดับตามวันที่จากเก่าไปใหม่ (เนื่องจากไม่มีสถานะ completed มาปนแล้ว)
-        const dateA = new Date(a.date).getTime();
-        const dateB = new Date(b.date).getTime();
+        const isACompleted = a.status === "completed" || a.status === "เสร็จสิ้น";
+        const isBCompleted = b.status === "completed" || b.status === "เสร็จสิ้น";
+
+        if (isACompleted !== isBCompleted) {
+            return isACompleted ? 1 : -1;
+        }
+
+        const parseTaskDate = (dateStr: string) => {
+            if (!dateStr) return 0;
+            const parts = dateStr.split('-');
+            let year = parseInt(parts[0], 10);
+            if (year > 2400) year = year - 543;
+            
+            const normalizedDateStr = `${year}-${parts[1]}-${parts[2]}`;
+            const time = new Date(normalizedDateStr).getTime();
+            return isNaN(time) ? 0 : time;
+        };
+
+        const dateA = parseTaskDate(a.date);
+        const dateB = parseTaskDate(b.date);
+        
         return dateA - dateB;
     });
-    
+
     return (
         <div className="flex flex-col w-full h-full gap-6 min-h-75">
             <div className="flex flex-col sm:flex-row justify-between gap-4">
                 <h1 className={styles.Header}>งานติดตามทั้งหมด</h1>
-                {/* 💡 แก้ไข: เพิ่มพื้นที่กด (minHeight) ให้ผ่านเกณฑ์ทัชสกรีน และเพิ่ม aria-label */}
                 <Link 
                     href={'/addFile'} 
                     aria-label="ไปหน้าเพิ่มงานติดตามใหม่" 
@@ -103,9 +144,9 @@ export default function AllTask() {
                         display: 'inline-flex', 
                         alignItems: 'center', 
                         justifyContent: 'center', 
-                        minHeight: '48px', /* บังคับความสูงให้ผ่านเกณฑ์ 100% */
+                        minHeight: '48px', 
                         padding: '0 24px',
-                        margin: '4px 0', /* เพิ่มระยะห่างกันนิ้วเบียด */
+                        margin: '4px 0', 
                         textDecoration: 'none'
                     }}
                 >
@@ -133,23 +174,59 @@ export default function AllTask() {
                             </select>
                         </div>
 
-                        {/* Group 2: สำหรับ */}
-                        <div className={styles.FilterGroup}>
+                        {/* 💡 Group 2: สำหรับ (ปรับใช้ Class จาก CSS Module แทน Inline Style) */}
+                        <div className={styles.FilterGroup} ref={dropdownRef}>
                             <strong>สำหรับ:</strong>
-                            <select 
-                                className={styles.Dropdown}
-                                value={personFilter}
-                                onChange={(e) => setPersonFilter(e.target.value)}
-                                aria-label="ตัวกรองผู้รับผิดชอบ"
-                                style={{ minHeight: '44px' }}
-                            >
-                                <option value="all">ทุกคน</option>
-                                {uniquePersons.map((person: any, idx) => (
-                                    <option key={idx} value={person}>{person}</option>
-                                ))}
-                            </select>
+                            <div className={styles.MultiSelectContainer}>
+                                <div 
+                                    className={styles.MultiSelectTrigger} 
+                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                >
+                                    <span className={styles.TriggerText}>
+                                        {personFilter.length === 0 
+                                            ? "ทุกคน" 
+                                            : `เลือกแล้ว (${personFilter.length} คน): ${personFilter.join(', ')}`}
+                                    </span>
+                                    <span className={styles.ArrowIcon} style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'none' }}>
+                                        ▼
+                                    </span>
+                                </div>
+
+                                {/* หน้าต่างรายการชื่อที่จะโผล่ขึ้นมาตอนกดเลือก */}
+                                {isDropdownOpen && (
+                                    <div className={styles.MultiSelectMenu}>
+                                        {/* ตัวเลือก ล้างการเลือกทั้งหมด */}
+                                        {personFilter.length > 0 && (
+                                            <div 
+                                                onClick={() => setPersonFilter([])}
+                                                className={styles.ClearAllButton}
+                                            >
+                                                ✕ ล้างทั้งหมด (เลือกทุกคน)
+                                            </div>
+                                        )}
+                                        {/* วนลูปรายชื่อพร้อมช่องติ๊กถูก */}
+                                        {uniquePersons.map((person, idx) => {
+                                            const isChecked = personFilter.includes(person);
+                                            return (
+                                                <label 
+                                                    key={idx} 
+                                                    className={styles.CheckboxOption}
+                                                    style={{ backgroundColor: isChecked ? 'var(--greenBG)' : 'transparent' }} // ไฮไลท์สีฟ้าอ่อนเมื่อถูกติ๊ก
+                                                >
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={isChecked}
+                                                        onChange={() => handlePersonToggle(person)}
+                                                        className={styles.CheckboxInput}
+                                                    />
+                                                    <span>{person}</span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    
                     </div>
                     <hr className={styles.Line} />
                     

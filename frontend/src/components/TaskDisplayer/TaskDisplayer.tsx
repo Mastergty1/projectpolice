@@ -26,21 +26,10 @@ export default function TaskDisplayer({
     onStatusChange
 }: Props) {
 
-    console.log(tasks);
-
-    // Sort by date 
-    const sortedTasks = [...tasks].sort(
-        (a, b) =>
-            new Date(a.date).getTime() -
-            new Date(b.date).getTime()
-    );
-
-    
-
     return (
         <div className={styles.ContentContent}>
             <div className={styles.ContentContentScrollable}>
-                {sortedTasks.map((task) => (
+                {tasks.map((task) => (
                     <AllTaskItem
                         key={task.id}
                         id={task.id}

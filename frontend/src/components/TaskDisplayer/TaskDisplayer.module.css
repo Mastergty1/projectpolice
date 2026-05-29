@@ -154,3 +154,120 @@
     }
 }
 
+/* กล่อง wrapper ตัวนอกสุดของ สำหรับ: */
+.MultiSelectContainer {
+    position: relative;
+    display: inline-block;
+}
+
+/* ปุ่ม Dropdown หลักที่กดเปิด-ปิด */
+.MultiSelectTrigger {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    border: 2px solid var(--wrapper);
+    padding: 0 12px;
+    border-radius: 4px;
+    background-color: var(--button);
+    color: var(--header);
+    min-width: 220px;
+    max-width: 220px;
+    user-select: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.MultiSelectTrigger:hover {
+    border-color: var(--blueText); /* ไฮไลท์สีฟ้าเวลา hover */
+}
+
+/* ข้อความรายชื่อภายในปุ่ม */
+.TriggerText {
+    flex-grow: 1;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 14px;
+    text-align: left;
+}
+
+/* ไอคอนลูกศรสามเหลี่ยม */
+.ArrowIcon {
+    font-size: 10px;
+    color: var(--foreground);
+    margin-left: 8px;
+    transition: transform 0.2s;
+}
+
+/* หน้าต่างรายการชื่อที่จะแสดงตอนเปิด (Dropdown Menu) */
+.MultiSelectMenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background-color: var(--button);
+    border: 2px solid var(--foreground);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-height: 240px;
+    overflow-y: auto;
+    margin-top: 6px;
+    padding: 6px 0;
+    animation: fadeIn 0.15s ease-out;
+}
+
+/* ปุ่มล้างข้อมูลทั้งหมด */
+.ClearAllButton {
+    padding: 8px 16px;
+    color: var(--redText);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--foreground);
+    transition: background-color 0.2s;
+}
+
+.ClearAllButton:hover {
+    background-color: var(--redBG);
+}
+
+/* แถวรายชื่อบุคคล (Label) */
+.CheckboxOption {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    color: var(--foreground);
+    font-size: 14px;
+    user-select: none;
+    transition: background-color 0.15s;
+}
+
+.CheckboxOption:hover {
+    background-color: var(--wrapper); /* เปลี่ยนสีพื้นหลังเมื่อเอาเมาส์ไปชี้ */
+    color: var(--header);
+}
+
+/* ตกแต่งตัวช่อง Checkbox */
+.CheckboxInput {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--wrapper); /* เปลี่ยนสีของตัวติ๊กถูกให้เป็นสีฟ้า */
+}
+
+/* เอฟเฟกต์ Fade-in ตอนเปิด dropdown */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
