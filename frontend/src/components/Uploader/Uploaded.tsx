@@ -350,14 +350,14 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                 <div className="p-2 shrink-0 text-foreground">
                                                     <strong style={{ color: "var(--header)" }}>เนื้อหา:</strong>
                                                     <textarea 
-                                                        className="mt-2 w-full border rounded p-3 text-(--foreground) focus:ring-2 focus:ring-(--blueText) outline-none bg-(--button) border-(--wrapper)" 
+                                                        className="mt-2 w-full border rounded p-3 text-foreground focus:ring-2 focus:ring-(--blueText) outline-none bg-(--button) border-(--wrapper)" 
                                                         rows={5} 
                                                         value={memo.main_text || ''} 
                                                         onChange={(e) => handleMemoChange(fileIdx, index, "main_text", e.target.value)} 
                                                     />
                                                 </div>
                                                 
-                                                {file.assigneeMode === 'all' ? (
+                                                {file.selectedAssignees.includes('all') ? (
                                                     <div className="mt-4 shrink-0 p-5 bg-blue-50 border border-blue-200 rounded-lg text-center shadow-sm">
                                                         <span className="text-(--blueText) font-bold text-lg">📢 มอบหมายให้ทุกหน่วยงาน (ทุกคน)</span>
                                                         <p className="text-sm text-(--blueText) mt-2">
@@ -365,45 +365,32 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                             <br/>(คุณสามารถเข้าไปเพิ่มรายละเอียดงานย่อย/หัวข้อในหน้าแก้ไขได้ภายหลัง)
                                                         </p>
                                                     </div>
-                                                ) : file.assigneeMode === 'specific' ? (
-                                                    memo.assignments && memo.assignments.length > 0 ? (
-                                                        <div className="mt-2 shrink-0">
-                                                            <strong className="text-base" style={{ color: "var(--header)" }}>การมอบหมายงาน/ความรับผิดชอบ:</strong>
-                                                            <div className="flex flex-col gap-4 mt-3">
-                                                                {memo.assignments.map((assignment: ResponsibilityAssignment, idx: number) => (
-                                                                    <div key={idx} className=" p-4 rounded-lg border shrink-0 text-foreground bg-(--container) border-(--shadow)">
+                                                ) : file.selectedAssignees.length > 0 ? (
+                                                    <div className="mt-2 shrink-0">
+                                                        <strong className="text-base" style={{ color: "var(--header)" }}>การมอบหมายงาน/ความรับผิดชอบ:</strong>
+                                                        <div className="flex flex-col gap-4 mt-3">
+                                                            {file.selectedAssignees.map((uid: string, idx: number) => {
+                                                                const user = users.find(u => String(u.id || u._id) === uid);
+                                                                const assignment = memo.assignments?.find(a => a.user_id === uid) || { topics: [] };
+                                                                
+                                                                return (
+                                                                    <div key={uid} className="p-4 rounded-lg border shrink-0 text-foreground bg-(--container) border-(--shadow)">
                                                                         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-gray-100 pb-3 mb-3">
                                                                             <p className="font-bold text-base text-green-700">
-                                                                                สกัดจากเอกสาร: {assignment.responsible_person || 'ไม่ระบุ'}
+                                                                                มอบหมายให้: {user?.name || 'ไม่ระบุ'} {user?.role ? `(${user.role})` : ''}
                                                                             </p>
-                                                                            
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className="text-xs font-bold text-(--blueText) shrink-0">มอบหมายให้:</span>
-                                                                                <select 
-                                                                                    className="p-2 border border-(--blueText) rounded text-sm bg-(--button) focus:outline-none focus:ring-1 focus:ring-blue-500 w-full sm:w-auto min-h-10 shrink-0 text-black"
-                                                                                    value={assignment.user_id || ""}
-                                                                                    onChange={(e) => handleUserSelect(fileIdx, index, idx, e.target.value)}
-                                                                                >
-                                                                                    <option value="">-- เลือกระบุบุคคล --</option>
-                                                                                    {users.map(u => (
-                                                                                        <option key={u.id || u._id} value={u.id || u._id}>
-                                                                                            {u.name} {u.role ? `(${u.role})` : ''}
-                                                                                        </option>
-                                                                                    ))}
-                                                                                </select>
-                                                                            </div>
                                                                         </div>
                                                                         <div className="pl-4 border-l-2 border-gray-200">
                                                                             <div className="flex flex-row items-center justify-between mt-2 mb-2">
                                                                                 <strong>สิ่งที่ต้องดำเนินการ / หัวข้อที่รับผิดชอบ:</strong>
-                                                                                <button type="button" onClick={() => handleAddTopic(fileIdx, index, userId)} className="text-xs bg-blue-500 text-white px-2 py-1.5 rounded hover:bg-blue-600 font-medium">+ เพิ่มงานที่ต้องทำ</button>
+                                                                                <button type="button" onClick={() => handleAddTopic(fileIdx, index, uid)} className="text-xs bg-blue-500 text-white px-2 py-1.5 rounded hover:bg-blue-600 font-medium">+ เพิ่มงานที่ต้องทำ</button>
                                                                             </div>
                                                                             <ul className="list-none pl-1 mt-2 text-gray-700 flex flex-col gap-2">
                                                                                 {assignment.topics && assignment.topics.length > 0 ? assignment.topics.map((topic: string, topicIdx: number) => (
                                                                                     <li key={topicIdx} className="flex gap-2 items-center">
                                                                                         <span className="text-gray-500 text-lg font-bold w-4">•</span>
-                                                                                        <input type="text" className="border border-gray-300 p-2 rounded flex-1 text-sm outline-none bg-(--button) focus:ring-1 focus:ring-blue-400 w-full" placeholder="ระบุสิ่งที่ต้องดำเนินการ..." value={topic} onChange={(e) => handleTopicChange(fileIdx, index, userId, topicIdx, e.target.value)} />
-                                                                                        <button type="button" onClick={() => handleRemoveTopic(fileIdx, index, userId, topicIdx)} className="text-red-500 hover:bg-red-50 p-2 rounded text-lg font-bold shrink-0">✕</button>
+                                                                                        <input type="text" className="border border-gray-300 p-2 rounded flex-1 text-sm outline-none bg-(--button) focus:ring-1 focus:ring-blue-400 w-full" placeholder="ระบุสิ่งที่ต้องดำเนินการ..." value={topic} onChange={(e) => handleTopicChange(fileIdx, index, uid, topicIdx, e.target.value)} />
+                                                                                        <button type="button" onClick={() => handleRemoveTopic(fileIdx, index, uid, topicIdx)} className="text-red-500 hover:bg-red-50 p-2 rounded text-lg font-bold shrink-0">✕</button>
                                                                                     </li>
                                                                                 )) : <li className="text-gray-400 text-sm">- ยังไม่มีสิ่งที่ต้องดำเนินการ -</li>}
                                                                             </ul>
@@ -412,8 +399,12 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                                 );
                                                             })}
                                                         </div>
-                                                    )}
-                                                </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="mt-4 shrink-0 p-5 bg-gray-50 border border-gray-200 rounded-lg text-center shadow-sm">
+                                                        <span className="text-gray-500 font-bold text-lg">⚠️ กรุณาเลือกผู้รับผิดชอบจากด้านบนก่อนเพิ่มรายละเอียดงาน</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
