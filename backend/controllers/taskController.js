@@ -185,68 +185,28 @@ exports.updateTaskDetail = async (req, res) => {
     );
 
     if (assignments && Array.isArray(assignments)) {
-      
-      // 💡 1. จัดการลบ Assignments ที่ถูกลบทิ้งจากหน้าเว็บ
-      const keepAssignmentIds = assignments
-        .map(a => parseInt(a.assignment_id, 10))
-        .filter(n => !isNaN(n));
-
-      if (keepAssignmentIds.length > 0) {
-        // หา assignment_id ที่อยู่ในฐานข้อมูล แต่ไม่มีส่งมาจากหน้าเว็บ
-        const deletedAssigns = await client.query(
-          `SELECT id FROM task_assignments WHERE task_id = $1 AND NOT (id = ANY($2::int[]))`,
-          [id, keepAssignmentIds]
-        );
-        const delIds = deletedAssigns.rows.map(r => r.id);
-        
-        // ต้องลบ Topics ย่อยของ Assignment นั้นก่อนป้องกัน Foreign Key Error
-        if (delIds.length > 0) {
-          await client.query(`DELETE FROM task_topics WHERE assignment_id = ANY($1::int[])`, [delIds]);
-        }
-        await client.query(`DELETE FROM task_assignments WHERE task_id = $1 AND NOT (id = ANY($2::int[]))`, [id, keepAssignmentIds]);
-      } else {
-        // ถ้าบนหน้าเว็บลบออกทั้งหมด
-        const allAssigns = await client.query(`SELECT id FROM task_assignments WHERE task_id = $1`, [id]);
-        const allIds = allAssigns.rows.map(r => r.id);
-        if (allIds.length > 0) {
-          await client.query(`DELETE FROM task_topics WHERE assignment_id = ANY($1::int[])`, [allIds]);
-          await client.query(`DELETE FROM task_assignments WHERE task_id = $1`, [id]);
-        }
-      }
-
-      // 💡 2. จัดการอัปเดตและเพิ่มข้อมูลใหม่
       for (const assign of assignments) {
-        let currentAssignmentId = assign.assignment_id;
+        if (!assign.assignment_id) continue;
         
+        // 💡 FIX: ป้องกัน NaN
         const parsedId = parseInt(assign.user_id, 10);
         const userId = !isNaN(parsedId) ? parsedId : null;
         
-        // ถ้าไม่มี assignment_id แปลว่าเป็นของใหม่ที่เพิ่งกดปุ่ม "+ เพิ่มการมอบหมายงาน"
-        if (!currentAssignmentId) {
-          const newAssignRes = await client.query(
-            `INSERT INTO task_assignments (task_id, user_id, role_or_name) VALUES ($1, $2, $3) RETURNING id`,
-            [id, userId, assign.role_or_name || 'เพิ่มด้วยตนเอง']
-          );
-          currentAssignmentId = newAssignRes.rows[0].id;
-        } else {
-          // ถ้ามีอยู่แล้วให้แก้ไขข้อมูลคนรับผิดชอบ
-          await client.query(
-            `UPDATE task_assignments SET user_id = $1 WHERE id = $2 AND task_id = $3`,
-            [userId, currentAssignmentId, id]
-          );
-        }
+        await client.query(
+          `UPDATE task_assignments SET user_id = $1 WHERE id = $2 AND task_id = $3`,
+          [userId, assign.assignment_id, id]
+        );
 
-        // จัดการหัวข้อ (Topics) ย่อยด้านใน Assignment
         if (assign.topics && Array.isArray(assign.topics)) {
           const keepTopicIds = assign.topics
                                 .filter(t => t.topic_id)
                                 .map(t => parseInt(t.topic_id, 10))
-                                .filter(n => !isNaN(n)); 
+                                .filter(n => !isNaN(n)); // 💡 FIX: คัดเอาเฉพาะไอดีที่เป็นตัวเลขจริงๆ
           
           if (keepTopicIds.length > 0) {
-            await client.query(`DELETE FROM task_topics WHERE assignment_id = $1 AND NOT (id = ANY($2::int[]))`, [currentAssignmentId, keepTopicIds]);
+            await client.query(`DELETE FROM task_topics WHERE assignment_id = $1 AND NOT (id = ANY($2::int[]))`, [assign.assignment_id, keepTopicIds]);
           } else {
-            await client.query(`DELETE FROM task_topics WHERE assignment_id = $1`, [currentAssignmentId]);
+            await client.query(`DELETE FROM task_topics WHERE assignment_id = $1`, [assign.assignment_id]);
           }
 
           for (const topic of assign.topics) {
@@ -258,22 +218,14 @@ exports.updateTaskDetail = async (req, res) => {
             } else {
               await client.query(
                 `INSERT INTO task_topics (assignment_id, detail, is_completed) VALUES ($1, $2, $3)`,
-                [currentAssignmentId, topic.detail, topic.is_completed || false]
+                [assign.assignment_id, topic.detail, topic.is_completed || false]
               );
             }
           }
         } else {
-           await client.query(`DELETE FROM task_topics WHERE assignment_id = $1`, [currentAssignmentId]);
+           await client.query(`DELETE FROM task_topics WHERE assignment_id = $1`, [assign.assignment_id]);
         }
       }
-    } else {
-        // กรณีที่ไม่เหลือ assignments เลย
-        const allAssigns = await client.query(`SELECT id FROM task_assignments WHERE task_id = $1`, [id]);
-        const allIds = allAssigns.rows.map(r => r.id);
-        if (allIds.length > 0) {
-          await client.query(`DELETE FROM task_topics WHERE assignment_id = ANY($1::int[])`, [allIds]);
-          await client.query(`DELETE FROM task_assignments WHERE task_id = $1`, [id]);
-        }
     }
 
     await client.query('COMMIT');
