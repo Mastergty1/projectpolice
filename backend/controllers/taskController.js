@@ -1,4 +1,9 @@
 const pool = require('../config/db');
+const fs = require('fs').promises;
+const { uploadToDrive } = require('../services/googleDriveService');
+const { generateHash } = require('../utils/duplicateChecker');
+
+const DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID; 
 
 exports.getAllTasks = async (req, res) => {
   try {
@@ -7,22 +12,19 @@ exports.getAllTasks = async (req, res) => {
         t.id AS id, 
         t.title AS name, 
         COALESCE(STRING_AGG(DISTINCT COALESCE(u.name, ta.role_or_name), ', '), 'ไม่ระบุ') AS "personInCharge", 
-        
-        /* 💡 ดึงชื่อและสีของ User ออกมาเป็น Array ของ JSON */
         COALESCE(
           (
             SELECT json_agg(json_build_object('name', sub.name, 'color', sub.color))
             FROM (
               SELECT DISTINCT 
                 COALESCE(u2.name, ta2.role_or_name) AS name, 
-                COALESCE(u2.color, '#e5e7eb') AS color -- ถ้าไม่มีสีให้ใช้สีเทา
+                COALESCE(u2.color, '#e5e7eb') AS color
               FROM task_assignments ta2
               LEFT JOIN users u2 ON ta2.user_id = u2.id
               WHERE ta2.task_id = t.id AND (u2.name IS NOT NULL OR ta2.role_or_name IS NOT NULL)
             ) sub
           ), '[]'::json
         ) AS "assigneesData",
-
         TO_CHAR(t.due_date, 'YYYY-MM-DD') AS date, 
         t.created_at AS "createdAt",
         t.status,
@@ -48,8 +50,6 @@ exports.getUrgentTasks = async (req, res) => {
         t.id AS id, 
         t.title AS name, 
         COALESCE(STRING_AGG(DISTINCT COALESCE(u.name, ta.role_or_name), ', '), 'ไม่ระบุ') AS "personInCharge", 
-        
-        /* 💡 เพิ่มการดึงสี assigneesData สำหรับหน้างานเร่งด่วน */
         COALESCE(
           (
             SELECT json_agg(json_build_object('name', sub.name, 'color', sub.color))
@@ -63,7 +63,6 @@ exports.getUrgentTasks = async (req, res) => {
             ) sub
           ), '[]'::json
         ) AS "assigneesData",
-
         TO_CHAR(t.due_date, 'YYYY-MM-DD') AS date, 
         t.created_at AS "createdAt",
         t.status,
@@ -99,15 +98,44 @@ exports.updateTaskStatus = async (req, res) => {
   }
 };
 
+// 🔥 แก้บัคข้อ 2: ย้ายสิทธิ์การบันทึกเอกสารลง DB และการอัปไฟล์ขึ้น Drive มาทำที่นี่เมื่อมีการยืนยันสำเร็จเท่านั้น
 exports.confirmTasks = async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const { documentId, memos, createdBy } = req.body;
+    const { fileInfo, memos, createdBy } = req.body;
+    const validCreatorId = createdBy ? createdBy : null;
+    let documentId = null;
 
-    const parsedCreator = parseInt(createdBy, 10);
-    const validCreatorId = !isNaN(parsedCreator) ? parsedCreator : null;
-    
+    // หากมีการส่งข้อมูลไฟล์มา และผ่านการกดยืนยันแล้ว ให้เริ่มกระบวนการจัดเก็บถาวร
+    if (fileInfo && fileInfo.path) {
+      // A. อัปโหลดไฟล์ตัวจริงขึ้น Google Drive
+      const driveData = await uploadToDrive(
+        { path: fileInfo.path, originalname: fileInfo.originalname, mimetype: fileInfo.mimetype },
+        DRIVE_FOLDER_ID
+      );
+
+      // B. สร้างรหัสแฮชเพื่อป้องกันการลงเอกสารซ้ำในตารางฐานข้อมูล
+      const hash = generateHash(fileInfo.text + Date.now().toString());
+
+      // C. บันทึกลงตารางเอกสารต้นฉบับ (documents) และดึงรหัส ID ออกมาใช้งาน
+      const docRes = await client.query(
+        `INSERT INTO documents (filename, content, content_hash, keywords_found, drive_file_id, drive_web_view_link, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+        [
+          fileInfo.originalname,
+          fileInfo.text,
+          hash,
+          JSON.stringify({ memos }), 
+          driveData.id,
+          driveData.webViewLink,
+          validCreatorId
+        ]
+      );
+      documentId = docRes.rows[0].id;
+    }
+
+    // ทำการบันทึกรายการงานติดตามทั้งหมดเข้าสู่ตารางระบบงาน
     if (memos && memos.length > 0) {
       for (const memo of memos) {
         const taskRes = await client.query(
@@ -128,9 +156,7 @@ exports.confirmTasks = async (req, res) => {
 
         if (memo.assignments && memo.assignments.length > 0) {
           for (const assign of memo.assignments) {
-            // 💡 FIX: ป้องกัน Error NaN เข้าสู่ Database
-            const parsedId = parseInt(assign.user_id, 10);
-            const userId = !isNaN(parsedId) ? parsedId : null; 
+            const userId = assign.user_id ? assign.user_id : null; 
             const personStr = assign.responsible_person || '';
 
             const assignRes = await client.query(
@@ -152,12 +178,19 @@ exports.confirmTasks = async (req, res) => {
         }
       }
     }
+    
     await client.query('COMMIT');
-    res.status(200).json({ success: true, message: 'บันทึกงานสำเร็จ!' });
+
+    // ลบไฟล์ชั่วคราวบน Local Server ออกทันทีหลังจากอัปโหลดเสร็จสมบูรณ์เรียบร้อยแล้ว
+    if (fileInfo && fileInfo.path) {
+      try { await fs.unlink(fileInfo.path); } catch (e) { console.error("Warning: Cannot delete temp file", e.message); }
+    }
+
+    res.status(200).json({ success: true, message: 'บันทึกเอกสารและงานติดตามสำเร็จเรียบร้อย!' });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error("Confirm error:", err.message);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    res.status(500).json({ success: false, message: 'Server Error', error: err.message });
   } finally {
     client.release();
   }
@@ -185,43 +218,34 @@ exports.updateTaskDetail = async (req, res) => {
     );
 
     if (assignments && Array.isArray(assignments)) {
-      
-      // 💡 1. จัดการลบ Assignments ที่ถูกลบทิ้งจากหน้าเว็บ
       const keepAssignmentIds = assignments
-        .map(a => parseInt(a.assignment_id, 10))
-        .filter(n => !isNaN(n));
+        .map(a => a.assignment_id)
+        .filter(id => id != null && id !== '');
 
       if (keepAssignmentIds.length > 0) {
-        // หา assignment_id ที่อยู่ในฐานข้อมูล แต่ไม่มีส่งมาจากหน้าเว็บ
         const deletedAssigns = await client.query(
-          `SELECT id FROM task_assignments WHERE task_id = $1 AND NOT (id = ANY($2::int[]))`,
+          `SELECT id FROM task_assignments WHERE task_id = $1 AND NOT (id = ANY($2::uuid[]))`,
           [id, keepAssignmentIds]
         );
         const delIds = deletedAssigns.rows.map(r => r.id);
         
-        // ต้องลบ Topics ย่อยของ Assignment นั้นก่อนป้องกัน Foreign Key Error
         if (delIds.length > 0) {
-          await client.query(`DELETE FROM task_topics WHERE assignment_id = ANY($1::int[])`, [delIds]);
+          await client.query(`DELETE FROM task_topics WHERE assignment_id = ANY($1::uuid[])`, [delIds]);
         }
-        await client.query(`DELETE FROM task_assignments WHERE task_id = $1 AND NOT (id = ANY($2::int[]))`, [id, keepAssignmentIds]);
+        await client.query(`DELETE FROM task_assignments WHERE task_id = $1 AND NOT (id = ANY($2::uuid[]))`, [id, keepAssignmentIds]);
       } else {
-        // ถ้าบนหน้าเว็บลบออกทั้งหมด
         const allAssigns = await client.query(`SELECT id FROM task_assignments WHERE task_id = $1`, [id]);
         const allIds = allAssigns.rows.map(r => r.id);
         if (allIds.length > 0) {
-          await client.query(`DELETE FROM task_topics WHERE assignment_id = ANY($1::int[])`, [allIds]);
+          await client.query(`DELETE FROM task_topics WHERE assignment_id = ANY($1::uuid[])`, [allIds]);
           await client.query(`DELETE FROM task_assignments WHERE task_id = $1`, [id]);
         }
       }
 
-      // 💡 2. จัดการอัปเดตและเพิ่มข้อมูลใหม่
       for (const assign of assignments) {
         let currentAssignmentId = assign.assignment_id;
+        const userId = assign.user_id ? assign.user_id : null;
         
-        const parsedId = parseInt(assign.user_id, 10);
-        const userId = !isNaN(parsedId) ? parsedId : null;
-        
-        // ถ้าไม่มี assignment_id แปลว่าเป็นของใหม่ที่เพิ่งกดปุ่ม "+ เพิ่มการมอบหมายงาน"
         if (!currentAssignmentId) {
           const newAssignRes = await client.query(
             `INSERT INTO task_assignments (task_id, user_id, role_or_name) VALUES ($1, $2, $3) RETURNING id`,
@@ -229,22 +253,20 @@ exports.updateTaskDetail = async (req, res) => {
           );
           currentAssignmentId = newAssignRes.rows[0].id;
         } else {
-          // ถ้ามีอยู่แล้วให้แก้ไขข้อมูลคนรับผิดชอบ
           await client.query(
             `UPDATE task_assignments SET user_id = $1 WHERE id = $2 AND task_id = $3`,
             [userId, currentAssignmentId, id]
           );
         }
 
-        // จัดการหัวข้อ (Topics) ย่อยด้านใน Assignment
         if (assign.topics && Array.isArray(assign.topics)) {
           const keepTopicIds = assign.topics
                                 .filter(t => t.topic_id)
-                                .map(t => parseInt(t.topic_id, 10))
-                                .filter(n => !isNaN(n)); 
+                                .map(t => t.topic_id)
+                                .filter(id => id != null && id !== ''); 
           
           if (keepTopicIds.length > 0) {
-            await client.query(`DELETE FROM task_topics WHERE assignment_id = $1 AND NOT (id = ANY($2::int[]))`, [currentAssignmentId, keepTopicIds]);
+            await client.query(`DELETE FROM task_topics WHERE assignment_id = $1 AND NOT (id = ANY($2::uuid[]))`, [currentAssignmentId, keepTopicIds]);
           } else {
             await client.query(`DELETE FROM task_topics WHERE assignment_id = $1`, [currentAssignmentId]);
           }
@@ -267,11 +289,10 @@ exports.updateTaskDetail = async (req, res) => {
         }
       }
     } else {
-        // กรณีที่ไม่เหลือ assignments เลย
         const allAssigns = await client.query(`SELECT id FROM task_assignments WHERE task_id = $1`, [id]);
         const allIds = allAssigns.rows.map(r => r.id);
         if (allIds.length > 0) {
-          await client.query(`DELETE FROM task_topics WHERE assignment_id = ANY($1::int[])`, [allIds]);
+          await client.query(`DELETE FROM task_topics WHERE assignment_id = ANY($1::uuid[])`, [allIds]);
           await client.query(`DELETE FROM task_assignments WHERE task_id = $1`, [id]);
         }
     }
@@ -358,8 +379,7 @@ exports.deleteTask = async (req, res) => {
     const assignmentIds = assignmentsRes.rows.map(row => row.id);
 
     if (assignmentIds.length > 0) {
-      // 💡 FIX: Cast type เป็น int array ::int[] ป้องกัน SQL type parsing issue
-      await client.query('DELETE FROM task_topics WHERE assignment_id = ANY($1::int[])', [assignmentIds]);
+      await client.query('DELETE FROM task_topics WHERE assignment_id = ANY($1::uuid[])', [assignmentIds]);
     }
     await client.query('DELETE FROM task_assignments WHERE task_id = $1', [id]);
     const result = await client.query('DELETE FROM tasks WHERE id = $1 RETURNING *', [id]);
@@ -384,43 +404,22 @@ exports.createTask = async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-
-    const { 
-      title, 
-      memo_no, 
-      memo_date, 
-      due_date, 
-      main_text, 
-      is_urgent, 
-      assignments 
-    } = req.body;
+    const { title, memo_no, memo_date, due_date, main_text, is_urgent, assignments } = req.body;
 
     const taskRes = await client.query(
       `INSERT INTO tasks (title, memo_no, memo_date, main_text, due_date, is_urgent, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-      [
-        title || 'ไม่ระบุชื่อเรื่อง', 
-        memo_no, 
-        memo_date || null, 
-        main_text, 
-        due_date || null, 
-        is_urgent || false,
-        'following'
-      ]
+      [title || 'ไม่ระบุชื่อเรื่อง', memo_no, memo_date || null, main_text, due_date || null, is_urgent || false, 'following']
     );
     const taskId = taskRes.rows[0].id;
 
     if (assignments && assignments.length > 0) {
       for (const assign of assignments) {
-        
-        // 💡 FIX: ป้องกัน TypeError
-        const parsedId = parseInt(assign.user_id, 10);
-        const userId = !isNaN(parsedId) ? parsedId : null;
+        const userId = assign.user_id ? assign.user_id : null;
         const roleOrName = assign.role_or_name || null;
 
         const assignRes = await client.query(
-          `INSERT INTO task_assignments (task_id, user_id, role_or_name)
-           VALUES ($1, $2, $3) RETURNING id`,
+          `INSERT INTO task_assignments (task_id, user_id, role_or_name) VALUES ($1, $2, $3) RETURNING id`,
           [taskId, userId, roleOrName]
         );
         const assignmentId = assignRes.rows[0].id;
@@ -428,8 +427,7 @@ exports.createTask = async (req, res) => {
         if (assign.topics && assign.topics.length > 0) {
           for (const topicDetail of assign.topics) {
             await client.query(
-              `INSERT INTO task_topics (assignment_id, detail, is_completed) 
-               VALUES ($1, $2, $3)`,
+              `INSERT INTO task_topics (assignment_id, detail, is_completed) VALUES ($1, $2, $3)`,
               [assignmentId, topicDetail, false]
             );
           }
@@ -438,12 +436,7 @@ exports.createTask = async (req, res) => {
     }
 
     await client.query('COMMIT');
-    res.status(201).json({ 
-      success: true, 
-      message: 'สร้างงานสำเร็จ!', 
-      taskId: taskId 
-    });
-
+    res.status(201).json({ success: true, message: 'สร้างงานสำเร็จ!', taskId: taskId });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error("Create task error:", err.message);

@@ -272,7 +272,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
             <div className="flex-1 w-full overflow-y-auto pr-2 pb-4 flex flex-col gap-8 min-h-0">
                 {filesData.length > 0 ? (
                     filesData.map((file, fileIdx) => (
-                        <div key={fileIdx} className={`${styles.ContentWrapper} flex flex-col shrink-0 overflow-hidden shadow-md`} style={{ minHeight: 'auto' }}>
+                        <div key={fileIdx} className={`${styles.ContentWrapper} flex flex-col shrink-0 shadow-md h-auto`}>
                             <div className="bg-(--container) shrink-0 border-b border-gray-400 z-10 w-full rounded-t-sm relative">
                                 <div className="p-4 sm:px-6 py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                                     <div className="text-base font-bold text-(--header) flex items-center gap-2">
