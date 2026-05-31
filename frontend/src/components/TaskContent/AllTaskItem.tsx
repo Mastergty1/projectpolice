@@ -147,7 +147,7 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
                                         ))
                                     ) : (
                                         personInCharge.split(',').map((person, idx) => (
-                                            <span key={idx} className="px-2.5 py-0.5 rounded-md text-xs sm:text-sm font-bold whitespace-nowrap shadow-sm bg-gray-200 text-gray-700">
+                                            <span key={idx} className="px-2.5 py-0.5 rounded-md text-xs sm:text-sm font-bold whitespace-nowrap shadow-sm bg-(--wrapper) text-(--foreground)">
                                                 {person.trim()}
                                             </span>
                                         ))
@@ -164,7 +164,7 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
                                     : `เหลืออีก ${diffDays} วัน`}</span>
                             </p>
 
-                            <div className="w-full shrink-0 block bg-gray-200 rounded-full h-2.5 mt-2 border border-gray-300 overflow-hidden">
+                            <div className="w-full shrink-0 block bg-(--wrapper) rounded-full h-2.5 mt-2 border border-(--shadow) overflow-hidden">
                                 <div 
                                     className={`h-full rounded-full transition-all duration-500 ease-in-out ${progressColor}`} 
                                     style={{ width: `${progressPercent}%` }}

@@ -273,7 +273,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                 {filesData.length > 0 ? (
                     filesData.map((file, fileIdx) => (
                         <div key={fileIdx} className={`${styles.ContentWrapper} flex flex-col shrink-0 shadow-md h-auto`}>
-                            <div className="bg-(--container) shrink-0 border-b border-gray-400 z-10 w-full rounded-t-sm relative">
+                            <div className="bg-(--container) shrink-0 border-b border-(--shadow) z-10 w-full rounded-t-sm relative">
                                 <div className="p-4 sm:px-6 py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                                     <div className="text-base font-bold text-(--header) flex items-center gap-2">
                                         <span className="text-xl">📁</span>
@@ -301,7 +301,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                 <strong className="shrink-0 whitespace-nowrap">สำหรับ</strong>
                                                 <div className="relative">
                                                     <div 
-                                                        className={`${styles.Dropdown} min-w-37.5 cursor-pointer flex justify-between items-center bg-(--button) border border-gray-300 rounded p-2`}
+                                                        className={`${styles.Dropdown} min-w-37.5 cursor-pointer flex justify-between items-center bg-(--button) border border-(--shadow) rounded p-2`}
                                                         onClick={() => setOpenDropdownIdx(openDropdownIdx === fileIdx ? null : fileIdx)}
                                                     >
                                                         <span className="truncate max-w-37.5 text-sm text-foreground">
@@ -311,8 +311,8 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                     </div>
                                                     
                                                     {openDropdownIdx === fileIdx && (
-                                                        <div className="absolute top-full right-0 lg:left-0 mt-1 w-64 bg-(--container) border border-gray-300 shadow-xl rounded-md z-50 max-h-60 overflow-y-auto flex flex-col p-2">
-                                                            <label className="flex items-center gap-2 p-2 hover:bg-gray-100 cursor-pointer rounded font-bold text-blue-600">
+                                                        <div className="absolute top-full right-0 lg:left-0 mt-1 w-64 bg-(--container) border border-(--shadow) shadow-xl rounded-md z-50 max-h-60 overflow-y-auto flex flex-col p-2">
+                                                            <label className="flex items-center gap-2 p-2 hover:bg-(--wrapper) cursor-pointer rounded font-bold text-blue-600">
                                                                 <input 
                                                                     type="checkbox" 
                                                                     checked={file.selectedAssignees.includes("all")}
@@ -320,11 +320,11 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                                 />
                                                                 ทุกหน่วยงาน (ทุกคน)
                                                             </label>
-                                                            <hr className="my-1 border-gray-200" />
+                                                            <hr className="my-1 border-(--shadow)/60" />
                                                             {users.map(u => {
                                                                 const uid = String(u.id || u._id);
                                                                 return (
-                                                                    <label key={uid} className="flex items-center gap-2 p-2 hover:bg-gray-100 cursor-pointer rounded text-sm text-foreground">
+                                                                    <label key={uid} className="flex items-center gap-2 p-2 hover:bg-(--wrapper) cursor-pointer rounded text-sm text-foreground">
                                                                         <input 
                                                                             type="checkbox" 
                                                                             checked={file.selectedAssignees.includes(uid)}
@@ -353,12 +353,12 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                 {file.memos.length > 0 ? (
                                     <div className="flex flex-col gap-8">
                                         {file.memos.map((memo, index) => (
-                                            <div key={index} className="text-sm flex flex-col gap-4 border-b border-gray-400 pb-6 last:border-b-0 shrink-0">
+                                            <div key={index} className="text-sm flex flex-col gap-4 border-b border-(--shadow) pb-6 last:border-b-0 shrink-0">
                                                 <h3 className="text-md font-bold" style={{ color: "var(--header)" }}>📄 เอกสารหน้าที่/ฉบับที่ {index + 1}</h3>
                                                 <div className="flex flex-col gap-2 p-4 rounded-lg border bg-(--container) border-(--shadow) shrink-0 text-foreground">
                                                     <div className="flex items-center gap-2">
                                                         <strong className="w-12 shrink-0">ที่:</strong>
-                                                        <input type="text" className="border border-gray-300 p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-(--button)" value={memo.ที่ || ''} onChange={(e) => handleMemoChange(fileIdx, index, "ที่", e.target.value)} />
+                                                        <input type="text" className="border border-(--shadow) p-1.5 rounded flex-1 focus:ring-2 focus:ring-blue-400 outline-none bg-(--button)" value={memo.ที่ || ''} onChange={(e) => handleMemoChange(fileIdx, index, "ที่", e.target.value)} />
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <strong className="w-12 shrink-0">วันที่:</strong>
@@ -377,7 +377,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                         <input type="text" className="border border-(--wrapper) p-1.5 rounded flex-1 focus:ring-2 focus:ring-(--blueText) outline-none bg-(--button)" value={memo.เรียน || ''} onChange={(e) => handleMemoChange(fileIdx, index, "เรียน", e.target.value)} />
                                                     </div>
                                                     
-                                                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">
+                                                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-(--shadow)/60">
                                                         <input type="checkbox" id={`urgent-${fileIdx}-${index}`} checked={memo.isUrgent || false} onChange={(e) => handleMemoChange(fileIdx, index, "isUrgent", e.target.checked)} className="w-4 h-4 cursor-pointer" style={{ accentColor: 'var(--redText)' }} />
                                                         <label htmlFor={`urgent-${fileIdx}-${index}`} className="cursor-pointer font-bold text-red-600">🔥 กำหนดให้เอกสารนี้เป็นงานเร่งด่วน</label>
                                                     </div>
@@ -398,7 +398,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                         <strong className="text-base" style={{ color: "var(--header)" }}>การมอบหมายงาน/ความรับผิดชอบ:</strong>
                                                         <div className="flex flex-col gap-4 mt-3">
                                                             <div className="p-4 rounded-lg border shrink-0 text-foreground bg-(--container) border-(--shadow)">
-                                                                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-gray-100 pb-3 mb-3">
+                                                                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-(--shadow)/40 pb-3 mb-3">
                                                                     <p className="font-bold text-base text-green-700 leading-relaxed">
                                                                         มอบหมายให้: &nbsp;
                                                                         <span className="text-blue-700 bg-blue-50 px-2 py-1 rounded">
@@ -412,40 +412,40 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                                         </span>
                                                                     </p>
                                                                 </div>
-                                                                <div className="pl-2 sm:pl-4 border-l-2 border-gray-200">
+                                                                <div className="pl-2 sm:pl-4 border-l-2 border-(--shadow)/60">
                                                                     <div className="flex flex-row items-center justify-between mt-2 mb-2">
                                                                         <strong>สิ่งที่ต้องดำเนินการ / หัวข้อที่รับผิดชอบร่วมกัน:</strong>
                                                                         <button type="button" onClick={() => handleAddSharedTopic(fileIdx, index)} className="text-xs bg-blue-500 text-white px-2 py-1.5 rounded hover:bg-blue-600 font-medium">+ เพิ่มงานที่ต้องทำ</button>
                                                                     </div>
-                                                                    <ul className="list-none pl-1 mt-2 text-gray-700 flex flex-col gap-2">
+                                                                    <ul className="list-none pl-1 mt-2 text-(--foreground) flex flex-col gap-2">
                                                                         {memo.sharedTopics && memo.sharedTopics.length > 0 ? memo.sharedTopics.map((topic: string, topicIdx: number) => (
                                                                             <li key={topicIdx} className="flex gap-2 items-center">
-                                                                                <span className="text-gray-500 text-lg font-bold w-4">•</span>
-                                                                                <input type="text" className="border border-gray-300 p-2 rounded flex-1 text-sm outline-none bg-(--button) focus:ring-1 focus:ring-blue-400 w-full" placeholder="ระบุสิ่งที่ต้องดำเนินการ..." value={topic} onChange={(e) => handleSharedTopicChange(fileIdx, index, topicIdx, e.target.value)} />
+                                                                                <span className="text-(--foreground)/60 text-lg font-bold w-4">•</span>
+                                                                                <input type="text" className="border border-(--shadow) p-2 rounded flex-1 text-sm outline-none bg-(--button) focus:ring-1 focus:ring-blue-400 w-full" placeholder="ระบุสิ่งที่ต้องดำเนินการ..." value={topic} onChange={(e) => handleSharedTopicChange(fileIdx, index, topicIdx, e.target.value)} />
                                                                                 <button type="button" onClick={() => handleRemoveSharedTopic(fileIdx, index, topicIdx)} className="text-red-500 hover:bg-red-50 p-2 rounded text-lg font-bold shrink-0">✕</button>
                                                                             </li>
-                                                                        )) : <li className="text-gray-400 text-sm">- ยังไม่มีสิ่งที่ต้องดำเนินการ -</li>}
+                                                                        )) : <li className="text-(--foreground)/50 text-sm">- ยังไม่มีสิ่งที่ต้องดำเนินการ -</li>}
                                                                     </ul>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <div className="mt-4 shrink-0 p-5 bg-gray-50 border border-gray-200 rounded-lg text-center shadow-sm">
-                                                        <span className="text-gray-500 font-bold text-lg">⚠️ กรุณาเลือกผู้รับผิดชอบจากด้านบนก่อนเพิ่มรายละเอียดงาน</span>
+                                                    <div className="mt-4 shrink-0 p-5 bg-(--container) border border-(--shadow)/60 rounded-lg text-center shadow-sm">
+                                                        <span className="text-(--foreground)/60 font-bold text-lg">⚠️ กรุณาเลือกผู้รับผิดชอบจากด้านบนก่อนเพิ่มรายละเอียดงาน</span>
                                                     </div>
                                                 )}
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-gray-400 text-center py-8">เอกสารมีข้อมูลไม่ครบถ้วน จึงถูกคัดกรองออก</div>
+                                    <div className="text-(--foreground)/50 text-center py-8">เอกสารมีข้อมูลไม่ครบถ้วน จึงถูกคัดกรองออก</div>
                                 )}
                             </div>
                         </div>
                     ))
                 ) : (
-                    <div className="text-gray-400 text-center flex items-center justify-center h-full py-10 bg-(--container) rounded-lg border border-(--shadow)">ยังไม่มีข้อมูล กรุณาอัพโหลดเอกสารเพื่อสแกน</div>
+                    <div className="text-(--foreground)/50 text-center flex items-center justify-center h-full py-10 bg-(--container) rounded-lg border border-(--shadow)">ยังไม่มีข้อมูล กรุณาอัพโหลดเอกสารเพื่อสแกน</div>
                 )}
             </div>
             

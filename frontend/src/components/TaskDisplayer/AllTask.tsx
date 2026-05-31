@@ -195,7 +195,7 @@ export default function AllTask() {
                     <hr className={styles.Line} />
                     
                     {isLoading ? (
-                        <div className="flex items-center justify-center w-full text-gray-500 font-bold" style={{ minHeight: '500px' }}>
+                        <div className="flex items-center justify-center w-full text-(--foreground)/60 font-bold" style={{ minHeight: '500px' }}>
                             กำลังโหลดข้อมูล...
                         </div>
                     ) : (

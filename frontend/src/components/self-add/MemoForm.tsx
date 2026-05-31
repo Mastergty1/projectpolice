@@ -215,12 +215,12 @@ export default function MemoForm() {
               <div className="p-4 rounded-xl mb-4" style={{ border: "1px solid var(--wrapper)", backgroundColor: "rgba(0,0,0,0.02)" }}>
                  <h3 className="font-bold text-sm mb-3" style={{ color: "var(--header)" }}>เลือกผู้รับผิดชอบ (เลือกได้หลายคน)</h3>
                  
-                 <div className="flex flex-col gap-2 max-h-48 overflow-y-auto border border-gray-300 p-3 rounded bg-(--button)">
+                 <div className="flex flex-col gap-2 max-h-48 overflow-y-auto border border-(--shadow) p-3 rounded bg-(--button)">
                      <label className="flex items-center gap-3 cursor-pointer font-bold text-blue-600">
                          <input type="checkbox" checked={selectedUsers.includes("all")} onChange={(e) => handleToggleUser("all", e.target.checked)} className="w-4 h-4 cursor-pointer" />
                          ทุกหน่วยงาน (ส่วนกลาง)
                      </label>
-                     <hr className="my-1 border-gray-200" />
+                     <hr className="my-1 border-(--shadow)/60" />
                      {users.map(u => {
                          const uid = String(u.id || u._id);
                          return (
@@ -249,10 +249,10 @@ export default function MemoForm() {
                                   <div className="pl-4 border-l-2 border-blue-200">
                                       {topics.map((topic, tIndex) => (
                                           <div key={tIndex} className="flex gap-2 items-center mb-2">
-                                              <span className="font-bold text-gray-400 w-4">•</span>
+                                              <span className="font-bold text-(--foreground)/50 w-4">•</span>
                                               <input 
                                                   type="text" 
-                                                  className="rounded-md p-2 w-full outline-none focus:ring-2 focus:ring-blue-400 bg-(--button) border border-gray-300" 
+                                                  className="rounded-md p-2 w-full outline-none focus:ring-2 focus:ring-blue-400 bg-(--button) border border-(--shadow)" 
                                                   placeholder="ระบุรายละเอียดงานย่อย..."
                                                   value={topic.detail} 
                                                   onChange={(e) => handleTopicChange(uid, tIndex, e.target.value)}
