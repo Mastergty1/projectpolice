@@ -1,6 +1,7 @@
 import styles from "./Details.module.css"
 import { useState, useEffect } from "react";
 
+// ฟังก์ชันคำนวณสีตัวอักษรให้อ่านง่าย
 const getTextColor = (bgColor: string) => {
     if (!bgColor || !bgColor.startsWith('#')) return '#1f2937'; 
     const hex = bgColor.replace('#', '');
@@ -160,7 +161,7 @@ export default function DetailsDisplayer({
                                     target="_blank" 
                                     rel="noopener noreferrer" 
                                     className={styles.Button}
-                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1rem', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1rem', textDecoration: 'none' }}
                                 >
                                     📄 เปิดดูไฟล์เอกสารต้นฉบับ
                                 </a>
@@ -179,7 +180,7 @@ export default function DetailsDisplayer({
                                 <button 
                                     onClick={handleAddAssignment}
                                     className={styles.Button}
-                                    style={{ fontSize: '1rem', padding: '0.4rem 0.8rem', margin: 0, whiteSpace: 'nowrap', flexShrink: 0 }}
+                                    style={{ fontSize: '1rem', padding: '0.4rem 0.8rem', margin: 0 }}
                                 >
                                     + เพิ่มการมอบหมายงาน
                                 </button>
@@ -190,8 +191,9 @@ export default function DetailsDisplayer({
                             {taskData?.assignments?.length > 0 ? taskData.assignments.map((assign: any, index: number) => {
                                 const isAssignCompleted = assign.topics?.length > 0 && assign.topics.every((t: any) => t.is_completed);
                                 
+                                // คำนวณสีประจำตัวของผู้ใช้งาน
                                 const assignedUser = users.find(u => String(u.id || u._id) === String(assign.user_id));
-                                const userColor = assignedUser?.color || '#e5e7eb'; 
+                                const userColor = assignedUser?.color || '#e5e7eb'; // สีเริ่มต้น (เทา)
                                 const userTextColor = getTextColor(userColor);
 
                                 return (
@@ -204,14 +206,13 @@ export default function DetailsDisplayer({
                                         borderColor: isAssignCompleted ? 'var(--greenBorder)' : 'var(--wrapper)'
                                     }}>
                                         
-                                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 box-border" style={{ borderBottom: '1px solid var(--wrapper)' }}>
-                                            {/* 💡 บังคับให้เป็น flex-row (แนวนอน) เพื่อให้คำว่า "สำหรับ..." อยู่บรรทัดเดียวกับ Select/Span */}
-                                            <div className="flex flex-row items-center gap-2 w-full sm:w-auto flex-1 min-w-0 box-border">
-                                                <label className="font-bold text-base sm:text-lg whitespace-nowrap shrink-0" style={{ color: isAssignCompleted ? 'var(--greenText)' : 'var(--header)' }}>สำหรับ (ผู้รับผิดชอบ):</label>
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3" style={{ borderBottom: '1px solid var(--wrapper)' }}>
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                                <label className="font-bold text-lg" style={{ color: isAssignCompleted ? 'var(--greenText)' : 'var(--header)' }}>สำหรับ (ผู้รับผิดชอบ):</label>
                                                 {isEditing ? (
                                                     <select 
                                                         className={styles.CustomSelect}
-                                                        style={{ padding: '0.4rem 0.8rem', flex: '1', minWidth: '0', maxWidth: '100%' }}
+                                                        style={{ padding: '0.4rem 0.8rem', width: 'auto' }}
                                                         value={assign.user_id || ""}
                                                         onChange={(e) => handleUserSelect(index, e.target.value)}
                                                     >
@@ -224,8 +225,8 @@ export default function DetailsDisplayer({
                                                     </select>
                                                 ) : (
                                                     <span 
-                                                        className="px-3 py-1 rounded-md text-sm sm:text-base font-bold shadow-sm border border-black/10 whitespace-nowrap truncate" 
-                                                        style={{ backgroundColor: userColor, color: userTextColor, maxWidth: '100%' }}
+                                                        className="px-3 py-1 rounded-md text-sm sm:text-base font-bold shadow-sm border border-black/10" 
+                                                        style={{ backgroundColor: userColor, color: userTextColor }}
                                                     >
                                                         {assign.personInCharge || "ไม่ระบุ"}
                                                     </span>
@@ -235,8 +236,8 @@ export default function DetailsDisplayer({
                                             {isEditing && (
                                                 <button 
                                                     onClick={() => handleDeleteAssignment(index)}
-                                                    className={`${styles.Clickable} ${styles.Red} w-full sm:w-auto mt-2 sm:mt-0`}
-                                                    style={{ minHeight: '2rem', padding: '0.4rem 0.8rem', fontSize: '0.9rem', whiteSpace: 'nowrap', flexShrink: 0 }}
+                                                    className={`${styles.Clickable} ${styles.Red}`}
+                                                    style={{ minHeight: '2rem', padding: '0.4rem 0.8rem', width: 'auto', fontSize: '0.9rem' }}
                                                 >
                                                     ลบมอบหมายงานนี้
                                                 </button>
@@ -244,11 +245,11 @@ export default function DetailsDisplayer({
                                         </div>
 
                                         <div className="flex flex-col gap-3">
-                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                            <div className="flex flex-row items-center justify-between gap-2">
                                                 <div className="flex flex-row items-center gap-2">
-                                                    <h3 className="font-bold whitespace-nowrap" style={{ color: isAssignCompleted ? 'var(--greenText)' : 'var(--header)' }}>สิ่งที่ต้องดำเนินการ:</h3>
+                                                    <h3 className="font-bold" style={{ color: isAssignCompleted ? 'var(--greenText)' : 'var(--header)' }}>สิ่งที่ต้องดำเนินการ:</h3>
                                                     {isAssignCompleted && (
-                                                        <span className={`${styles.Green}`} style={{ padding: '0.2rem 0.5rem', borderRadius: '0.3rem', fontSize: '0.8rem', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                                                        <span className={`${styles.Green}`} style={{ padding: '0.2rem 0.5rem', borderRadius: '0.3rem', fontSize: '0.8rem', fontWeight: 'bold' }}>
                                                             ✅ เสร็จสิ้นแล้ว
                                                         </span>
                                                     )}
@@ -256,7 +257,7 @@ export default function DetailsDisplayer({
                                                 {isEditing && (
                                                     <button 
                                                         className={styles.Button}
-                                                        style={{ fontSize: '0.9rem', padding: '0.3rem 0.6rem', margin: 0, whiteSpace: 'nowrap', flexShrink: 0 }}
+                                                        style={{ fontSize: '0.9rem', padding: '0.3rem 0.6rem', margin: 0 }}
                                                         onClick={() => handleAddTopic(index)}
                                                     >
                                                         + เพิ่มหัวข้อย่อย
@@ -280,7 +281,7 @@ export default function DetailsDisplayer({
                                                                 <input 
                                                                     type="text" 
                                                                     className={styles.CustomSelect}
-                                                                    style={{ padding: '0.4rem 0.8rem', flex: 1, minWidth: 0 }}
+                                                                    style={{ padding: '0.4rem 0.8rem' }}
                                                                     value={topic.detail || ""}
                                                                     onChange={(e) => handleTopicChange(index, i, e.target.value)}
                                                                     placeholder="รายละเอียดงาน..."

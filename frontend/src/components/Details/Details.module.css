@@ -2,7 +2,6 @@
     color: var(--header);
     font-weight: bold;
     font-size: 2.5rem;
-    word-break: break-word;
 }
 
 .ContentWrapper {
@@ -44,8 +43,8 @@
     flex-direction: column;
     gap: 1rem;
     min-height: 0;
-    min-height: min-content; 
-    height: auto;            
+    min-height: min-content; /* Force container to expand if content wraps */
+    height: auto;            /* Allow it to grow naturally */
     flex-shrink: 0;
 }
 
@@ -79,7 +78,6 @@
     padding: 0.2rem 0.5rem;
     margin: 0rem 0.4rem;
     border-radius: 0.3rem;
-    flex-shrink: 0;
 }
 
 .Button{
@@ -91,9 +89,6 @@
     color: var(--header);
     font-size: 1.25rem;
     transition: 0.1s ease;
-    white-space: nowrap;
-    flex-shrink: 0;
-    text-align: center;
 }
 
 .Button:hover{
@@ -115,7 +110,6 @@
     flex-shrink: 0;
     font-weight: bold;
     cursor: pointer;
-    white-space: nowrap;
 }
 .ButtonBack:hover {
     background-color: var(--container);
@@ -133,18 +127,19 @@
     overflow: hidden;
     flex-shrink: 0;
     container-type: inline-size;
+
 }
 
 .InnerWrapper{
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    
 }
 
 .InfoContainer{
     display: flex;
     flex-direction: row;
-    min-width: 0;
 }
 
 .DetailedContainer{
@@ -169,12 +164,14 @@
         flex-direction: column;
         gap: 0.2rem;
     }
+
 }
 
 @container(max-width: 375px){
     .InfoContainer{
         flex-direction: column;
     }
+    
 }
 
 @container(max-width: 200px){
@@ -216,25 +213,30 @@
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
+    
     align-items: start;
-    min-width: 0;
+}
+
+.Header{
+    color: var(--header);
+    font-weight: bold;
+    font-size: 2rem;
 }
 
 
 .Clickable {
     background-color: var(--container);
     border: 2px solid var(--wrapper);
-    padding: 0.75rem 1rem;  
+    padding: 0.6rem 0.5rem;
     border-radius: 0.7rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex: 1;
     width: 100%;
     transition: 0.1s ease;
-    min-height: 3.2rem;     
-    max-height: none;       
-    white-space: nowrap;    
-    flex-shrink: 0;         
+    min-height: 3rem;   /* 💡 บังคับความสูงขั้นต่ำไม่ให้ปุ่มโดนบีบจนจม */
+    flex-shrink: 0;     /* 💡 ห้ามไม่ให้วัตถุหดตัวเมื่อจอเล็กลง */
     font-weight: bold;
 }
 
@@ -245,7 +247,7 @@
 
 .SelectWrapper{
     flex: 1;
-    min-width: 120px;
+    
 }
 
 .SelectWrapper:hover{
@@ -261,18 +263,23 @@
     align-items: center;
     align-self: center;
 
+    
+
+
     gap: 0.5rem;
     color: var(--header);
     
     max-width: 250px;
     min-width: 250px;
     flex-shrink: 0;
+
 }
 
 .ButtonContainer > *{
     flex: 1;
     min-width: 0;
     width: 100%;
+    
 }
 
 @container (max-width: 700px){
@@ -281,11 +288,14 @@
         align-items: stretch;
         max-width: none;
         align-self: stretch;
+        min-width: none;
+
     }
 }
 @container (max-width: 400px){
     .ButtonContainer{
         flex-direction: column;
+        min-width: none;
     }
 }
 
@@ -360,9 +370,9 @@
     background-color: var(--button);
     border: 2px solid var(--wrapper);
     border-radius: 0.3rem;
-    min-width: 0;
 }
 
+/* เพิ่ม Container แบบเลื่อนอิสระสำหรับข้อความยาวๆ */
 .ContentHeaderScrollable {
     padding: 1.5rem 1.5rem;
     display: flex;
@@ -381,7 +391,7 @@
     border-radius: 10px;
 }
 
-
+/* สไตล์สำหรับ Dropdown แบบ Native ที่เพิ่มเข้าไปใหม่ */
 .CustomSelect {
     background-color: var(--container);
     border: 2px solid var(--wrapper);
@@ -393,39 +403,40 @@
     outline: none;
     cursor: pointer;
     transition: 0.2s ease;
-    flex-shrink: 0;
-    min-width: 150px;
 }
 .CustomSelect:focus {
     border-color: var(--yellowBorder);
 }
 
+/* แก้ไขบัค "ปุ่มจม" (พอหน้าจอแคบหรือเลื่อนแนวนอนแล้วปุ่มหดตัว/หายไป) */
+.Clickable {
+    background-color: var(--container);
+    border: 2px solid var(--wrapper);
+    padding: 0.75rem 1rem;  /* เพิ่มพื้นที่ให้กดง่ายขึ้น */
+    border-radius: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    transition: 0.1s ease;
+    min-height: 3.2rem;     /* ล็อคความสูงขั้นต่ำไว้ไม่ให้แฟบ */
+    max-height: none;       /* ปลดล็อคไม่ให้ถูกตัดขาด */
+    white-space: nowrap;    /* ป้องกันข้อความตกบรรทัด */
+    font-weight: bold;
+}
+
+.Clickable:hover {
+    background-color: var(--wrapper);
+    cursor: pointer;
+}
+
+/* จัดกลุ่มปุ่มด้านล่างให้ Wrap อัตโนมัติเมื่อจอแคบ ป้องกันการทะลุหรือจมหาย */
 .ActionButtonsContainer {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     gap: 1rem;
-    flex-wrap: wrap; 
+    flex-wrap: wrap; /* ตัวแปรสำคัญ: ป้องกันปุ่มหดจนเบี้ยวหรือหลุดกรอบ */
     width: 100%;
     padding-top: 0.5rem;
-}
-/* --- เพิ่มโค้ดนี้ที่ล่างสุดของไฟล์ --- */
-
-/* บังคับให้ปุ่มทุกปุ่มไม่ทะลุขอบ และยอมให้ตัดคำได้ในจอมือถือ */
-.ButtonBack, .Clickable, .Button {
-    max-width: 100%;
-    box-sizing: border-box;
-    white-space: normal !important;
-    word-break: break-word;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* ป้องกันหน้าต่างรายละเอียดดันจอแตก */
-.ContentWrapper, .ContentContainer {
-    max-width: 100%;
-    box-sizing: border-box;
-    overflow-wrap: break-word;
 }
