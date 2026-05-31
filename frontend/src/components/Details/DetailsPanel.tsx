@@ -97,7 +97,7 @@ export default function DetailsPanel({
     const themeStyle = selectThemeMap[taskStatus] || selectThemeMap["following"];
 
     return (
-        <div className="flex flex-col w-full h-full gap-6 justify-between min-h-140">
+        <div className="flex flex-col w-full h-full gap-6 justify-between min-h-140 max-w-full box-border">
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
                     <div className={styles.ContentHeader}>
@@ -112,7 +112,7 @@ export default function DetailsPanel({
                                     <input 
                                         type="text" 
                                         className={styles.CustomSelect}
-                                        style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}
+                                        style={{ marginBottom: '0.5rem', fontWeight: 'bold', width: '100%', boxSizing: 'border-box' }}
                                         value={taskData?.name || ""} 
                                         onChange={(e) => setTaskData({ ...taskData, name: e.target.value })} 
                                     />
@@ -122,28 +122,27 @@ export default function DetailsPanel({
                                 <div className={styles.DetailContainer}>
                                     <div className={styles.DetailedContainer}>
                                         
-                                        <div className="flex flex-row items-center flex-wrap gap-2">
+                                        <div className="flex flex-col sm:flex-row sm:items-center flex-wrap gap-2">
                                             <strong>ผู้รับผิดชอบรวม: &nbsp; </strong> 
-                                            <span className={styles.TextArea} style={{ padding: '0.2rem 0.6rem', fontWeight: 'bold' }}>
+                                            <span className={styles.TextArea} style={{ padding: '0.2rem 0.6rem', fontWeight: 'bold', display: 'inline-block' }}>
                                                 {taskData?.personInCharge || "ไม่ระบุ"}
                                             </span>
                                         </div>
                                         
                                         {isEditing ? (
-                                            <div className="flex flex-col gap-2 mt-2">
+                                            <div className="flex flex-col gap-2 mt-2 max-w-full">
                                                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                                                     <strong>เปลี่ยนกำหนดส่ง: </strong>
                                                     <input 
                                                         type="datetime-local" 
                                                         className={styles.CustomSelect}
-                                                        style={{ width: 'auto', padding: '0.4rem 0.8rem' }}
+                                                        style={{ width: '100%', maxWidth: '300px', padding: '0.4rem 0.8rem', boxSizing: 'border-box' }}
                                                         value={taskData?.date ? formatForInput(taskData.date) : ""} 
                                                         onChange={(e) => {
                                                             setTaskData({ ...taskData, date: e.target.value });
                                                         }} 
                                                     />
                                                 </div>
-                                                {/* เพิ่ม Checkbox สำหรับกำหนดงานเร่งด่วน */}
                                                 <div className="flex flex-row items-center gap-2 mt-1">
                                                     <input 
                                                         type="checkbox" 
@@ -157,20 +156,19 @@ export default function DetailsPanel({
                                             </div>
                                         ) : (
                                             <div className="flex flex-col gap-1 mt-3">
-                                                <p className="flex flex-row">
+                                                <p className="flex flex-wrap wrap-break-word">
                                                     <strong>กำหนดส่ง: &nbsp; </strong> 
                                                     {isValidDate ? `${day} ${monthYear} เวลา ${timeText} น.` : "ไม่ระบุ"}
                                                 </p>
-                                                <p className="flex flex-row text-sm" style={{ color: "var(--header)" }}>
+                                                <p className="flex flex-wrap text-sm wrap-break-word" style={{ color: "var(--header)" }}>
                                                     <strong>สถานะเวลา: &nbsp; </strong>  
                                                     <span style={{ fontWeight: 'bold', color: diffTotalMinutes < 0 ? 'var(--redText)' : 'var(--blueText)' }}>
                                                         {timeRemainingDisplay}
                                                     </span>
                                                 </p>
-                                                {/* แสดงป้ายความเร่งด่วน */}
                                                 {taskData?.isUrgent && (
                                                     <p className="flex flex-row text-sm mt-1">
-                                                        <span style={{ fontWeight: 'bold', color: 'var(--redText)', backgroundColor: 'var(--redBG)', padding: '0.1rem 0.6rem', borderRadius: '0.4rem' }}>
+                                                        <span style={{ fontWeight: 'bold', color: 'var(--redText)', backgroundColor: 'var(--redBG)', padding: '0.2rem 0.6rem', borderRadius: '0.4rem' }}>
                                                             🔥 งานเร่งด่วน
                                                         </span>
                                                     </p>
@@ -182,10 +180,11 @@ export default function DetailsPanel({
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-4 mt-6 pt-6" style={{ borderTop: '1px solid var(--wrapper)' }}>
-                            <div className={styles.InteractionContainer}>
-                                <label className="min-w-17.5"><strong>สถานะ : </strong></label>
-                                <div className={styles.SelectWrapper}>
+                        <div className="flex flex-col gap-4 mt-6 pt-6 max-w-full box-border" style={{ borderTop: '1px solid var(--wrapper)' }}>
+                            {/* 💡 บังคับให้เป็น flex-row (แนวนอน) เสมอ เพื่อให้คำว่า "สถานะ :" กับ Dropdown อยู่บรรทัดเดียวกัน */}
+                            <div className="flex flex-row items-center gap-3 w-full box-border">
+                                <label className="whitespace-nowrap shrink-0"><strong>สถานะ : </strong></label>
+                                <div className="flex-1 min-w-0">
                                     <Select
                                         instanceId={`task-status-${taskData?.id}`}
                                         options={statusOption}
@@ -206,7 +205,8 @@ export default function DetailsPanel({
                                             borderRadius: "0.7rem",
                                             backgroundColor: themeStyle.bg,
                                             border: `2px solid ${themeStyle.border}`,
-                                            color: themeStyle.color
+                                            color: themeStyle.color,
+                                            width: "100%"
                                             }),
                                             menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                                             singleValue: (base) => ({ ...base, textAlign: "center", color: themeStyle.color }),
@@ -226,43 +226,49 @@ export default function DetailsPanel({
                                     />
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-2 mt-2">
+                            <div className="flex flex-col gap-2 mt-2 w-full box-border">
                                 <label><strong>บันทึกเพิ่มเติม : </strong></label>
                                 <textarea 
-                                    className={styles.TextArea}
-                                    style={{ padding: '0.6rem', color: 'var(--header)', outline: 'none' }}
+                                    className={`${styles.TextArea} w-full box-border`}
+                                    style={{ padding: '0.6rem', color: 'var(--header)', outline: 'none', maxWidth: '100%' }}
                                     rows={4} 
                                     value={taskData?.notes || ""} 
                                     onChange={(e) => setTaskData({ ...taskData, notes: e.target.value })}
                                 ></textarea>
-                                <button className={styles.Clickable} onClick={onUpdateTask}>บันทึกข้อมูลและบันทึกเพิ่มเติม</button>
+                                <button className={`${styles.Clickable} w-full sm:w-auto box-border`} onClick={onUpdateTask}>บันทึกข้อมูลและบันทึกเพิ่มเติม</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 w-full mt-4">
-                <Link href={'/'} className="w-full sm:w-1/3">
-                    <button className={styles.ButtonBack}>กลับหน้าหลัก</button>
+            <div className="flex flex-col sm:flex-row gap-3 w-full mt-2 box-border">
+                <Link href={'/'} className="w-full sm:w-1/3 flex">
+                    <button className={`${styles.ButtonBack} w-full min-h-11`}>กลับหน้าหลัก</button>
                 </Link>
-                <div className="flex flex-row gap-4 flex-1">
+                
+                <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full min-w-0 box-border">
                     {isEditing ? (
                         <button 
-                            className={`${styles.Clickable} ${styles.Green}`} 
+                            className={`${styles.Clickable} ${styles.Green} w-full flex-1 min-h-11`} 
                             onClick={onUpdateTask}
                         >
                             ตกลง (บันทึกข้อมูล)
                         </button>
                     ) : (
                         <button 
-                            className={`${styles.Clickable} ${styles.Yellow}`} 
+                            className={`${styles.Clickable} ${styles.Yellow} w-full flex-1 min-h-11`} 
                             onClick={() => setIsEditing(true)}
                         >
                             แก้ไขข้อมูล
                         </button>
                     )}
-                    <button className={`${styles.Clickable} ${styles.Red}`} onClick={onDeleteTask}>ลบงานติดตามนี้</button>
+                    <button 
+                        className={`${styles.Clickable} ${styles.Red} w-full flex-1 min-h-11`} 
+                        onClick={onDeleteTask}
+                    >
+                        ลบงานติดตามนี้
+                    </button>
                 </div>
             </div>
         </div>

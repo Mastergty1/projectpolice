@@ -409,3 +409,23 @@
     width: 100%;
     padding-top: 0.5rem;
 }
+/* --- เพิ่มโค้ดนี้ที่ล่างสุดของไฟล์ --- */
+
+/* บังคับให้ปุ่มทุกปุ่มไม่ทะลุขอบ และยอมให้ตัดคำได้ในจอมือถือ */
+.ButtonBack, .Clickable, .Button {
+    max-width: 100%;
+    box-sizing: border-box;
+    white-space: normal !important;
+    word-break: break-word;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ป้องกันหน้าต่างรายละเอียดดันจอแตก */
+.ContentWrapper, .ContentContainer {
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
+}

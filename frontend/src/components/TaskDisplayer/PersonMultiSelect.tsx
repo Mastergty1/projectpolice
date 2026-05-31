@@ -15,11 +15,9 @@ export default function PersonMultiSelect({
     setPersonFilter
 }: PersonMultiSelectProps) {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    // 💡 FIX: เพิ่ม State เก็บรายชื่อคนจาก Database ทั้งหมด
     const [dbUsers, setDbUsers] = useState<string[]>([]);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // ดึง User ทั้งหมดจาก Database เพื่อโชว์ใน Dropdown
     useEffect(() => {
         const fetchAllUsers = async () => {
             try {
@@ -44,7 +42,6 @@ export default function PersonMultiSelect({
         fetchAllUsers();
     }, []);
 
-    // ดักจับการคลิกนอกพื้นที่เพื่อปิด Dropdown
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -63,7 +60,6 @@ export default function PersonMultiSelect({
         );
     };
 
-    // 💡 FIX: รวมรายชื่อทั้งจาก Task (uniquePersons) และจาก Database เข้าด้วยกัน โดยตัดตัวซ้ำออก
     const allDisplayPersons = Array.from(new Set([...uniquePersons, ...dbUsers, 'ไม่ระบุ']));
 
     return (
@@ -79,9 +75,27 @@ export default function PersonMultiSelect({
                             ? "ทุกคน" 
                             : `เลือกแล้ว (${personFilter.length} คน): ${personFilter.join(', ')}`}
                     </span>
-                    <span className={styles.ArrowIcon} style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'none' }}>
-                        ▼
-                    </span>
+                    
+                    {/* 💡 บังคับลูกศรให้ขนาด 16px และสีเดียวกับกล่อง สถานะ ทุกกระเบียดนิ้ว */}
+                    <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: '8px' }}>
+                        <svg 
+                            height="16" 
+                            width="16" 
+                            viewBox="0 0 20 20" 
+                            aria-hidden="true" 
+                            focusable="false"
+                            style={{ 
+                                transform: isDropdownOpen ? 'rotate(180deg)' : 'none',
+                                transition: 'transform 0.2s ease',
+                                color: '#6b7280', 
+                            }}
+                        >
+                            <path 
+                                fill="currentColor" 
+                                d="M4.516 7.548c0.436-0.446 1.043-0.481 1.576 0l3.908 3.747 3.908-3.747c0.533-0.481 1.141-0.446 1.574 0 0.436 0.445 0.408 1.197 0 1.615-0.406 0.418-4.695 4.502-4.695 4.502-0.217 0.223-0.502 0.335-0.787 0.335s-0.57-0.112-0.789-0.335c0 0-4.287-4.084-4.695-4.502s-0.436-1.17 0-1.615z"
+                            ></path>
+                        </svg>
+                    </div>
                 </div>
 
                 {isDropdownOpen && (

@@ -52,7 +52,6 @@ export default function TopBar() {
             });
             document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             setUser(null);
-            // ใช้ window.location.href ตอนออกจากระบบ เพื่อเคลียร์ State ให้สะอาดหมดจด
             window.location.href = '/login';
         } catch (err) {
             console.error("Logout error", err);
@@ -62,32 +61,36 @@ export default function TopBar() {
     return (
        <div 
         id="main-topbar" 
-        className="flex justify-between items-center w-full px-6 py-4 shadow-md z-50 relative"
+        className="flex justify-between items-center w-full px-4 sm:px-6 py-3 sm:py-4 shadow-md z-50 relative gap-2"
         style={{ backgroundColor: 'var(--header-bg)' }}
         >
-            <Link href="/" aria-label="กลับหน้าหลัก ระบบติดตามงานมอบหมาย">
-                <div className="flex items-center gap-4 group">
+            {/* ฝั่งซ้าย: โลโก้และชื่อระบบ */}
+            {/* 💡 เพิ่ม min-w-0 และ flex-1 เพื่อให้ชื่อระบบหดตัวได้ */}
+            <Link href="/" aria-label="กลับหน้าหลัก ระบบติดตามงานมอบหมาย" className="shrink min-w-0 flex-1">
+                <div className="flex items-center gap-2 sm:gap-4 group min-w-0">
                     <Image 
                         src="/police.png" 
                         alt="โลโก้ระบบติดตามงานมอบหมาย" 
                         width={40} 
                         height={40} 
-                        className="transition-transform group-hover:scale-110" 
+                        className="transition-transform group-hover:scale-110 w-8 h-8 sm:w-10 sm:h-10 shrink-0" 
                         priority
                     />
-                    <strong style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
+                    {/* 💡 เอา hidden ออก เพื่อให้ชื่อแสดงเสมอ และถ้าจอยาวไม่พอจะกลายเป็น ... แทน */}
+                    <strong className="text-sm sm:text-lg lg:text-xl font-bold truncate text-white block">
                         ระบบติดตามงานมอบหมาย
                     </strong>
                 </div>
             </Link>
 
-            <div className="flex items-center gap-4">
+            {/* ฝั่งขวา: ปุ่มตั้งค่าและผู้ใช้ */}
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <DarkModeBtn />
 
                 <Link href="/help" aria-label="ไปหน้าช่วยเหลือการใช้งาน">
-                    <button className="flex items-center gap-2 hover:bg-white/10 px-4 py-2 rounded-lg transition-colors">
-                        <Image src="/window.svg" alt="ไอคอนช่วยเหลือ" width={24} height={24} />
-                        <span className="font-medium hidden sm:inline">ช่วยเหลือ</span>
+                    <button className="flex items-center gap-1 sm:gap-2 hover:bg-white/10 px-2 sm:px-4 py-2 rounded-lg transition-colors">
+                        <Image src="/window.svg" alt="ไอคอนช่วยเหลือ" width={24} height={24} className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
+                        <span className="font-medium hidden md:inline text-white">ช่วยเหลือ</span>
                     </button>
                 </Link>
 
@@ -96,16 +99,19 @@ export default function TopBar() {
                     <div className="relative" ref={dropdownRef}>
                         <button 
                             onClick={() => setDropdownOpen(!dropdownOpen)}
-                            className="flex items-center gap-3 bg-(--button) hover:opacity-80 px-4 py-2 rounded-lg transition-colors border border-(--shadow)"
+                            className="flex items-center gap-2 sm:gap-3 bg-(--button) hover:opacity-80 px-2 sm:px-4 py-2 rounded-lg transition-colors border border-(--shadow) max-w-32.5 sm:max-w-50"
                         >
                             <Image 
                                 src="/user.png" 
                                 alt="รูปโปรไฟล์ผู้ใช้งาน" 
                                 width={24} 
                                 height={24} 
-                                className="rounded-full object-cover"
+                                className="rounded-full object-cover w-6 h-6 shrink-0"
                             />
-                            <span className="font-medium text-foreground!">{user.name}</span>
+                            {/* 💡 เอา hidden ออก เพื่อให้ชื่อ User แสดงในมือถือด้วย */}
+                            <span className="font-medium text-foreground! truncate text-sm sm:text-base block">
+                                {user.name}
+                            </span>
                         </button>
 
                         {/* Dropdown Menu */}
@@ -117,7 +123,7 @@ export default function TopBar() {
                                         alt="รูปโปรไฟล์ย่อ" 
                                         width={20} 
                                         height={20} 
-                                        className="rounded-full"
+                                        className="rounded-full shrink-0"
                                     />
                                     <span className="font-semibold text-xs text-foreground! truncate">{user.name}</span>
                                 </div>
@@ -140,8 +146,8 @@ export default function TopBar() {
                     </div>
                 ) : (
                     <Link href="/login">
-                        <button className="flex items-center gap-2 bg-(--orangeBG) hover:opacity-90 text-white px-5 py-2 rounded-lg transition-colors shadow-md font-medium">
-                            <LogIn size={18} /> เข้าสู่ระบบ
+                        <button className="flex items-center gap-1 sm:gap-2 bg-(--orangeBG) hover:opacity-90 text-white px-3 sm:px-5 py-2 rounded-lg transition-colors shadow-md font-medium text-sm sm:text-base whitespace-nowrap">
+                            <LogIn size={18} className="w-4 h-4 sm:w-5 sm:h-5" /> เข้าสู่ระบบ
                         </button>
                     </Link>
                 )}

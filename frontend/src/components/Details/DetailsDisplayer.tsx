@@ -204,13 +204,14 @@ export default function DetailsDisplayer({
                                         borderColor: isAssignCompleted ? 'var(--greenBorder)' : 'var(--wrapper)'
                                     }}>
                                         
-                                        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 pb-3" style={{ borderBottom: '1px solid var(--wrapper)' }}>
-                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-                                                <label className="font-bold text-lg whitespace-nowrap" style={{ color: isAssignCompleted ? 'var(--greenText)' : 'var(--header)' }}>สำหรับ (ผู้รับผิดชอบ):</label>
+                                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 box-border" style={{ borderBottom: '1px solid var(--wrapper)' }}>
+                                            {/* 💡 บังคับให้เป็น flex-row (แนวนอน) เพื่อให้คำว่า "สำหรับ..." อยู่บรรทัดเดียวกับ Select/Span */}
+                                            <div className="flex flex-row items-center gap-2 w-full sm:w-auto flex-1 min-w-0 box-border">
+                                                <label className="font-bold text-base sm:text-lg whitespace-nowrap shrink-0" style={{ color: isAssignCompleted ? 'var(--greenText)' : 'var(--header)' }}>สำหรับ (ผู้รับผิดชอบ):</label>
                                                 {isEditing ? (
                                                     <select 
                                                         className={styles.CustomSelect}
-                                                        style={{ padding: '0.4rem 0.8rem', width: 'auto' }}
+                                                        style={{ padding: '0.4rem 0.8rem', flex: '1', minWidth: '0', maxWidth: '100%' }}
                                                         value={assign.user_id || ""}
                                                         onChange={(e) => handleUserSelect(index, e.target.value)}
                                                     >
@@ -223,8 +224,8 @@ export default function DetailsDisplayer({
                                                     </select>
                                                 ) : (
                                                     <span 
-                                                        className="px-3 py-1 rounded-md text-sm sm:text-base font-bold shadow-sm border border-black/10 whitespace-nowrap" 
-                                                        style={{ backgroundColor: userColor, color: userTextColor }}
+                                                        className="px-3 py-1 rounded-md text-sm sm:text-base font-bold shadow-sm border border-black/10 whitespace-nowrap truncate" 
+                                                        style={{ backgroundColor: userColor, color: userTextColor, maxWidth: '100%' }}
                                                     >
                                                         {assign.personInCharge || "ไม่ระบุ"}
                                                     </span>
@@ -234,8 +235,8 @@ export default function DetailsDisplayer({
                                             {isEditing && (
                                                 <button 
                                                     onClick={() => handleDeleteAssignment(index)}
-                                                    className={`${styles.Clickable} ${styles.Red}`}
-                                                    style={{ minHeight: '2rem', padding: '0.4rem 0.8rem', width: 'auto', fontSize: '0.9rem', whiteSpace: 'nowrap', flexShrink: 0 }}
+                                                    className={`${styles.Clickable} ${styles.Red} w-full sm:w-auto mt-2 sm:mt-0`}
+                                                    style={{ minHeight: '2rem', padding: '0.4rem 0.8rem', fontSize: '0.9rem', whiteSpace: 'nowrap', flexShrink: 0 }}
                                                 >
                                                     ลบมอบหมายงานนี้
                                                 </button>

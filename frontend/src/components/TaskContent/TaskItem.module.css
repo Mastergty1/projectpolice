@@ -229,3 +229,26 @@
     color: var(--greenText);
     background-color: var(--greenBG);
 }
+
+/* --- 💡 เพิ่มโค้ดนี้ที่ล่างสุดของไฟล์ เพื่อป้องกันปุ่มในการ์ดตกขอบ --- */
+
+.ItemContainer, .Wrapper, .Content {
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden; /* ป้องกันเนื้อหาด้านในดันกล่องแตก */
+}
+
+/* บังคับให้กลุ่มปุ่ม (ลบ/แก้ไข) ปัดบรรทัดได้ถ้าพื้นที่แคบเกินไป */
+.InteractionContainer, .ButtonContainer {
+    display: flex;
+    flex-wrap: wrap !important;
+    gap: 0.5rem;
+    max-width: 100%;
+}
+
+.Button {
+    flex: 1 1 auto;
+    white-space: normal !important;
+    word-break: break-word;
+    text-align: center;
+}
