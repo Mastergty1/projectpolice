@@ -147,7 +147,7 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
                                         ))
                                     ) : (
                                         personInCharge.split(',').map((person, idx) => (
-                                            <span key={idx} className="px-2.5 py-0.5 rounded-md text-xs sm:text-sm font-bold whitespace-nowrap shadow-sm bg-(--wrapper) text-(--foreground)">
+                                            <span key={idx} className="px-2.5 py-0.5 rounded-md text-xs sm:text-sm font-bold whitespace-nowrap shadow-sm bg-(--wrapper) text-foreground">
                                                 {person.trim()}
                                             </span>
                                         ))

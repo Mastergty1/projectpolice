@@ -57,7 +57,7 @@ export default function BackendWakeupLoader({ children }: { children: React.Reac
 
     // หน้าจอโหลดขณะรอเซิร์ฟเวอร์ Render ตื่น
     return (
-        <div className="flex flex-col items-center justify-center w-full h-full min-h-[70vh] bg-(--background) text-(--foreground)">
+        <div className="flex flex-col items-center justify-center w-full h-full min-h-[70vh] bg-background text-foreground">
             <div className="w-16 h-16 border-4 border-(--shadow) border-t-[#3F1818] rounded-full animate-spin mb-6"></div>
             
             <h2 className="text-2xl font-bold mb-2 text-black">กำลังเชื่อมต่อฐานข้อมูล... 🚀</h2>

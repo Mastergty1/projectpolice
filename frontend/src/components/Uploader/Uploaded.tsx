@@ -417,7 +417,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                                                                         <strong>สิ่งที่ต้องดำเนินการ / หัวข้อที่รับผิดชอบร่วมกัน:</strong>
                                                                         <button type="button" onClick={() => handleAddSharedTopic(fileIdx, index)} className="text-xs bg-blue-500 text-white px-2 py-1.5 rounded hover:bg-blue-600 font-medium">+ เพิ่มงานที่ต้องทำ</button>
                                                                     </div>
-                                                                    <ul className="list-none pl-1 mt-2 text-(--foreground) flex flex-col gap-2">
+                                                                    <ul className="list-none pl-1 mt-2 text-foreground flex flex-col gap-2">
                                                                         {memo.sharedTopics && memo.sharedTopics.length > 0 ? memo.sharedTopics.map((topic: string, topicIdx: number) => (
                                                                             <li key={topicIdx} className="flex gap-2 items-center">
                                                                                 <span className="text-(--foreground)/60 text-lg font-bold w-4">•</span>

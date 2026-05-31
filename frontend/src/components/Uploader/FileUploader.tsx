@@ -120,7 +120,7 @@ export default function FileUploader({ setExtractedData, progress, setProgress }
                     {files.length === 0 ? (
                         <div>อัพโหลดหรือลากไฟล์เอกสารมาที่นี่</div>
                     ) : (
-                        <ul className="flex flex-col gap-2 w-full max-w-sm px-4 text-sm text-(--foreground)">
+                        <ul className="flex flex-col gap-2 w-full max-w-sm px-4 text-sm text-foreground">
                             {files.map((file, index) => (
                                 <li key={index} className="flex justify-between items-center bg-(--wrapper) p-2 rounded">
                                     <span className="truncate pr-4">{file.name}</span>
