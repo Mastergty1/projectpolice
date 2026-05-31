@@ -4,8 +4,6 @@
     font-size: 2.5rem;
 }
 
-
-
 .ContentWrapper{
     background-color: var(--wrapper);
     display: flex;
@@ -19,7 +17,6 @@
     
 }
 
-
 .ContentContainer{
     background-color: var(--container);
     font-size: 1rem;
@@ -32,7 +29,6 @@
     container-type: inline-size;
 }
 
-
 .ContentContent{
     padding: 0.7rem 1rem;
     display: flex;
@@ -40,7 +36,6 @@
     gap: 0.5rem;
     min-height: 0;
 }
-
 
 @container (max-width:450px){
     .ContentHeader{
@@ -69,10 +64,9 @@
 }
 
 .ContentContentScrollable::-webkit-scrollbar-thumb {
-  background-color: var(--shadow); /* ใช้สี shadow ที่คุณตั้งไว้ */
+  background-color: var(--shadow); 
   border-radius: 10px;
 }
-
 
 
 .Button{
@@ -84,6 +78,8 @@
     color: var(--header);
     font-size: 1.5rem;
     transition: 0.1s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .Button:hover{
@@ -101,9 +97,7 @@
     padding: 0.7rem 1rem;
     display: flex;
     flex-direction: row;
-    /* 💡 CHANGE 1: Enable wrapping on the parent so groups can drop down smoothly together */
     flex-wrap: wrap; 
-    /* 💡 CHANGE 2: Use row and column gaps to handle spacing perfectly when wrapped */
     column-gap: 1.5rem;
     row-gap: 0.75rem;     
     min-height: min-content; 
@@ -113,13 +107,12 @@
     color: var(--header) !important;
 }
 
-/* 💡 New Class: Keeps label and dropdown locked tightly as a single un-splittable block */
 .FilterGroup {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 0.5rem;         /* Tight spacing between label text and its dropdown */
-    flex-shrink: 0;      /* Prevents the group itself from shrinking awkwardly */
+    gap: 0.5rem;         
+    flex-shrink: 0;      
     flex: 1;
 }
 
@@ -131,7 +124,7 @@
     }
     
     .FilterGroup {
-        justify-content: space-between !important; /* Keeps things neat on small phones */
+        justify-content: space-between !important; 
         
     }
 }
@@ -142,10 +135,10 @@
     padding: 0.2rem 0.5rem;
     border-radius: 0.3rem;
     width: 100%;             
-    /* 💡 CHANGE 3: Changed to min-width instead of strict max-width to ensure the box doesn't squash */
     min-width: 130px;
     max-width: 160px;        
     box-sizing: border-box;  
+    flex-shrink: 0;
 }
 
 @container (max-width:450px){
@@ -154,13 +147,11 @@
     }
 }
 
-/* กล่อง wrapper ตัวนอกสุดของ สำหรับ: */
 .MultiSelectContainer {
     position: relative;
     display: inline-block;
 }
 
-/* ปุ่ม Dropdown หลักที่กดเปิด-ปิด */
 .MultiSelectTrigger {
     min-height: 44px;
     display: flex;
@@ -176,13 +167,13 @@
     max-width: 220px;
     user-select: none;
     transition: border-color 0.2s, box-shadow 0.2s;
+    flex-shrink: 0;
 }
 
 .MultiSelectTrigger:hover {
-    border-color: var(--blueText); /* ไฮไลท์สีฟ้าเวลา hover */
+    border-color: var(--blueText); 
 }
 
-/* ข้อความรายชื่อภายในปุ่ม */
 .TriggerText {
     flex-grow: 1;
     text-overflow: ellipsis;
@@ -192,7 +183,6 @@
     text-align: left;
 }
 
-/* ไอคอนลูกศรสามเหลี่ยม */
 .ArrowIcon {
     font-size: 10px;
     color: var(--foreground);
@@ -200,7 +190,6 @@
     transition: transform 0.2s;
 }
 
-/* หน้าต่างรายการชื่อที่จะแสดงตอนเปิด (Dropdown Menu) */
 .MultiSelectMenu {
     position: absolute;
     top: 100%;
@@ -218,7 +207,6 @@
     animation: fadeIn 0.15s ease-out;
 }
 
-/* ปุ่มล้างข้อมูลทั้งหมด */
 .ClearAllButton {
     padding: 8px 16px;
     color: var(--redText);
@@ -233,7 +221,6 @@
     background-color: var(--redBG);
 }
 
-/* แถวรายชื่อบุคคล (Label) */
 .CheckboxOption {
     display: flex;
     align-items: center;
@@ -247,19 +234,17 @@
 }
 
 .CheckboxOption:hover {
-    background-color: var(--wrapper); /* เปลี่ยนสีพื้นหลังเมื่อเอาเมาส์ไปชี้ */
+    background-color: var(--wrapper); 
     color: var(--header);
 }
 
-/* ตกแต่งตัวช่อง Checkbox */
 .CheckboxInput {
     width: 16px;
     height: 16px;
     cursor: pointer;
-    accent-color: var(--wrapper); /* เปลี่ยนสีของตัวติ๊กถูกให้เป็นสีฟ้า */
+    accent-color: var(--wrapper); 
 }
 
-/* เอฟเฟกต์ Fade-in ตอนเปิด dropdown */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -270,4 +255,3 @@
         transform: translateY(0);
     }
 }
-

@@ -62,7 +62,6 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
         urgency = "later"; theme = styles.DateGreen; progressColor = "bg-green-500";
     }
 
-    // 💡 คำนวณความคืบหน้าของ Progress Bar สมเหตุสมผลด้วยเปอร์เซ็นต์
     let progressPercent = 0;
     const nowTime = new Date().getTime();
     const dueTime = parsedDate.getTime();
@@ -70,23 +69,20 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
     if (createdAt) {
         const createdTime = new Date(createdAt).getTime();
         
-        // ตรวจสอบเพื่อป้องกัน NaN
         if (!isNaN(createdTime) && !isNaN(dueTime)) {
-            const totalDuration = dueTime - createdTime; // เวลาส่ง - เวลาสร้าง
-            const elapsed = nowTime - createdTime;       // เวลาปัจจุบัน - เวลาสร้าง
+            const totalDuration = dueTime - createdTime; 
+            const elapsed = nowTime - createdTime;       
             
             if (totalDuration > 0) {
                 progressPercent = (elapsed / totalDuration) * 100;
             } else {
-                progressPercent = 100; // กรณีระยะเวลาติดลบหรือ 0 (ถึงกำหนดแล้วตั้งแต่สร้าง)
+                progressPercent = 100; 
             }
         }
     } else {
-        // Fallback กรณีไม่มี Date สร้าง ให้ประเมินจากวันเหลือโดยประมาณการ
         progressPercent = diffDays <= 0 ? 100 : Math.max(0, 100 - (diffDays * 10));
     }
 
-    // ป้องกันค่าแปลกๆ และบังคับให้อยู่ในช่วง 0 - 100 เสมอ
     if (isNaN(progressPercent)) progressPercent = 0;
     progressPercent = Math.max(0, Math.min(100, progressPercent));
 
@@ -126,58 +122,57 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
         <div className={styles.TaskWrapper}>
             <div className={styles.InnerWrapper}>
                 <div className={styles.InfoContainer}>
-                <div className={`${styles.DateDisplayer} ${theme}`}>
-                    <span>กำหนดติดตาม</span>
-                    <span className={styles.DateNumber}>{day}</span>
-                    <span className={styles.DateMonth}>{monthYear}</span>
-                </div>
+                    <div className={`${styles.DateDisplayer} ${theme}`}>
+                        <span className="whitespace-nowrap">กำหนดติดตาม</span>
+                        <span className={styles.DateNumber}>{day}</span>
+                        <span className={styles.DateMonth}>{monthYear}</span>
+                    </div>
 
-                <div className={`${styles.Content} w-full`}>
-                <h1 className={styles.Header} title={name}>{name}</h1>
-                <div className={`${styles.DetailContainer} mt-2 w-full pr-4 flex flex-col`}>
-                    
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-2 mb-2">
-                        <strong className="mt-0.5 whitespace-nowrap text-sm">ผู้รับผิดชอบ: </strong> 
-                        <div className="flex flex-wrap gap-1.5">
-                            {assigneesData && assigneesData.length > 0 ? (
-                                assigneesData.map((assignee, idx) => (
-                                    <span 
-                                        key={idx} 
-                                        style={{ backgroundColor: assignee.color, color: getTextColor(assignee.color) }} 
-                                        className="px-2.5 py-0.5 rounded-md text-xs sm:text-sm font-bold whitespace-nowrap shadow-sm border border-black/10"
-                                    >
-                                        {assignee.name}
-                                    </span>
-                                ))
-                            ) : (
-                                personInCharge.split(',').map((person, idx) => (
-                                    <span key={idx} className="px-2.5 py-0.5 rounded-md text-xs sm:text-sm font-bold whitespace-nowrap shadow-sm bg-gray-200 text-gray-700">
-                                        {person.trim()}
-                                    </span>
-                                ))
-                            )}
+                    <div className={`${styles.Content} w-full min-w-0`}>
+                        <h1 className={styles.Header} title={name}>{name}</h1>
+                        <div className={`${styles.DetailContainer} mt-2 w-full pr-4 flex flex-col`}>
+                            
+                            <div className="flex flex-col sm:flex-row sm:items-start gap-2 mb-2">
+                                <strong className="mt-0.5 whitespace-nowrap text-sm">ผู้รับผิดชอบ: </strong> 
+                                <div className="flex flex-wrap gap-1.5">
+                                    {assigneesData && assigneesData.length > 0 ? (
+                                        assigneesData.map((assignee, idx) => (
+                                            <span 
+                                                key={idx} 
+                                                style={{ backgroundColor: assignee.color, color: getTextColor(assignee.color) }} 
+                                                className="px-2.5 py-0.5 rounded-md text-xs sm:text-sm font-bold whitespace-nowrap shadow-sm border border-black/10"
+                                            >
+                                                {assignee.name}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        personInCharge.split(',').map((person, idx) => (
+                                            <span key={idx} className="px-2.5 py-0.5 rounded-md text-xs sm:text-sm font-bold whitespace-nowrap shadow-sm bg-gray-200 text-gray-700">
+                                                {person.trim()}
+                                            </span>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            <p className="flex flex-col sm:flex-row mb-1 text-sm whitespace-nowrap">
+                                <strong>สถานะระยะเวลา: &nbsp; </strong>  
+                                <span>{diffDays < 0
+                                    ? `เกินกำหนด ${Math.abs(diffDays)} วัน`
+                                    : diffDays === 0
+                                    ? "ครบกำหนดวันนี้"
+                                    : `เหลืออีก ${diffDays} วัน`}</span>
+                            </p>
+
+                            <div className="w-full shrink-0 block bg-gray-200 rounded-full h-2.5 mt-2 border border-gray-300 overflow-hidden">
+                                <div 
+                                    className={`h-full rounded-full transition-all duration-500 ease-in-out ${progressColor}`} 
+                                    style={{ width: `${progressPercent}%` }}
+                                ></div>
+                            </div>
+
                         </div>
                     </div>
-
-                    <p className="flex flex-col sm:flex-row mb-1 text-sm">
-                        <strong>สถานะระยะเวลา: &nbsp; </strong>  
-                        {diffDays < 0
-                            ? `เกินกำหนด ${Math.abs(diffDays)} วัน`
-                            : diffDays === 0
-                            ? "ครบกำหนดวันนี้"
-                            : `เหลืออีก ${diffDays} วัน`}
-                    </p>
-
-                    {/* 💡 บังคับความยาวหลอดคงที่ และกางเต็มร้อยเปอร์เซ็นของ Container */}
-                    <div className="w-full shrink-0 block bg-gray-200 rounded-full h-2.5 mt-2 border border-gray-300 overflow-hidden">
-                        <div 
-                            className={`h-full rounded-full transition-all duration-500 ease-in-out ${progressColor}`} 
-                            style={{ width: `${progressPercent}%` }}
-                        ></div>
-                    </div>
-
-                </div>
-                </div>
                 </div>
 
                 <div className={styles.ButtonContainer}>
@@ -206,6 +201,7 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
                                     color: themeStyle.color,
                                     minHeight: "44px", 
                                     cursor: "pointer",
+                                    flexWrap: "nowrap"
                                 }),
                                 menuPortal: (base) => ({ ...base, zIndex: 999999 }),
                                 menu: (base) => ({ ...base, zIndex: 999999 }),
@@ -235,10 +231,10 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
                         />
                         </div>
 
-                    <Link href={`/tasks/${id}`} aria-label={`ดูรายละเอียดของงาน ${name} รหัส ${id}`}>
-                    <button className={styles.Clickable} tabIndex={-1} style={{ minHeight: "44px" }}> 
-                        รายละเอียด 
-                    </button>
+                    <Link href={`/tasks/${id}`} aria-label={`ดูรายละเอียดของงาน ${name} รหัส ${id}`} style={{ width: '100%' }}>
+                        <button className={styles.Clickable} tabIndex={-1}> 
+                            รายละเอียด 
+                        </button>
                     </Link>
                 </div>
             </div>

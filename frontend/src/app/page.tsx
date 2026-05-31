@@ -1,15 +1,15 @@
 import AllTask from "@/components/TaskDisplayer/AllTask";
 import UrgentTask from "@/components/TaskDisplayer/UrgentTask";
-import Image from "next/image";
 
 export default function Home() {
   return (
-    <div className="flex flex-col md:flex-row justify-between w-full md:h-full p-16 pt-8 gap-12">
-      <div className="flex flex-1">
-        <UrgentTask></UrgentTask>
+    // 💡 แก้ไข Responsive: ลด padding ในจอเล็ก (p-4) ปรับเป็น flex-col บนจอเล็ก และขยายเป็นแนวนอน (lg:flex-row) เมื่อจอใหญ่
+    <div className="flex flex-col lg:flex-row justify-between w-full min-h-screen p-4 sm:p-8 lg:p-16 lg:pt-8 gap-8 lg:gap-12 overflow-x-hidden">
+      <div className="flex flex-col w-full lg:w-1/3">
+        <UrgentTask />
       </div>
-      <div className="flex flex-2">
-        <AllTask/>
+      <div className="flex flex-col w-full lg:w-2/3">
+        <AllTask />
       </div>
     </div>
   );

@@ -8,7 +8,6 @@ import PersonMultiSelect from "./PersonMultiSelect";
 type TaskStatus = "following" | "problem" | "completed";
 
 export default function UrgentTask() {
-    // 💡 เพิ่มข้อมูลสีจำลองและวันที่สร้าง กรณีที่หลังบ้าน (Database) โหลดไม่ติด
     const initialTaskData = [
         { 
             id: "0", 
@@ -16,16 +15,14 @@ export default function UrgentTask() {
             personInCharge: "ผู้ดูแลระบบ", 
             date: "2026-05-21", 
             status: "following",
-            createdAt: new Date().toISOString(), // 💡 เพิ่ม createdAt
-            assigneesData: [{ name: "ผู้ดูแลระบบ", color: "#fca5a5" }] // 💡 เพิ่มข้อมูลสี
+            createdAt: new Date().toISOString(),
+            assigneesData: [{ name: "ผู้ดูแลระบบ", color: "#fca5a5" }] 
         },
     ];
 
     const [tasks, setTasks] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-
     const [statusFilter, setStatusFilter] = useState("all");
-    
     const [personFilter, setPersonFilter] = useState<string[]>([]); 
 
     useEffect(() => {
@@ -50,6 +47,20 @@ export default function UrgentTask() {
         fetchUrgentTasks();
     }, []);
 
+    // 💡 เพิ่มระบบรับ Event การซิงค์ข้อมูลจาก Component อื่น
+    useEffect(() => {
+        const handleTaskSync = (event: Event) => {
+            const customEvent = event as CustomEvent<{ id: string; status: string }>;
+            const { id, status } = customEvent.detail;
+            setTasks((prevTasks) =>
+                prevTasks.map((task) => task.id === id ? { ...task, status } : task)
+            );
+        };
+
+        window.addEventListener("taskStatusSync", handleTaskSync);
+        return () => window.removeEventListener("taskStatusSync", handleTaskSync);
+    }, []);
+
     const handleStatusChange = async (id: string, newStatus: TaskStatus) => {
         try {
             const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
@@ -64,6 +75,13 @@ export default function UrgentTask() {
             setTasks((prevTasks) =>
                 prevTasks.map((task) => task.id === id ? { ...task, status: newStatus } : task)
             );
+
+            // 💡 ส่ง Event ไปบอก Component อื่น (AllTask) ให้เปลี่ยนสถานะตามด้วย
+            window.dispatchEvent(
+                new CustomEvent("taskStatusSync", {
+                    detail: { id, status: newStatus },
+                })
+            );
         } catch (error) {
             console.error("Failed to update task", error);
             alert("เกิดข้อผิดพลาด ไม่สามารถอัปเดตสถานะได้");
@@ -77,7 +95,7 @@ export default function UrgentTask() {
     const uniquePersons = Array.from(new Set(allPersons));
 
     const filteredTasks = tasks.filter((task) => {
-        if (task.status === "completed") return false; // กรองงานที่ completed ออกก่อน
+        // 💡 แก้บัคที่ 1: ลบการ Block งาน completed ออกไป เพื่อให้ Filter ทำงานได้อย่างถูกต้อง
         const matchStatus = statusFilter === "all" || task.status === statusFilter;
         
         const taskPersons = task.personInCharge 
@@ -85,9 +103,9 @@ export default function UrgentTask() {
             : [];
 
         const matchPerson =
-            personFilter.length === 0 || // ไม่เลือกใครเลย = แสดงทั้งหมด
+            personFilter.length === 0 || 
             taskPersons.includes("ทุกหน่วยงาน") ||
-            taskPersons.some((p: string) => personFilter.includes(p)); // ตรงกับคนใดคนหนึ่งที่เลือก
+            taskPersons.some((p: string) => personFilter.includes(p)); 
 
         return matchStatus && matchPerson;
     }).sort((a, b) => {
@@ -114,7 +132,7 @@ export default function UrgentTask() {
     });
 
     return (
-        <div className="flex flex-col w-full h-full gap-6 min-h-75">
+        <div className="flex flex-col w-full h-full gap-6 min-h-[75vh]">
             <h1 className={styles.Header}>งานติดตามเร่งด่วน</h1>
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
@@ -126,7 +144,6 @@ export default function UrgentTask() {
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
                                 aria-label="ตัวกรองสถานะงาน"
-                                style={{ minHeight: '44px' }}
                             >
                                 <option value="all">ทั้งหมด</option>
                                 <option value="following">กำลังติดตาม</option>
@@ -140,7 +157,6 @@ export default function UrgentTask() {
                             personFilter={personFilter}
                             setPersonFilter={setPersonFilter}
                         />
-                    
                     </div>
                     <hr className={styles.Line}></hr>
                     

@@ -16,10 +16,7 @@ export default function AllTask() {
 
     const [tasks, setTasks] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-
     const [statusFilter, setStatusFilter] = useState("all");
-    
-    // 💡 เปลี่ยนมาเก็บเป็น Array สำหรับรองรับ Multi-select
     const [personFilter, setPersonFilter] = useState<string[]>([]); 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -46,7 +43,20 @@ export default function AllTask() {
         fetchTasks();
     }, []);
 
-    // 💡 ปิด Dropdown อัตโนมัติเมื่อคลิกข้างนอกพื้นที่
+    // 💡 เพิ่มระบบรับ Event การซิงค์ข้อมูลจาก Component อื่น
+    useEffect(() => {
+        const handleTaskSync = (event: Event) => {
+            const customEvent = event as CustomEvent<{ id: string; status: string }>;
+            const { id, status } = customEvent.detail;
+            setTasks((prevTasks) =>
+                prevTasks.map((task) => task.id === id ? { ...task, status } : task)
+            );
+        };
+
+        window.addEventListener("taskStatusSync", handleTaskSync);
+        return () => window.removeEventListener("taskStatusSync", handleTaskSync);
+    }, []);
+
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -71,6 +81,13 @@ export default function AllTask() {
             setTasks((prevTasks) =>
                 prevTasks.map((task) => task.id === id ? { ...task, status: newStatus } : task)
             );
+
+            // 💡 ส่ง Event ไปบอก Component อื่น (UrgentTask) ให้เปลี่ยนสถานะตามด้วย
+            window.dispatchEvent(
+                new CustomEvent("taskStatusSync", {
+                    detail: { id, status: newStatus },
+                })
+            );
         } catch (error) {
             console.error("Failed to update task", error);
             alert("เกิดข้อผิดพลาด ไม่สามารถอัปเดตสถานะได้");
@@ -83,28 +100,25 @@ export default function AllTask() {
     });
     const uniquePersons = Array.from(new Set(allPersons));
 
-    // 💡 จัดการคลิกเลือก/เอาออก รายชื่อคนรับผิดชอบ
     const handlePersonToggle = (person: string) => {
         setPersonFilter((prev) =>
             prev.includes(person)
-                ? prev.filter((p) => p !== person) // เอาออกถ้าติ๊กซ้ำ
-                : [...prev, person] // เพิ่มเข้าถ้ายังไม่มี
+                ? prev.filter((p) => p !== person) 
+                : [...prev, person] 
         );
     };
 
     const filteredTasks = tasks
     .filter((task) => {
         const matchStatus = statusFilter === "all" || task.status === statusFilter;
-
-        // 💡 ปรับปรุงการ Filter: ค้นหาว่าในงานชิ้นนี้มีรายชื่อตรงกับคนที่เราเลือกไว้บ้างไหม
         const taskPersons = task.personInCharge 
             ? task.personInCharge.split(',').map((s: string) => s.trim()) 
             : [];
 
         const matchPerson =
-            personFilter.length === 0 || // ถ้าไม่ได้เลือกใครเลย = แสดงทั้งหมด (เหมือนตอนเป็น "all")
+            personFilter.length === 0 || 
             taskPersons.includes("ทุกหน่วยงาน") ||
-            taskPersons.some((p:string) => personFilter.includes(p)); // ถ้ามีคนรับผิดชอบตรงกับที่สุ่มเลือกแม้แต่คนเดียวให้แสดงผล
+            taskPersons.some((p:string) => personFilter.includes(p)); 
 
         return matchStatus && matchPerson;
     })
@@ -134,7 +148,7 @@ export default function AllTask() {
     });
 
     return (
-        <div className="flex flex-col w-full h-full gap-6 min-h-75">
+        <div className="flex flex-col w-full h-full gap-6 min-h-[75vh]">
             <div className="flex flex-col sm:flex-row justify-between gap-4">
                 <h1 className={styles.Header}>งานติดตามทั้งหมด</h1>
                 <Link 
@@ -158,7 +172,6 @@ export default function AllTask() {
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
                     <div className={styles.ContentHeader}>
-                        {/* Group 1: สถานะ */}
                         <div className={styles.FilterGroup}>
                             <strong>สถานะ:</strong>
                             <select 
@@ -166,7 +179,6 @@ export default function AllTask() {
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
                                 aria-label="ตัวกรองสถานะงาน"
-                                style={{ minHeight: '44px' }}
                             >
                                 <option value="all">ทั้งหมด</option>
                                 <option value="following">กำลังติดตาม</option>
@@ -174,8 +186,6 @@ export default function AllTask() {
                                 <option value="completed">เสร็จสิ้น</option>
                             </select>
                         </div>
-
-                        {/* 💡 Group 2: สำหรับ (ปรับใช้ Class จาก CSS Module แทน Inline Style) */}
                         <PersonMultiSelect 
                             uniquePersons={uniquePersons}
                             personFilter={personFilter}
