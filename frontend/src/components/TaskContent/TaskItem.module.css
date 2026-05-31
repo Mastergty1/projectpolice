@@ -17,6 +17,7 @@
     display: flex;
     flex-direction: row;
     min-width: 0;
+    flex: 1;
 }
 
 
@@ -115,7 +116,6 @@
 }
 
 .ButtonContainer{
-    flex: 1;
     padding: 1rem;
 
     display: flex;
@@ -140,9 +140,8 @@
     .ButtonContainer{
         flex-direction: row;
         align-items: stretch;
-        max-width: none;
+        width: auto;
         align-self: stretch;
-        min-width: auto;
     }
 }
 @container (max-width: 400px){

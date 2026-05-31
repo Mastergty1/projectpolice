@@ -12,6 +12,18 @@ const getTextColor = (bgColor: string) => {
     return (yiq >= 128) ? '#1f2937' : '#ffffff';
 };
 
+// 💡 เพิ่มฟังก์ชันแปลงข้อความ **ให้กลายเป็นตัวหนา**
+const formatText = (text: string) => {
+    if (!text) return "ไม่พบข้อความเนื้อหาในเอกสาร";
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+            return <strong key={index}>{part.slice(2, -2)}</strong>;
+        }
+        return part;
+    });
+};
+
 export default function DetailsDisplayer({ 
     taskData, 
     setTaskData, 
@@ -166,8 +178,18 @@ export default function DetailsDisplayer({
                                     📄 เปิดดูไฟล์เอกสารต้นฉบับ
                                 </a>
                             )}
-                            <div className={styles.TextArea} style={{ padding: '1rem', whiteSpace: "pre-wrap", lineHeight: "1.6", color: 'var(--header)' }}>
-                                {taskData?.main_text || "ไม่พบข้อความเนื้อหาในเอกสาร"}
+                            {/* 💡 เพิ่ม maxHeight และ overflowY เพื่อสร้าง Scrollbar */}
+                            <div className={styles.TextArea} style={{ 
+                                padding: '1rem', 
+                                whiteSpace: "pre-wrap", 
+                                lineHeight: "1.6", 
+                                color: 'var(--header)',
+                                maxHeight: '350px',
+                                overflowY: 'auto',
+                                borderRadius: '8px'
+                            }}>
+                                {/* 💡 เรียกใช้ formatText เพื่อเรนเดอร์ตัวหนา */}
+                                {taskData?.main_text ? formatText(taskData.main_text) : "ไม่พบข้อความเนื้อหาในเอกสาร"}
                             </div>
                         </div>
 
@@ -191,9 +213,8 @@ export default function DetailsDisplayer({
                             {taskData?.assignments?.length > 0 ? taskData.assignments.map((assign: any, index: number) => {
                                 const isAssignCompleted = assign.topics?.length > 0 && assign.topics.every((t: any) => t.is_completed);
                                 
-                                // คำนวณสีประจำตัวของผู้ใช้งาน
                                 const assignedUser = users.find(u => String(u.id || u._id) === String(assign.user_id));
-                                const userColor = assignedUser?.color || '#e5e7eb'; // สีเริ่มต้น (เทา)
+                                const userColor = assignedUser?.color || '#e5e7eb';
                                 const userTextColor = getTextColor(userColor);
 
                                 return (

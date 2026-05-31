@@ -10,7 +10,7 @@ if (!apiKey) {
 
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// 💡 เพิ่มฟังก์ชันหน่วงเวลา (Delay) ไว้ใช้ตอน Server AI ทำงานหนัก
+// เพิ่มฟังก์ชันหน่วงเวลา (Delay) ไว้ใช้ตอน Server AI ทำงานหนัก
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // ฟังก์ชันแปลงไฟล์เป็นรูปแบบที่ Gemini รองรับ (Inline Data)
@@ -26,7 +26,6 @@ function fileToGenerativePart(filePath, mimeType) {
 // ฟังก์ชันหลักที่ใช้ประมวลผลด้วย Gemini
 exports.extractDataWithGemini = async (filePath, mimeType) => {
   try {
-    // 💡 แก้ไขบัค: เปลี่ยนมาใช้ 1.5-pro เพื่อความแม่นยำสูงสุดในการอ่านเอกสารภาษาไทย (ตามคอมเมนต์ของคุณ)
     const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" }); 
 
     const prompt = `
@@ -45,7 +44,7 @@ exports.extractDataWithGemini = async (filePath, mimeType) => {
           "เวลา": "ระบุเวลา (ถ้าไม่มีให้ใส่ null)",
           "เรื่อง": "ระบุเรื่อง (ถ้าไม่มีให้ใส่ null)",
           "เรียน": "ระบุผู้ที่เอกสารส่งถึง (ถ้าไม่มีให้ใส่ null)",
-          "main_text": "ข้อความอธิบายโดยรวมทั้งหมดที่อยู่หลังคำว่า 'เรียน' (แต่ไม่ใช่ส่วนการมอบหมายงาน)",
+          "main_text": "ข้อความเนื้อหาทั้งหมดที่อยู่หลังคำว่า 'เรียน' (ยกเว้นส่วนการมอบหมายงาน) **ห้ามตัดทอนข้อความ ห้ามสรุปความเด็ดขาด ให้ดึงเนื้อหาต้นฉบับมาแบบ 100%** หน้าที่ของคุณคือเพียงแค่เพิ่มการจัดย่อหน้า (ขึ้นบรรทัดใหม่ด้วย \\n) และทำตัวหนา (ใส่ **เน้นคำ**) ในจุดที่สำคัญ เพื่อให้อ่านง่ายขึ้นเท่านั้น",
           "assignments": [
             {
               "responsible_person": "ระบุตัวย่อหรือชื่อยศของผู้รับผิดชอบ เช่น ฝอ.๑, สว.ฝอ.๔, ผกก.",
@@ -61,7 +60,7 @@ exports.extractDataWithGemini = async (filePath, mimeType) => {
 
     **กฎเกณฑ์สำคัญในการสกัดข้อมูล:**
     1. **memos**: สกัดข้อมูลบันทึกข้อความ หากมีหลายหน้าหรือหลายบันทึก ให้เพิ่ม Object เข้าไปใน Array "memos" เรื่อยๆ
-    2. **main_text**: ทุกอย่างที่อยู่ **หลังเส้น "เรียน"** จะต้องอยู่ในหมวดนี้
+    2. **main_text**: ทุกอย่างที่อยู่ **หลังเส้น "เรียน"** จะต้องอยู่ในหมวดนี้ (ห้ามสรุปความ ห้ามตัดคำทิ้ง ให้ดึงมาทั้งหมด)
     3. **หลักการมอบหมายงาน (Assignments)**:
         * สังเกตโครงสร้างรายการหลังจาก "เรียน"
         * **"คนที่รับผิดชอบ" (responsible_person)** คือตัวย่อของตำแหน่งหรือยศที่ปรากฏชัดเจน (เช่น 'ฝอ.๑', 'ผกก.ฝอ.๑')
@@ -77,7 +76,7 @@ exports.extractDataWithGemini = async (filePath, mimeType) => {
     const filePart = fileToGenerativePart(filePath, mimeType);
 
     let parsedData = null;
-    let maxRetries = 3; // 💡 ปรับเป็น 3 รอบ เผื่อกรณี Server 503
+    let maxRetries = 3; 
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       console.log(`กำลังส่งไฟล์ให้ Gemini ประมวลผล... (รอบที่ ${attempt}/${maxRetries})`);
@@ -86,12 +85,16 @@ exports.extractDataWithGemini = async (filePath, mimeType) => {
         const result = await model.generateContent([prompt, filePart]);
         const responseText = result.response.text();
 
-        const cleanJsonString = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        // 💡 แก้บัค VS Code Syntax Error: เปลี่ยนการลบสัญลักษณ์ ``` จาก /.../ เป็น new RegExp แทน
+        const cleanJsonString = responseText
+            .replace(new RegExp('```json', 'g'), '')
+            .replace(new RegExp('```', 'g'), '')
+            .trim();
+            
         parsedData = JSON.parse(cleanJsonString);
 
         const memos = parsedData.memos || [];
         
-        // ตรวจสอบว่าแสกนเจอข้อมูลสำคัญครบหรือไม่
         const isComplete = memos.length > 0 && memos.every(memo => 
           memo["ที่"] && memo["ที่"] !== "-" &&
           memo["วันที่"] && memo["วันที่"] !== "-" &&
@@ -101,7 +104,7 @@ exports.extractDataWithGemini = async (filePath, mimeType) => {
 
         if (isComplete) {
           console.log("ข้อมูลครบถ้วนสมบูรณ์!");
-          break; // ถ้าข้อมูลครบแล้วให้ออกจากการวนลูปเลย
+          break; 
         } else if (attempt < maxRetries) {
           console.log("⚠️ ข้อมูลสำคัญหายไป กำลังสั่งให้ AI รีเช็คและแสกนใหม่อีกครั้ง...");
         }
@@ -109,18 +112,15 @@ exports.extractDataWithGemini = async (filePath, mimeType) => {
       } catch (innerError) {
         console.error(`พบข้อผิดพลาดระหว่างเรียก API (รอบที่ ${attempt}):`, innerError.message);
         
-        // ถ้าเป็นการเรียกครั้งสุดท้ายแล้ว ให้ throw โยน error ออกไปเลย
         if (attempt === maxRetries) {
           throw innerError; 
         }
 
-        // 💡 ถ้าเจอ 503 หรือ 429 ให้ทำการหน่วงเวลา (Delay) แล้ววนลูปทำใหม่
         if (innerError.message.includes('503') || innerError.message.includes('429')) {
-          const waitTime = attempt * 3000; // รอบที่ 1 รอ 3 วิ, รอบที่ 2 รอ 6 วิ
+          const waitTime = attempt * 3000; 
           console.log(`⏳ เซิร์ฟเวอร์ AI ทำงานหนักชั่วคราว รอ ${waitTime/1000} วินาทีแล้วลองใหม่...`);
           await delay(waitTime);
         } else {
-          // ถ้าเป็น Error แบบอื่น (เช่น JSON parse พัง) ให้โยนออกไปจัดการด้านนอก
           throw innerError;
         }
       }
@@ -138,7 +138,6 @@ exports.extractDataWithGemini = async (filePath, mimeType) => {
       throw new Error(`โควตา AI เต็มชั่วคราว: กรุณารอประมาณ 1 นาทีแล้วกดอัพโหลดใหม่อีกครั้ง`);
     }
     
-    // 💡 ดักจับ 503 กรณีที่ทำครบ 3 รอบแล้วยังล่มอยู่ ให้ส่งข้อความที่เป็นมิตรกลับไปที่ UI
     if (error.message.includes('503')) {
        throw new Error(`ระบบ AI ทำงานหนักเกินไป (503 Service Unavailable): กรุณารอสักครู่แล้วกดอัปโหลดใหม่อีกครั้ง`);
     }

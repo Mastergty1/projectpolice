@@ -26,15 +26,17 @@ interface MemoData {
 interface FileResult {
     filename: string;
     status: string;
-    documentId: number;
+    documentId?: number; // เปลี่ยนเป็น Optional
     viewLink?: string;
     extractedData: MemoData[];
+    fileInfo?: any; // 💡 เพิ่มฟิลด์รองรับ fileInfo สำหรับอัปโหลดขึ้น Drive
     error?: string;
 }
 
 interface FileData {
     filename: string;
-    documentId: number;
+    documentId?: number;
+    fileInfo?: any; // 💡 เพิ่มฟิลด์รองรับ fileInfo
     deadline: string;
     selectedAssignees: string[]; 
     memos: MemoData[];
@@ -88,7 +90,6 @@ export default function Uploaded({ extractedData }: UploadedProps) {
     }, []);
 
     useEffect(() => {
-        // ดึง ID ผู้ใช้ที่ล็อกอินอยู่มาตั้งเป็นค่าเริ่มต้น
         const loggedInUserId = typeof window !== 'undefined' ? String(localStorage.getItem("user_id") || localStorage.getItem("userId") || "") : "";
         
         if (extractedData && Array.isArray(extractedData)) {
@@ -143,12 +144,12 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                     });
 
                     const assigneesArray = Array.from(scannedAssignees);
-                    // 💡 ถ้าเอกสารสแกนไม่พบใครเลย ให้ตั้งค่าคนอัปโหลดเป็นผู้รับผิดชอบ Default
                     const finalAssignees = assigneesArray.length > 0 ? assigneesArray : (loggedInUserId ? [loggedInUserId] : []);
 
                     return {
                         filename: file.filename,
                         documentId: file.documentId,
+                        fileInfo: file.fileInfo, // 💡 เก็บ fileInfo ลงไปใน State
                         deadline: "14", 
                         selectedAssignees: finalAssignees, 
                         memos: processedMemos
@@ -210,8 +211,6 @@ export default function Uploaded({ extractedData }: UploadedProps) {
         if (!isAllSet) return alert("⚠️ กรุณาเลือกระยะเวลาที่ต้องติดตามงาน และ ผู้รับผิดชอบ ให้ครบก่อนทำการบันทึกครับ");
 
         setIsSaving(true);
-        
-        // 💡 ดึง ID ผู้สร้างอีกครั้งตรงนี้เพื่อหลีกเลี่ยง Scope Error (Cannot find name 'loggedInUserId')
         const currentUserId = typeof window !== 'undefined' ? String(localStorage.getItem("user_id") || localStorage.getItem("userId") || "") : "";
 
         try {
@@ -248,9 +247,10 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ 
+                        fileInfo: file.fileInfo, // 💡 ส่งข้อมูลไฟล์ไปให้ Backend อัปโหลดขึ้น Drive ตอนกดยืนยันแล้ว
                         documentId: file.documentId, 
                         memos: memosWithDueDate,
-                        createdBy: currentUserId // 💡 แนบ ID ของคนอัปโหลดไปให้ Backend
+                        createdBy: currentUserId 
                     })
                 });
                 

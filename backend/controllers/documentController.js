@@ -1,10 +1,8 @@
 const fs = require('fs').promises; 
 const { extractDataWithGemini } = require('../services/ocrService'); 
-const { generateHash } = require('../utils/duplicateChecker');
-const pool = require('../config/db');
-const { uploadToDrive } = require('../services/googleDriveService');
 
-const DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID; 
+// หมายเหตุ: ไม่ต้องใช้ pool (Database) และ uploadToDrive ที่นี่แล้ว 
+// เพราะย้ายไปบันทึกตอนผู้ใช้กดยืนยันใน taskController (confirmTasks) แทน
 
 exports.processDocuments = async (req, res) => {
   const files = req.files;
@@ -16,44 +14,38 @@ exports.processDocuments = async (req, res) => {
   const userName = req.user ? req.user.name : "Unknown"; // ปรับ .name ให้ตรงกับชื่อฟิลด์ใน User model ของคุณ
 
   for (const file of files) {
-    const client = await pool.connect();
     try {
-      await client.query('BEGIN');
+      // 1. ให้ AI สกัดข้อมูลและอ่านข้อความออกมาอย่างเดียว
       const geminiResult = await extractDataWithGemini(file.path, file.mimetype);
       const { text, extractedData } = geminiResult;
-      const hash = generateHash(text + Date.now().toString());
-      const driveData = await uploadToDrive(file, DRIVE_FOLDER_ID);
 
-      // เพิ่มฟิลด์ created_by และส่ง userId เข้าไปใน Database
-      const docRes = await client.query(
-        `INSERT INTO documents (filename, content, content_hash, keywords_found, drive_file_id, drive_web_view_link, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-        [file.originalname, text, hash, JSON.stringify(extractedData), driveData.id, driveData.webViewLink, userId]
-      );
-      
-      await client.query('COMMIT'); 
-      
-      try { await fs.unlink(file.path); } catch (e) { console.error("Warning: Cannot delete file", e.message); }
-
-      // ตั้งค่า default ชื่อคนรับผิดชอบให้เป็นชื่อคนอัพโหลด
+      // 2. ตั้งค่า default ชื่อคนรับผิดชอบให้เป็นชื่อคนอัพโหลด
       let dataWithDefaultUser = extractedData || {};
-      dataWithDefaultUser.assignee = userName; // ปรับคีย์ 'assignee' ให้ตรงกับ Frontend ที่คุณใช้งาน
+      dataWithDefaultUser.assignee = userName; 
 
+      // 3. เตรียมข้อมูลส่งกลับให้ Frontend 
       results.push({
         filename: file.originalname,
         status: 'success',
-        extractedData: dataWithDefaultUser, // ส่งข้อมูลที่มีชื่อ Default กลับไป
-        documentId: docRes.rows[0].id, 
-        viewLink: driveData.webViewLink
+        extractedData: dataWithDefaultUser,
+        // สำคัญ: แนบ fileInfo กลับไปเพื่อให้ Frontend เอาไปใช้ส่งมายืนยันอีกครั้งตอนบันทึกลงฐานข้อมูล
+        fileInfo: {
+            path: file.path,
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+            text: text
+        }
       });
 
+      // หมายเหตุ: จะไม่มีการลบไฟล์ (fs.unlink) หรือบันทึกลงฐานข้อมูลใดๆ ตรงนี้ 
+      // ไฟล์จะถูกเก็บไว้ที่โฟลเดอร์ชั่วคราวบน Server เพื่อรอให้ผู้ใช้กดยืนยันการเพิ่มงานแล้วค่อยลบทิ้งใน confirmTasks
+
     } catch (err) {
-      await client.query('ROLLBACK'); 
+      // หากเกิด Error ในขั้นตอนการสกัดข้อมูลค่อยลบไฟล์ชั่วคราวทิ้ง
       try { await fs.unlink(file.path); } catch (e) {}
       results.push({ filename: file.originalname, status: 'error', error: err.message });
-    } finally {
-      client.release();
     }
   }
+  
   res.json({ total: files.length, results });
 };
