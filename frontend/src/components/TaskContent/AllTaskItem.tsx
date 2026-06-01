@@ -4,6 +4,8 @@ import styles from "./TaskItem.module.css"
 import Select from "react-select";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
 
 type AssigneeData = {
   name: string;
@@ -29,6 +31,7 @@ type StatusOption = {
 };
 
 export default function AllTaskItem({date, createdAt, name, personInCharge, assigneesData, status, id, onStatusChange}:TaskItemProps){
+    const router = useRouter();
     
     const parsedDate = new Date(date);
     const day = parsedDate.getDate();
@@ -169,7 +172,7 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
                                     className="h-full rounded-full transition-all duration-500 ease-in-out" 
                                     style={{ 
                                         width: `${progressPercent}%`,
-                                        backgroundColor: progressColor // <-- This applies the CSS variable safely
+                                        backgroundColor: progressColor 
                                     }}
                                 ></div>
                             </div>
@@ -187,6 +190,25 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
                             value={statusOption.find((option) => option.value === taskStatus) || statusOption[0]}
                             isClearable={false}
                             onChange={(selectedOption) => {
+                                // 💡 ดักความถูกต้องของ Token ก่อนให้เปลี่ยนค่าใน Dropdown หน้ารวม
+                                const localToken = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
+                                const cookieToken = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+                                const token = (localToken && localToken !== "undefined") ? localToken : (cookieToken || null);
+
+                                if (!token) {
+                                    Swal.fire({
+                                        icon: 'warning',
+                                        title: 'ไม่อนุญาต',
+                                        text: 'กรุณาเข้าสู่ระบบก่อนทำการเปลี่ยนสถานะงาน',
+                                        confirmButtonText: 'เข้าสู่ระบบ',
+                                        showCancelButton: true,
+                                        cancelButtonText: 'ยกเลิก'
+                                    }).then((result) => {
+                                        if (result.isConfirmed) router.push('/login');
+                                    });
+                                    return;
+                                }
+
                                 const newStatus = selectedOption!.value;
                                 setStatus(newStatus);
                                 onStatusChange(id, newStatus);

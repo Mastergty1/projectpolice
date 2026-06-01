@@ -50,7 +50,13 @@ export default function TopBar() {
             await fetch(`${backendUrl}/api/v1/auth/logout`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            
+            // 💡 ล้างข้อมูลออกจากทั้ง Cookie และ LocalStorage ให้เกลี้ยง
             document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            localStorage.removeItem("token");
+            localStorage.removeItem("user_id");
+            localStorage.removeItem("userId");
+
             setUser(null);
             window.location.href = '/login';
         } catch (err) {
@@ -64,8 +70,6 @@ export default function TopBar() {
         className="flex justify-between items-center w-full px-4 sm:px-6 py-3 sm:py-4 shadow-md z-50 relative gap-2"
         style={{ backgroundColor: 'var(--header-bg)' }}
         >
-            {/* ฝั่งซ้าย: โลโก้และชื่อระบบ */}
-            {/* 💡 เพิ่ม min-w-0 และ flex-1 เพื่อให้ชื่อระบบหดตัวได้ */}
             <Link href="/" aria-label="กลับหน้าหลัก ระบบติดตามงานมอบหมาย" className="shrink min-w-0 flex-1">
                 <div className="flex items-center gap-2 sm:gap-4 group min-w-0">
                     <Image 
@@ -76,14 +80,12 @@ export default function TopBar() {
                         className="transition-transform group-hover:scale-110 w-8 h-8 sm:w-10 sm:h-10 shrink-0" 
                         priority
                     />
-                    {/* 💡 เอา hidden ออก เพื่อให้ชื่อแสดงเสมอ และถ้าจอยาวไม่พอจะกลายเป็น ... แทน */}
                     <strong className="text-sm sm:text-lg lg:text-xl font-bold truncate text-white block">
                         ระบบติดตามงานมอบหมาย
                     </strong>
                 </div>
             </Link>
 
-            {/* ฝั่งขวา: ปุ่มตั้งค่าและผู้ใช้ */}
             <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <DarkModeBtn />
 
@@ -94,7 +96,6 @@ export default function TopBar() {
                     </button>
                 </Link>
 
-                {/* Authentication Section */}
                 {user ? (
                     <div className="relative" ref={dropdownRef}>
                         <button 
@@ -108,13 +109,11 @@ export default function TopBar() {
                                 height={24} 
                                 className="rounded-full object-cover w-6 h-6 shrink-0"
                             />
-                            {/* 💡 เอา hidden ออก เพื่อให้ชื่อ User แสดงในมือถือด้วย */}
                             <span className="font-medium text-foreground! truncate text-sm sm:text-base block">
                                 {user.name}
                             </span>
                         </button>
 
-                        {/* Dropdown Menu */}
                         {dropdownOpen && (
                             <div className="absolute right-0 mt-2 w-48 bg-(--container) border border-(--shadow) rounded-xl shadow-lg py-2 flex flex-col overflow-hidden">
                                 <div className="flex items-center gap-2 px-4 py-2 border-b border-(--shadow) bg-(--button)/40">
