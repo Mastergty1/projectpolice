@@ -51,15 +51,15 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
     let progressColor = "bg-green-500"; 
 
     if (diffDays < 0) {
-        urgency = "late"; theme = styles.DateGrey; progressColor = "bg-gray-500";
+        urgency = "late"; theme = styles.DateGrey; progressColor = "var(--greyBorder)";
     } else if (diffDays === 0) {
-        urgency = "today"; theme = styles.DateRed; progressColor = "bg-red-500";
+        urgency = "today"; theme = styles.DateRed; progressColor = "var(--redBorder)";
     } else if (diffDays === 1) {
-        urgency = "tommorrow"; theme = styles.DateOrange; progressColor = "bg-orange-500";
+        urgency = "tommorrow"; theme = styles.DateOrange; progressColor = "var(--orangeBorder)";
     } else if (diffDays <= 7) {
-        urgency = "this week"; theme = styles.DateYellow; progressColor = "bg-yellow-400";
+        urgency = "this week"; theme = styles.DateYellow; progressColor = "var(--yellowBorder)";
     } else {
-        urgency = "later"; theme = styles.DateGreen; progressColor = "bg-green-500";
+        urgency = "later"; theme = styles.DateGreen; progressColor = "var(--greenBorder)";
     }
 
     let progressPercent = 0;
@@ -166,8 +166,11 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
 
                             <div className="w-full shrink-0 block bg-(--wrapper) rounded-full h-2.5 mt-2 border border-(--shadow) overflow-hidden">
                                 <div 
-                                    className={`h-full rounded-full transition-all duration-500 ease-in-out ${progressColor}`} 
-                                    style={{ width: `${progressPercent}%` }}
+                                    className="h-full rounded-full transition-all duration-500 ease-in-out" 
+                                    style={{ 
+                                        width: `${progressPercent}%`,
+                                        backgroundColor: progressColor // <-- This applies the CSS variable safely
+                                    }}
                                 ></div>
                             </div>
 

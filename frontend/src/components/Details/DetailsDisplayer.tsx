@@ -165,7 +165,7 @@ export default function DetailsDisplayer({
                                 รายละเอียดจากเอกสาร (ข้อความเต็ม)
                             </h2>
                             <p className="text-sm text-(--foreground)/60 mb-4 font-medium flex items-center gap-2 bg-(--container) w-fit px-3 py-1.5 rounded-full border border-(--shadow)/60">
-                                👤 เพิ่มเข้าระบบโดย: <span className="font-bold text-blue-700">{taskData?.creatorName || "ไม่ระบุ"}</span>
+                                👤 เพิ่มเข้าระบบโดย: <span className="font-bold text-(--blueText)">{taskData?.creatorName || "ไม่ระบุ"}</span>
                             </p>
                             {taskData?.document_link && (
                                 <a 

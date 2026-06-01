@@ -5,6 +5,7 @@ import TaskDisplayer from "./TaskDisplayer";
 import styles from "./TaskDisplayer.module.css";
 import Link from "next/link";
 import PersonMultiSelect from "./PersonMultiSelect";
+import StatusMultiSelect from "./StatusMultiSelect"; // 👈 Import new component
 
 type TaskStatus = "following" | "problem" | "completed";
 
@@ -16,10 +17,10 @@ export default function AllTask() {
 
     const [tasks, setTasks] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [statusFilter, setStatusFilter] = useState("all");
+    
+    // 💡 Changed from string "all" to string[] for multi-select
+    const [statusFilter, setStatusFilter] = useState<string[]>([]); 
     const [personFilter, setPersonFilter] = useState<string[]>([]); 
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const fetchTasks = async () => {
@@ -43,7 +44,6 @@ export default function AllTask() {
         fetchTasks();
     }, []);
 
-    // 💡 เพิ่มระบบรับ Event การซิงค์ข้อมูลจาก Component อื่น
     useEffect(() => {
         const handleTaskSync = (event: Event) => {
             const customEvent = event as CustomEvent<{ id: string; status: string }>;
@@ -55,16 +55,6 @@ export default function AllTask() {
 
         window.addEventListener("taskStatusSync", handleTaskSync);
         return () => window.removeEventListener("taskStatusSync", handleTaskSync);
-    }, []);
-
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsDropdownOpen(false);
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
     const handleStatusChange = async (id: string, newStatus: TaskStatus) => {
@@ -82,7 +72,6 @@ export default function AllTask() {
                 prevTasks.map((task) => task.id === id ? { ...task, status: newStatus } : task)
             );
 
-            // 💡 ส่ง Event ไปบอก Component อื่น (UrgentTask) ให้เปลี่ยนสถานะตามด้วย
             window.dispatchEvent(
                 new CustomEvent("taskStatusSync", {
                     detail: { id, status: newStatus },
@@ -100,17 +89,11 @@ export default function AllTask() {
     });
     const uniquePersons = Array.from(new Set(allPersons));
 
-    const handlePersonToggle = (person: string) => {
-        setPersonFilter((prev) =>
-            prev.includes(person)
-                ? prev.filter((p) => p !== person) 
-                : [...prev, person] 
-        );
-    };
-
     const filteredTasks = tasks
     .filter((task) => {
-        const matchStatus = statusFilter === "all" || task.status === statusFilter;
+        // 💡 Updated to support multi-status arrays
+        const matchStatus = statusFilter.length === 0 || statusFilter.includes(task.status);
+        
         const taskPersons = task.personInCharge 
             ? task.personInCharge.split(',').map((s: string) => s.trim()) 
             : [];
@@ -172,20 +155,13 @@ export default function AllTask() {
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
                     <div className={styles.ContentHeader}>
-                        <div className={styles.FilterGroup}>
-                            <strong>สถานะ:</strong>
-                            <select 
-                                className={styles.Dropdown}
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                aria-label="ตัวกรองสถานะงาน"
-                            >
-                                <option value="all">ทั้งหมด</option>
-                                <option value="following">กำลังติดตาม</option>
-                                <option value="problem">เกิดปัญหา</option>
-                                <option value="completed">เสร็จสิ้น</option>
-                            </select>
-                        </div>
+                        
+                        {/* 💡 Replaced raw HTML select with our Custom Status Component */}
+                        <StatusMultiSelect 
+                            statusFilter={statusFilter}
+                            setStatusFilter={setStatusFilter}
+                        />
+
                         <PersonMultiSelect 
                             uniquePersons={uniquePersons}
                             personFilter={personFilter}

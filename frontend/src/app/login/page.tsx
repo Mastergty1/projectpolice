@@ -45,10 +45,10 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="h-screen w-full flex items-center justify-center bg-background overflow-hidden p-4">
+        <div className="h-full w-full flex items-center justify-center bg-background overflow-hidden p-4">
             
             {/* Card Container */}
-            <div className="w-full max-w-md bg-(--container) p-8 rounded-2xl shadow-2xl border border-(--shadow) transition-all">
+            <div className="w-full max-w-md bg-(--container) p-8 rounded-2xl flex flex-col gap-2 border-2 border-(--shadow) transition-all">
                 
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-(--header) mb-2">ยินดีต้อนรับ</h1>
@@ -99,12 +99,12 @@ const LoginPage = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full py-4 rounded-xl font-bold text-(--greenText) transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98]
-                            ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-(--greenBG)'}`}
+                        className={`w-full py-4 rounded-xl font-bold text-(--greenText) transition-all hover:scale-[1.02] active:scale-[0.98]
+                            ${loading ? 'bg-(--greyBG) cursor-not-allowed' : 'bg-(--greenBG) border-2 border-(--greenBorder)'}`}
                     >
                         {loading ? (
                             <div className="flex items-center justify-center gap-2">
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <div className="w-5 h-5 border border-white border-t-transparent rounded-full animate-spin"></div>
                                 กำลังเข้าสู่ระบบ...
                             </div>
                         ) : (

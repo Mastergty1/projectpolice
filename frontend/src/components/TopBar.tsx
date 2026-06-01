@@ -146,7 +146,7 @@ export default function TopBar() {
                     </div>
                 ) : (
                     <Link href="/login">
-                        <button className="flex items-center gap-1 sm:gap-2 bg-(--orangeBG) hover:opacity-90 text-white px-3 sm:px-5 py-2 rounded-lg transition-colors shadow-md font-medium text-sm sm:text-base whitespace-nowrap">
+                        <button className="flex items-center gap-1 sm:gap-2 bg-(--orangeBG) text-(--orangeText) hover:opacity-90 px-3 sm:px-5 py-2 rounded-lg transition-colors shadow-md font-medium text-sm sm:text-base whitespace-nowrap border-2 border-(--orangeBorder)">
                             <LogIn size={18} className="w-4 h-4 sm:w-5 sm:h-5" /> เข้าสู่ระบบ
                         </button>
                     </Link>

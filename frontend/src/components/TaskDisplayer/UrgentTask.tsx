@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import TaskDisplayer from "./TaskDisplayer";
 import styles from "./TaskDisplayer.module.css";
 import PersonMultiSelect from "./PersonMultiSelect";
+import StatusMultiSelect from "./StatusMultiSelect"; // 👈 Imported the multi-select component
 
 type TaskStatus = "following" | "problem" | "completed";
 
@@ -22,7 +23,9 @@ export default function UrgentTask() {
 
     const [tasks, setTasks] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [statusFilter, setStatusFilter] = useState("all");
+    
+    // 💡 Changed from string "all" to string[] to support multi-select status filtering
+    const [statusFilter, setStatusFilter] = useState<string[]>([]); 
     const [personFilter, setPersonFilter] = useState<string[]>([]); 
 
     useEffect(() => {
@@ -47,7 +50,6 @@ export default function UrgentTask() {
         fetchUrgentTasks();
     }, []);
 
-    // 💡 เพิ่มระบบรับ Event การซิงค์ข้อมูลจาก Component อื่น
     useEffect(() => {
         const handleTaskSync = (event: Event) => {
             const customEvent = event as CustomEvent<{ id: string; status: string }>;
@@ -76,7 +78,6 @@ export default function UrgentTask() {
                 prevTasks.map((task) => task.id === id ? { ...task, status: newStatus } : task)
             );
 
-            // 💡 ส่ง Event ไปบอก Component อื่น (AllTask) ให้เปลี่ยนสถานะตามด้วย
             window.dispatchEvent(
                 new CustomEvent("taskStatusSync", {
                     detail: { id, status: newStatus },
@@ -95,8 +96,8 @@ export default function UrgentTask() {
     const uniquePersons = Array.from(new Set(allPersons));
 
     const filteredTasks = tasks.filter((task) => {
-        // 💡 แก้บัคที่ 1: ลบการ Block งาน completed ออกไป เพื่อให้ Filter ทำงานได้อย่างถูกต้อง
-        const matchStatus = statusFilter === "all" || task.status === statusFilter;
+        // 💡 Updated to evaluate whether the task's status exists within the filter array
+        const matchStatus = statusFilter.length === 0 || statusFilter.includes(task.status);
         
         const taskPersons = task.personInCharge 
             ? task.personInCharge.split(',').map((s: string) => s.trim()) 
@@ -137,20 +138,12 @@ export default function UrgentTask() {
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
                     <div className={styles.ContentHeader}>
-                        <div className={styles.FilterGroup}>
-                            <strong>สถานะ:</strong>
-                            <select 
-                                className={styles.Dropdown}
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                aria-label="ตัวกรองสถานะงาน"
-                            >
-                                <option value="all">ทั้งหมด</option>
-                                <option value="following">กำลังติดตาม</option>
-                                <option value="problem">เกิดปัญหา</option>
-                                <option value="completed">เสร็จสิ้น</option>
-                            </select>
-                        </div>
+                        
+                        {/* 💡 Replaced legacy dropdown with custom multi-select selector */}
+                        <StatusMultiSelect 
+                            statusFilter={statusFilter}
+                            setStatusFilter={setStatusFilter}
+                        />
 
                         <PersonMultiSelect 
                             uniquePersons={uniquePersons}
