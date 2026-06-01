@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./fileUploader.module.css";
+import Swal from "sweetalert2"; // 💡 นำเข้า SweetAlert2
 
 interface ResponsibilityAssignment {
     responsible_person: string;
@@ -26,17 +27,17 @@ interface MemoData {
 interface FileResult {
     filename: string;
     status: string;
-    documentId?: number; // เปลี่ยนเป็น Optional
+    documentId?: number; 
     viewLink?: string;
     extractedData: MemoData[];
-    fileInfo?: any; // 💡 เพิ่มฟิลด์รองรับ fileInfo สำหรับอัปโหลดขึ้น Drive
+    fileInfo?: any; 
     error?: string;
 }
 
 interface FileData {
     filename: string;
     documentId?: number;
-    fileInfo?: any; // 💡 เพิ่มฟิลด์รองรับ fileInfo
+    fileInfo?: any; 
     deadline: string;
     selectedAssignees: string[]; 
     memos: MemoData[];
@@ -149,7 +150,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                     return {
                         filename: file.filename,
                         documentId: file.documentId,
-                        fileInfo: file.fileInfo, // 💡 เก็บ fileInfo ลงไปใน State
+                        fileInfo: file.fileInfo, 
                         deadline: "14", 
                         selectedAssignees: finalAssignees, 
                         memos: processedMemos
@@ -205,10 +206,27 @@ export default function Uploaded({ extractedData }: UploadedProps) {
 
     const handleConfirm = async () => {
         const validFiles = filesData.filter(file => file.memos.length > 0);
-        if (validFiles.length === 0) return alert("ไม่พบข้อมูลเอกสารที่สามารถบันทึกได้");
+        
+        // 💡 ใช้ SweetAlert2 แทน alert
+        if (validFiles.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ไม่พบข้อมูล',
+                text: 'ไม่พบข้อมูลเอกสารที่สามารถบันทึกได้',
+            });
+            return;
+        }
 
         const isAllSet = validFiles.every(f => f.deadline && f.selectedAssignees.length > 0);
-        if (!isAllSet) return alert("⚠️ กรุณาเลือกระยะเวลาที่ต้องติดตามงาน และ ผู้รับผิดชอบ ให้ครบก่อนทำการบันทึกครับ");
+        if (!isAllSet) {
+            // 💡 ใช้ SweetAlert2 แทน alert
+            Swal.fire({
+                icon: 'warning',
+                title: 'ข้อมูลไม่ครบถ้วน',
+                text: 'กรุณาเลือกระยะเวลาที่ต้องติดตามงาน และผู้รับผิดชอบให้ครบก่อนทำการบันทึก',
+            });
+            return;
+        }
 
         setIsSaving(true);
         const currentUserId = typeof window !== 'undefined' ? String(localStorage.getItem("user_id") || localStorage.getItem("userId") || "") : "";
@@ -247,7 +265,7 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ 
-                        fileInfo: file.fileInfo, // 💡 ส่งข้อมูลไฟล์ไปให้ Backend อัปโหลดขึ้น Drive ตอนกดยืนยันแล้ว
+                        fileInfo: file.fileInfo,
                         documentId: file.documentId, 
                         memos: memosWithDueDate,
                         createdBy: currentUserId 
@@ -257,10 +275,24 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                 if (!res.ok) throw new Error(`เกิดข้อผิดพลาดในการบันทึกข้อมูลไฟล์: ${file.filename}`);
             }
 
-            alert("เพิ่มงานติดตามเข้าสู่ระบบเรียบร้อยแล้ว!");
-            router.push("/"); 
+            // 💡 ใช้ SweetAlert2 แทน alert สำหรับความสำเร็จ
+            Swal.fire({
+                icon: 'success',
+                title: 'บันทึกข้อมูลสำเร็จ!',
+                text: 'เพิ่มงานติดตามเข้าสู่ระบบเรียบร้อยแล้ว',
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                router.push("/"); 
+            });
+
         } catch (err: any) {
-            alert(err.message || "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
+            // 💡 ใช้ SweetAlert2 แทน alert สำหรับข้อผิดพลาด
+            Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: err.message || "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้",
+            });
         } finally {
             setIsSaving(false);
         }

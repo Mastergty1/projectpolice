@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import styles from "./SelfAdd.module.css"; 
+import Swal from "sweetalert2"; // 💡 นำเข้า SweetAlert2
 
 // ฟังก์ชันหาเวลาอนาคตเพื่อตั้งเป็น default
 const getFutureDateStr = (daysToAdd: number) => {
@@ -30,7 +31,6 @@ export default function MemoForm() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        // 💡 FIX: แนบ Token ไปกับ Request ป้องกันการติด Unauthorized
         const token = typeof window !== 'undefined' ? localStorage.getItem("token") : "";
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
         const res = await fetch(`${backendUrl}/api/v1/users`, {
@@ -107,7 +107,11 @@ export default function MemoForm() {
     e.preventDefault();
 
     if (selectedUsers.length === 0) {
-        alert("กรุณาเลือกผู้รับผิดชอบอย่างน้อย 1 คน");
+        Swal.fire({
+            icon: 'warning',
+            title: 'ข้อมูลไม่ครบถ้วน',
+            text: 'กรุณาเลือกผู้รับผิดชอบอย่างน้อย 1 คน',
+        });
         return;
     }
 
@@ -129,14 +133,18 @@ export default function MemoForm() {
         });
     }
 
-    // กรองเอาคนที่มี Topics ด้วย
-    const validAssignments = formattedAssignments.filter(a => a.topics.length > 0);
+    const validAssignments = formattedAssignments;
+
+    // 💡 ดึง ID ของคนที่กำลังล็อกอินอยู่
+    const currentUserId = typeof window !== 'undefined' ? String(localStorage.getItem("user_id") || localStorage.getItem("userId") || "") : "";
 
     const payload = {
       ...formData,
       document_id: null,
       due_date: formData.due_date.length === 16 ? `${formData.due_date}:00` : formData.due_date,
       assignments: validAssignments,
+      created_by: currentUserId, // 💡 เพิ่มบรรทัดนี้: ส่ง ID ไปบันทึกลง Database
+      createdBy: currentUserId   // 💡 เพิ่มเผื่อไว้ในกรณีที่ Backend รับเป็นชื่อนี้
     };
 
     try {
@@ -153,14 +161,29 @@ export default function MemoForm() {
         const result = await response.json();
 
         if (response.ok && result.success) {
-            alert("บันทึกข้อมูลสำเร็จ!");
-            window.location.href = "/";
+            Swal.fire({
+                icon: 'success',
+                title: 'บันทึกข้อมูลสำเร็จ!',
+                text: 'ระบบได้เพิ่มงานเข้าระบบเรียบร้อยแล้ว',
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                window.location.href = "/";
+            });
         } else {
-            alert("เกิดข้อผิดพลาด: " + (result.message || "Unknown error"));
+            Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: result.message || "Unknown error",
+            });
         }
     } catch (error) {
         console.error("Error submitting form:", error);
-        alert("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ (Network Error)");
+        Swal.fire({
+            icon: 'error',
+            title: 'เชื่อมต่อล้มเหลว',
+            text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ (Network Error)',
+        });
     }
   };
 
@@ -253,10 +276,10 @@ export default function MemoForm() {
                                               <input 
                                                   type="text" 
                                                   className="rounded-md p-2 w-full outline-none focus:ring-2 focus:ring-blue-400 bg-(--button) border border-(--shadow)" 
-                                                  placeholder="ระบุรายละเอียดงานย่อย..."
+                                                  placeholder="ระบุรายละเอียดงานย่อย (ไม่บังคับ)..."
                                                   value={topic.detail} 
                                                   onChange={(e) => handleTopicChange(uid, tIndex, e.target.value)}
-                                                  required
+                                                  /* 💡 FIX: เอา required ออก เพื่อให้เว้นช่องว่างได้โดยไม่โดนบล็อคฟอร์ม */
                                               />
                                               {topics.length > 1 && (
                                                   <button type="button" className="text-red-500 font-bold px-2 hover:bg-red-50 rounded text-lg shrink-0" onClick={() => removeTopic(uid, tIndex)}>✕</button>

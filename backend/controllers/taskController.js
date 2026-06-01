@@ -404,12 +404,17 @@ exports.createTask = async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const { title, memo_no, memo_date, due_date, main_text, is_urgent, assignments } = req.body;
+    
+    // 💡 แก้ไข 1: เพิ่มการรับค่า createdBy หรือ created_by จาก req.body
+    const { title, memo_no, memo_date, due_date, main_text, is_urgent, assignments, createdBy, created_by } = req.body;
 
+    const validCreatorId = createdBy || created_by || null;
+
+    // 💡 แก้ไข 2: เพิ่มการบันทึก created_by ลงในคำสั่ง INSERT
     const taskRes = await client.query(
-      `INSERT INTO tasks (title, memo_no, memo_date, main_text, due_date, is_urgent, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-      [title || 'ไม่ระบุชื่อเรื่อง', memo_no, memo_date || null, main_text, due_date || null, is_urgent || false, 'following']
+      `INSERT INTO tasks (title, memo_no, memo_date, main_text, due_date, is_urgent, status, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+      [title || 'ไม่ระบุชื่อเรื่อง', memo_no, memo_date || null, main_text, due_date || null, is_urgent || false, 'following', validCreatorId]
     );
     const taskId = taskRes.rows[0].id;
 
