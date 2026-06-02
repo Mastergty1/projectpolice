@@ -150,9 +150,8 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
                                         return (
                                             <span
                                             key={idx}
-                                            className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-xs sm:text-sm font-bold whitespace-nowrap assignee-badge"
+                                            className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap assignee-badge"
                                             style={{
-                                                // light: โปร่งแสง / dark: ทึบสด (ผ่าน CSS variable)
                                                 ['--badge-bg-light' as string]: `rgba(${r},${g},${b},0.15)`,
                                                 ['--badge-bg-dark' as string]:  `rgba(${r},${g},${b},0.85)`,
                                                 ['--badge-border-light' as string]: `rgba(${r},${g},${b},0.4)`,
