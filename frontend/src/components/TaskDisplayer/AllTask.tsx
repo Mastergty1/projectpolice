@@ -131,9 +131,9 @@ export default function AllTask() {
     });
 
     return (
-        <div className="flex flex-col w-full h-full gap-6 min-h-[75vh]">
+        <div className="flex flex-col w-full h-full min-h-[75vh]">
             <div className="flex flex-col sm:flex-row justify-between gap-4">
-                <h1 className={styles.Header}>งานติดตามทั้งหมด</h1>
+                <h1 className={styles.Header} style={{marginBottom:"1.5rem"}} ><span style={{backgroundColor:"var(--container)",boxShadow:"0px 30px 0 var(--container),5px 20px 0 var(--shadow)",borderRadius:"0.2rem",padding:"1rem 1rem"}}>งานติดตามเร่งด่วน</span></h1>
                 <Link 
                     href={'/addFile'} 
                     aria-label="ไปหน้าเพิ่มงานติดตามใหม่" 
