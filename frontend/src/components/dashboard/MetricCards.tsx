@@ -1,6 +1,6 @@
 import React from 'react';
 import { Layers, CheckSquare, AlertCircle, Users } from 'lucide-react';
-import { GlobalMetrics } from './types';
+import { GlobalMetrics } from './Types';
 
 interface MetricCardsProps {
     metrics: GlobalMetrics;
@@ -10,7 +10,7 @@ export default function MetricCards({ metrics }: MetricCardsProps) {
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-(--container) p-5 rounded-xl border-2 border-(--shadow) flex items-center gap-4">
-                <div className="p-3 bg-(--wrapper) rounded-lg text-(--foreground)"><Layers size={24}/></div>
+                <div className="p-3 bg-(--wrapper) rounded-lg text-foreground"><Layers size={24}/></div>
                 <div>
                     <div className="text-sm opacity-60 font-medium">ปริมาณภาระงานรวม</div>
                     <div className="text-2xl font-bold">{metrics.total} งาน</div>

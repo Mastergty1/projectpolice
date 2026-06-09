@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react';
-import { UserStat, SortKey } from './types';
+import { UserStat, SortKey } from './Types';
 import UserTasksGrid from './UserTasksGrid';
 
 interface TaskTableProps {
@@ -97,7 +97,7 @@ export default function TaskTable({
                                                 </div>
                                             </td>
 
-                                            <td className="p-4 text-center text-(--foreground) opacity-50">
+                                            <td className="p-4 text-center text-foreground opacity-50">
                                                 {isExpanded ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}
                                             </td>
                                         </tr>

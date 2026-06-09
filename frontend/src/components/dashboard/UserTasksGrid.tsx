@@ -1,6 +1,6 @@
 import React from 'react';
 import { Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { TaskDetail } from './types';
+import { TaskDetail } from './Types';
 
 interface UserTasksGridProps {
     userName: string;
