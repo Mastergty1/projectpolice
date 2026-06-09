@@ -23,7 +23,7 @@ type TaskItemProps = {
   onStatusChange: (id: string, status: TaskStatus) => void;
 };
 
-type TaskStatus = "following" | "problem" | "completed";
+type TaskStatus = "following" |"completed";
 
 type StatusOption = {
   value: TaskStatus;
@@ -99,13 +99,11 @@ export default function AllTaskItem({date, createdAt, name, personInCharge, assi
 
     const statusOption: StatusOption[] = [
         { value: "following", label: "กำลังติดตาม" },
-        { value: "problem", label: "เกิดปัญหา" },
         { value: "completed", label: "เสร็จสิ้น" },
     ];
 
     const selectThemeMap = {
         following: { color: "var(--yellowText)", bg: "var(--yellowBG)", border: "var(--yellowBorder)" },
-        problem: { color: "var(--redText)", bg: "var(--redBG)", border: "var(--redBorder)" },
         completed: { color: "var(--greenText)", bg: "var(--greenBG)", border: "var(--greenBorder)" },
     } as const;
 

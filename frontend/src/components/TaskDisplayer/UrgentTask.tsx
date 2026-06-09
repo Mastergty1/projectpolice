@@ -135,10 +135,13 @@ export default function UrgentTask() {
     return (
         <div className="flex flex-col w-full h-full  min-h-[75vh]">
             
-            <h1 className={styles.Header} style={{marginBottom:"1.5rem"}} ><span style={{backgroundColor:"var(--container)",boxShadow:"0px 30px 0 var(--container),5px 20px 0 var(--shadow)",borderRadius:"0.2rem",padding:"1rem 1rem"}}>งานติดตามเร่งด่วน</span></h1>
-            
             <div className={styles.ContentWrapper}>
                 <div className={styles.ContentContainer}>
+
+                    <h1 className={styles.Header} style={{ fontSize: "3rem", fontWeight: "bold", margin: "0.75rem" }}>
+                        งานติดตามเร่งด่วน
+                    </h1>
+
                     <div className={styles.ContentHeader} >
                         
                         {/* 💡 Replaced legacy dropdown with custom multi-select selector */}
