@@ -174,16 +174,6 @@ export default function DetailsPanel({
                                                         }} 
                                                     />
                                                 </div>
-                                                <div className="flex flex-row items-center gap-2 mt-1">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        id="isUrgent"
-                                                        checked={taskData?.isUrgent || false}
-                                                        onChange={(e) => setTaskData({ ...taskData, isUrgent: e.target.checked })}
-                                                        style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer', accentColor: 'var(--redText)' }}
-                                                    />
-                                                    <label htmlFor="isUrgent" style={{ cursor: 'pointer' }}><strong>กำหนดเป็นงานเร่งด่วน</strong></label>
-                                                </div>
                                             </div>
                                         ) : (
                                             <div className="flex flex-col gap-1 mt-3">
