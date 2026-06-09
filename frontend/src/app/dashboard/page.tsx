@@ -9,7 +9,7 @@ import MetricCards from '@/components/dashboard/MetricCards';
 import TaskTable from '@/components/dashboard/TaskTable';
 
 // นำเข้า Types
-import { UserStat, TaskFromAPI, SortKey } from '@/components/dashboard/types';
+import { UserStat, TaskFromAPI, SortKey } from '@/components/dashboard/Types';
 
 export default function Dashboard() {
     const [stats, setStats] = useState<UserStat[]>([]);
