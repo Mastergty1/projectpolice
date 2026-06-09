@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { TaskDetail } from './Types';
 
@@ -36,7 +37,11 @@ export default function UserTasksGrid({ userName, tasks }: UserTasksGridProps) {
                 {sortedTasks.map((task, idx) => {
                     const isDone = task.status === 'completed';
                     return (
-                        <div key={idx} className={`p-4 rounded-xl border-l-4 transition-transform hover:-translate-y-0.5 shadow-sm ${isDone ? 'border-(--greenBorder) bg-(--greenBG)' : 'border-(--yellowBorder) bg-(--yellowBG)'} flex flex-col justify-between gap-4`}>
+                        <Link 
+                            href={`/tasks/${task.taskId}`} 
+                            key={idx} 
+                            className={`p-4 rounded-xl border-l-4 transition-transform hover:-translate-y-0.5 hover:shadow-md cursor-pointer shadow-sm ${isDone ? 'border-(--greenBorder) bg-(--greenBG)' : 'border-(--yellowBorder) bg-(--yellowBG)'} flex flex-col justify-between gap-4`}
+                        >
                             <div>
                                 <div className="flex items-start justify-between gap-4 mb-2">
                                     <strong className={`text-sm font-bold line-clamp-2 ${isDone ? 'text-(--greenText)' : 'text-(--yellowText)'}`}>
@@ -63,7 +68,7 @@ export default function UserTasksGrid({ userName, tasks }: UserTasksGridProps) {
                                     )}
                                 </div>
                             </div>
-                        </div>
+                        </Link>
                     );
                 })}
             </div>
