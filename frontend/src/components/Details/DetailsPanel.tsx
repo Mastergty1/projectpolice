@@ -116,7 +116,6 @@ export default function DetailsPanel({
 
     const statusOption: StatusOption[] = [
         { value: "following", label: "กำลังติดตาม" },
-        { value: "problem", label: "เกิดปัญหา" },
         { value: "completed", label: "เสร็จสิ้น" },
     ];
 
