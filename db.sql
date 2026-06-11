@@ -4,8 +4,6 @@ CREATE TABLE users (
   name VARCHAR(50) NOT NULL,
   password VARCHAR(255) NOT NULL,
   role VARCHAR(20) DEFAULT 'user',
-  reset_password_token VARCHAR(255),
-  reset_password_expire TIMESTAMP,
   color VARCHAR(7) DEFAULT '#3B82F6'
 );
 
@@ -23,38 +21,8 @@ CREATE TABLE documents (
   created_by          UUID REFERENCES users(id) ON DELETE SET NULL
 );
 
--- 2. ผลการวิเคราะห์แต่ละเอกสาร
-CREATE TABLE document_analysis (
-  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  document_id    UUID REFERENCES documents(id) ON DELETE CASCADE,
-  has_report     BOOLEAN DEFAULT FALSE,
-  keywords_found JSONB,                  
-  dates_raw      JSONB,   
-  dates_parsed   JSONB,   
-  analyzed_at    TIMESTAMP DEFAULT NOW()
-);
 
--- 3. deadlineที่แยกออกมาชัดเจน
-CREATE TABLE document_deadlines (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  document_id  UUID REFERENCES documents(id) ON DELETE CASCADE,
-  deadline_date DATE,
-  date_raw      VARCHAR(100),  
-  context       TEXT,          
-  confidence    FLOAT,         
-  created_at    TIMESTAMP DEFAULT NOW()
-);
-
--- 4. keywords ที่ใช้ตรวจจับ
-CREATE TABLE keywords (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  word        VARCHAR(100) UNIQUE,
-  category    VARCHAR(50),   
-  is_active   BOOLEAN DEFAULT TRUE,
-  created_at  TIMESTAMP DEFAULT NOW()
-);
-
--- 5. ตารางเก็บงานติดตาม (Tasks) -- [ส่วนที่เพิ่มใหม่]
+-- 2. ตารางเก็บงานติดตาม (Tasks) -- [ส่วนที่เพิ่มใหม่]
 CREATE TABLE tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   document_id UUID REFERENCES documents(id) ON DELETE CASCADE,
@@ -71,7 +39,7 @@ CREATE TABLE tasks (
   created_by UUID REFERENCES users(id) ON DELETE SET NULL
 );
 
--- 2. ตาราง "ผู้รับผิดชอบ" (เชื่อมกับ Users)
+-- 3. ตาราง "ผู้รับผิดชอบ" (เชื่อมกับ Users)
 CREATE TABLE task_assignments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   task_id UUID REFERENCES tasks(id) ON DELETE CASCADE,
@@ -80,7 +48,7 @@ CREATE TABLE task_assignments (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 3. ตาราง "รายละเอียดย่อย" (งานที่ผู้รับผิดชอบต้องทำ)
+-- 4. ตาราง "รายละเอียดย่อย" (งานที่ผู้รับผิดชอบต้องทำ)
 CREATE TABLE task_topics (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   assignment_id UUID REFERENCES task_assignments(id) ON DELETE CASCADE,
@@ -89,11 +57,3 @@ CREATE TABLE task_topics (
   is_completed BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT NOW()
 );
-
--- ลอง Insert ข้อมูลจำลองลงไปใน Database (เพื่อทดสอบ API) 
--- (แก้ไขโครงสร้างคอลัมน์จำลองให้ตรงกับ Table เพื่อไม่ให้เกิด Error)
-INSERT INTO tasks (title, main_text, due_date, status, is_urgent) 
-VALUES 
-('ชื่องานติดตาม 1', 'ข้อความชั่วคราว 1', '2026-05-22', 'following', false),
-('งานใหม่ที่ต้องแก้', 'ข้อความชั่วคราว 2', '2026-05-25', 'problem', false),
-('งานด่วนมาก', 'ข้อความชั่วคราว 3', '2026-05-21', 'following', true);
