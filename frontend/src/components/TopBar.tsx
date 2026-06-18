@@ -51,8 +51,8 @@ export default function TopBar() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
-            // 💡 ล้างข้อมูลออกจากทั้ง Cookie และ LocalStorage ให้เกลี้ยง
-            document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            // 🔒 ป้องกัน Insecure Cookie (CWE-614): ใส่ Secure และ SameSite ตอนล้าง
+            document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict;";
             localStorage.removeItem("token");
             localStorage.removeItem("user_id");
             localStorage.removeItem("userId");

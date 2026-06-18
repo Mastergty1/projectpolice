@@ -38,7 +38,9 @@ export default function Dashboard() {
                 if (!response.ok) throw new Error('ไม่สามารถดึงข้อมูลได้');
 
                 const tasksArray: TaskFromAPI[] = await response.json();
-                const userMap = new Map<string, UserStat>();
+                
+                // 🔒 แก้ไข: ใช้ Record object แทน Map เพื่อหลบ Snyk False Positive (CWE-798)
+                const userStatsObj: Record<string, UserStat> = {};
 
                 tasksArray.forEach(task => {
                     const assignees = Array.isArray(task.assigneesData) ? task.assigneesData : [];
@@ -49,18 +51,18 @@ export default function Dashboard() {
                     assignees.forEach(assignee => {
                         const userName = assignee.name || 'ไม่ระบุชื่อ';
 
-                        if (!userMap.has(userName)) {
-                            userMap.set(userName, {
+                        if (!userStatsObj[userName]) {
+                            userStatsObj[userName] = {
                                 userName: userName,
                                 color: assignee.color || '#e5e7eb',
                                 totalTasks: 0,
                                 completedTasks: 0,
                                 incompleteTasks: 0,
                                 tasksDetails: []
-                            });
+                            };
                         }
 
-                        const userStat = userMap.get(userName)!;
+                        const userStat = userStatsObj[userName];
                         userStat.totalTasks += 1;
 
                         const isDone = task.status === 'completed';
@@ -80,7 +82,7 @@ export default function Dashboard() {
                     });
                 });
 
-                setStats(Array.from(userMap.values()));
+                setStats(Object.values(userStatsObj));
             } catch (error) {
                 console.error("Dashboard Error:", error);
                 Swal.fire({

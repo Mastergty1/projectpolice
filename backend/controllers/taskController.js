@@ -109,27 +109,21 @@ exports.confirmTasks = async (req, res) => {
     const validCreatorId = createdBy ? createdBy : null;
     let documentId = null;
 
-    // หากมีการส่งข้อมูลไฟล์มา และผ่านการกดยืนยันแล้ว ให้เริ่มกระบวนการจัดเก็บถาวร
     if (fileInfo && fileInfo.path) {
-      // 🔒 ป้องกัน Path Traversal: ตรวจสอบและบังคับให้ path อยู่ในโฟลเดอร์ที่ปลอดภัยเท่านั้น
+      // 🔒 Snyk Fix (CWE-22): ทำความสะอาด path ที่รับมาจาก Frontend 
       const safeFileName = path.basename(fileInfo.path);
-      const safePath = path.resolve(UPLOADS_DIR, safeFileName);
+      const safePath = path.join(process.cwd(), 'uploads', safeFileName);
       
-      if (!safePath.startsWith(UPLOADS_DIR)) {
-         throw new Error("Security Error: Invalid file path detected.");
-      }
+      // บังคับเปลี่ยน path เป็นอันที่ปลอดภัย
       fileInfo.path = safePath;
 
-      // A. อัปโหลดไฟล์ตัวจริงขึ้น Google Drive
       const driveData = await uploadToDrive(
         { path: fileInfo.path, originalname: fileInfo.originalname, mimetype: fileInfo.mimetype },
         DRIVE_FOLDER_ID
       );
 
-      // B. สร้างรหัสแฮชเพื่อป้องกันการลงเอกสารซ้ำในตารางฐานข้อมูล
       const hash = generateHash(fileInfo.text + Date.now().toString());
 
-      // C. บันทึกลงตารางเอกสารต้นฉบับ (documents) และดึงรหัส ID ออกมาใช้งาน
       const docRes = await client.query(
         `INSERT INTO documents (filename, content, content_hash, keywords_found, drive_file_id, drive_web_view_link, created_by)
          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
@@ -146,7 +140,6 @@ exports.confirmTasks = async (req, res) => {
       documentId = docRes.rows[0].id;
     }
 
-    // 🔒 ป้องกัน Improper Type Validation: ตรวจสอบให้แน่ใจว่าเป็น Array ก่อนลูป
     if (Array.isArray(memos) && memos.length > 0) {
       for (const memo of memos) {
         const taskRes = await client.query(
@@ -165,7 +158,6 @@ exports.confirmTasks = async (req, res) => {
         );
         const taskId = taskRes.rows[0].id;
 
-        // 🔒 ตรวจสอบให้แน่ใจว่าเป็น Array
         if (Array.isArray(memo.assignments) && memo.assignments.length > 0) {
           for (const assign of memo.assignments) {
             const userId = assign.user_id ? assign.user_id : null; 
@@ -193,7 +185,6 @@ exports.confirmTasks = async (req, res) => {
     
     await client.query('COMMIT');
 
-    // ลบไฟล์ชั่วคราวบน Local Server ออกทันทีหลังจากอัปโหลดเสร็จสมบูรณ์เรียบร้อยแล้ว
     if (fileInfo && fileInfo.path) {
       try { await fs.unlink(fileInfo.path); } catch (e) { console.error("Warning: Cannot delete temp file", e.message); }
     }
