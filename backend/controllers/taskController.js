@@ -1,9 +1,12 @@
 const pool = require('../config/db');
 const fs = require('fs').promises;
+const path = require('path'); // เพิ่ม module path สำหรับป้องกัน Path Traversal
 const { uploadToDrive } = require('../services/googleDriveService');
 const { generateHash } = require('../utils/duplicateChecker');
 
 const DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID; 
+// กำหนดโฟลเดอร์สำหรับเก็บไฟล์ชั่วคราวให้ชัดเจน (แก้ไข path ให้ตรงกับที่ตั้งโฟลเดอร์ uploads ของคุณ)
+const UPLOADS_DIR = path.resolve(__dirname, '../../uploads'); 
 
 exports.getAllTasks = async (req, res) => {
   try {
@@ -98,7 +101,6 @@ exports.updateTaskStatus = async (req, res) => {
   }
 };
 
-// 🔥 แก้บัคข้อ 2: ย้ายสิทธิ์การบันทึกเอกสารลง DB และการอัปไฟล์ขึ้น Drive มาทำที่นี่เมื่อมีการยืนยันสำเร็จเท่านั้น
 exports.confirmTasks = async (req, res) => {
   const client = await pool.connect();
   try {
@@ -109,6 +111,15 @@ exports.confirmTasks = async (req, res) => {
 
     // หากมีการส่งข้อมูลไฟล์มา และผ่านการกดยืนยันแล้ว ให้เริ่มกระบวนการจัดเก็บถาวร
     if (fileInfo && fileInfo.path) {
+      // 🔒 ป้องกัน Path Traversal: ตรวจสอบและบังคับให้ path อยู่ในโฟลเดอร์ที่ปลอดภัยเท่านั้น
+      const safeFileName = path.basename(fileInfo.path);
+      const safePath = path.resolve(UPLOADS_DIR, safeFileName);
+      
+      if (!safePath.startsWith(UPLOADS_DIR)) {
+         throw new Error("Security Error: Invalid file path detected.");
+      }
+      fileInfo.path = safePath;
+
       // A. อัปโหลดไฟล์ตัวจริงขึ้น Google Drive
       const driveData = await uploadToDrive(
         { path: fileInfo.path, originalname: fileInfo.originalname, mimetype: fileInfo.mimetype },
@@ -135,8 +146,8 @@ exports.confirmTasks = async (req, res) => {
       documentId = docRes.rows[0].id;
     }
 
-    // ทำการบันทึกรายการงานติดตามทั้งหมดเข้าสู่ตารางระบบงาน
-    if (memos && memos.length > 0) {
+    // 🔒 ป้องกัน Improper Type Validation: ตรวจสอบให้แน่ใจว่าเป็น Array ก่อนลูป
+    if (Array.isArray(memos) && memos.length > 0) {
       for (const memo of memos) {
         const taskRes = await client.query(
           `INSERT INTO tasks (document_id, title, memo_no, memo_date, main_text, due_date, is_urgent, created_by)
@@ -154,7 +165,8 @@ exports.confirmTasks = async (req, res) => {
         );
         const taskId = taskRes.rows[0].id;
 
-        if (memo.assignments && memo.assignments.length > 0) {
+        // 🔒 ตรวจสอบให้แน่ใจว่าเป็น Array
+        if (Array.isArray(memo.assignments) && memo.assignments.length > 0) {
           for (const assign of memo.assignments) {
             const userId = assign.user_id ? assign.user_id : null; 
             const personStr = assign.responsible_person || '';
@@ -166,7 +178,7 @@ exports.confirmTasks = async (req, res) => {
             );
             const assignmentId = assignRes.rows[0].id;
 
-            if (assign.topics && assign.topics.length > 0) {
+            if (Array.isArray(assign.topics) && assign.topics.length > 0) {
               for (const topic of assign.topics) {
                 await client.query(
                   `INSERT INTO task_topics (assignment_id, detail, is_completed) VALUES ($1, $2, $3)`,
@@ -217,7 +229,7 @@ exports.updateTaskDetail = async (req, res) => {
       [name, validDate, notes, urgentValue, id]
     );
 
-    if (assignments && Array.isArray(assignments)) {
+    if (Array.isArray(assignments)) {
       const keepAssignmentIds = assignments
         .map(a => a.assignment_id)
         .filter(id => id != null && id !== '');
@@ -259,7 +271,7 @@ exports.updateTaskDetail = async (req, res) => {
           );
         }
 
-        if (assign.topics && Array.isArray(assign.topics)) {
+        if (Array.isArray(assign.topics)) {
           const keepTopicIds = assign.topics
                                 .filter(t => t.topic_id)
                                 .map(t => t.topic_id)
@@ -405,12 +417,9 @@ exports.createTask = async (req, res) => {
   try {
     await client.query('BEGIN');
     
-    // 💡 แก้ไข 1: เพิ่มการรับค่า createdBy หรือ created_by จาก req.body
     const { title, memo_no, memo_date, due_date, main_text, is_urgent, assignments, createdBy, created_by } = req.body;
-
     const validCreatorId = createdBy || created_by || null;
 
-    // 💡 แก้ไข 2: เพิ่มการบันทึก created_by ลงในคำสั่ง INSERT
     const taskRes = await client.query(
       `INSERT INTO tasks (title, memo_no, memo_date, main_text, due_date, is_urgent, status, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
@@ -418,7 +427,8 @@ exports.createTask = async (req, res) => {
     );
     const taskId = taskRes.rows[0].id;
 
-    if (assignments && assignments.length > 0) {
+    // 🔒 ตรวจสอบ Array Type ป้องกัน Crash 
+    if (Array.isArray(assignments) && assignments.length > 0) {
       for (const assign of assignments) {
         const userId = assign.user_id ? assign.user_id : null;
         const roleOrName = assign.role_or_name || null;
@@ -429,7 +439,7 @@ exports.createTask = async (req, res) => {
         );
         const assignmentId = assignRes.rows[0].id;
 
-        if (assign.topics && assign.topics.length > 0) {
+        if (Array.isArray(assign.topics) && assign.topics.length > 0) {
           for (const topicDetail of assign.topics) {
             await client.query(
               `INSERT INTO task_topics (assignment_id, detail, is_completed) VALUES ($1, $2, $3)`,

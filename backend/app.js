@@ -12,7 +12,7 @@ const swaggerUi = require("swagger-ui-express");
 const auth = require("./routes/auth");
 const users = require("./routes/users");
 const documents = require("./routes/documents");
-const tasks = require("./routes/tasks"); // เพิ่ม Route สำหรับ Tasks
+const tasks = require("./routes/tasks"); 
 
 const app = express();
 
@@ -32,7 +32,6 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// แก้ไข CORS ให้ปลอดภัยและยืดหยุ่นขึ้น
 const corsOptions = {
   origin: [
     "http://localhost:3000",
@@ -67,10 +66,20 @@ const authLimiter = rateLimit({
   },
 });
 
+// 🔒 เพิ่ม Limiter สำหรับการใช้งานไฟล์หนักๆ (ป้องกัน Resource Exhaustion/DoS)
+const documentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30, // จำกัดการอัปโหลดไฟล์/ดึงไฟล์ ต่อ IP
+  handler: (req, res) => {
+    res.status(429).json({ success: false, message: "Too many document requests. Please try again later." });
+  },
+});
+
 app.use("/api/v1/auth", authLimiter, auth);
 app.use("/api/v1/users", users);
-app.use("/api/v1/documents", documents);
-app.use("/api/v1/tasks", tasks); // เปิดใช้งาน API tasks
+// 🔒 ใช้งาน limiter กับ route documents
+app.use("/api/v1/documents", documentLimiter, documents); 
+app.use("/api/v1/tasks", tasks); 
 app.set("query parser", "extended");
 
 app.get("/", (req, res) => {

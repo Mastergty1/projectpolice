@@ -9,13 +9,13 @@ const sendTokenResponse = (user, statusCode, res) => {
   const options = {
     expires: new Date(Date.now() + expireDays * 24 * 60 * 60 * 1000),
     httpOnly: true,
+    sameSite: "strict" // 🔒 เพิ่ม SameSite ช่วยป้องกัน CSRF 
   };
 
   if (process.env.NODE_ENV === "production") {
-    options.secure = true;
+    options.secure = true; // 🔒 บังคับใช้ Secure Cookie บน HTTPS เท่านั้น
   }
 
-  // 💡 แก้ไข: เพิ่มการส่ง object user กลับไปด้วย
   res.status(statusCode).cookie("token", token, options).json({
     success: true,
     token,
@@ -85,6 +85,8 @@ exports.logout = async (req, res, next) => {
   res.cookie("token", "none", {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // 🔒 ป้องกัน Insecure Cookie 
+    sameSite: "strict" // 🔒 ช่วยป้องกัน CSRF 
   });
 
   res.status(200).json({ success: true, data: {} });
