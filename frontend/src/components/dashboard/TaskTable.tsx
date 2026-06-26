@@ -10,7 +10,7 @@ interface TaskTableProps {
     onSort: (key: SortKey) => void;
     expandedUser: string | null;
     onToggleExpand: (userName: string) => void;
-    maxTasks: number;
+    maxTasks: number; // ไม่ได้ใช้ใน Pie Chart แล้ว แต่เก็บไว้รับ Props ให้เข้ากับหน้ารวมได้
 }
 
 export default function TaskTable({
@@ -57,8 +57,6 @@ export default function TaskTable({
                         ) : (
                             stats.map((user) => {
                                 const completionRate = user.totalTasks > 0 ? Math.round((user.completedTasks / user.totalTasks) * 100) : 0;
-                                const completedWidth = (user.completedTasks / maxTasks) * 100;
-                                const incompleteWidth = (user.incompleteTasks / maxTasks) * 100;
                                 const isExpanded = expandedUser === user.userName;
 
                                 return (
@@ -78,21 +76,19 @@ export default function TaskTable({
                                             <td className="p-4 text-center text-(--redText) font-black text-base bg-(--redBG)/10">{user.incompleteTasks}</td>
                                             
                                             <td className="p-4">
-                                                <div className="flex flex-col gap-1.5">
-                                                    <div className="flex justify-end text-xs font-bold text-(--blueText)">
-                                                        {completionRate}%
-                                                    </div>
-                                                    <div className="w-full h-3 bg-(--wrapper) rounded-full overflow-hidden flex shadow-inner">
-                                                        <div 
-                                                            className="bg-(--greenBorder) h-full transition-all duration-700 ease-out" 
-                                                            style={{ width: `${completedWidth}%` }}
-                                                            title={`เสร็จแล้ว ${user.completedTasks} งาน`}
-                                                        ></div>
-                                                        <div 
-                                                            className="bg-(--redBorder) h-full transition-all duration-700 ease-out border-l border-white/20" 
-                                                            style={{ width: `${incompleteWidth}%` }}
-                                                            title={`ยังไม่เสร็จ ${user.incompleteTasks} งาน`}
-                                                        ></div>
+                                                <div className="flex justify-center items-center">
+                                                    <div 
+                                                        className="w-14 h-14 rounded-full flex items-center justify-center relative shadow-sm"
+                                                        style={{
+                                                            // วาดกราฟวงกลม สีเขียว = เสร็จ / สีแดง = ไม่เสร็จ
+                                                            background: `conic-gradient(#22c55e ${completionRate}%, #ef4444 ${completionRate}% 100%)`
+                                                        }}
+                                                        title={`เสร็จแล้ว ${user.completedTasks} งาน, ยังไม่เสร็จ ${user.incompleteTasks} งาน`}
+                                                    >
+                                                        {/* จุดกึ่งกลางสำหรับแสดงเลขเปอร์เซ็นต์ ทำให้เป็น Donut Chart */}
+                                                        <div className="w-10 h-10 bg-(--wrapper) rounded-full flex items-center justify-center text-xs font-bold text-foreground">
+                                                            {completionRate}%
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </td>

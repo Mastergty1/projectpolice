@@ -57,14 +57,12 @@ export default function FileUploader({ setExtractedData, progress, setProgress }
 
         try {
             const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
-            
-            // ดึง Token จาก LocalStorage (หรือที่ที่คุณเก็บไว้)
             const token = localStorage.getItem("token"); 
 
             const response = await axios.post(`${backendUrl}/api/v1/documents/process`, formData, {
                 headers: { 
                     "Content-Type": "multipart/form-data",
-                    "Authorization": `Bearer ${token}` // เพิ่ม Token ตรงนี้
+                    "Authorization": `Bearer ${token}` 
                 },
                 onUploadProgress: (progressEvent) => {
                     if (progressEvent.total) {
@@ -80,11 +78,9 @@ export default function FileUploader({ setExtractedData, progress, setProgress }
 
             if (response.status === 200) {
                 const results = response.data.results;
-                // ตรวจสอบว่ามีไฟล์ไหนที่ Backend แจ้งสถานะเป็น error กลับมาหรือไม่
                 const hasError = results && results.some((r: any) => r.status === "error");
                 
                 if (hasError) {
-                    // ดึงข้อความ Error มาแสดง
                     const errorMsg = results.find((r: any) => r.status === "error")?.error;
                     setMessage({ text: `พบข้อผิดพลาด: ${errorMsg}`, type: "error" });
                 } else {
@@ -105,6 +101,8 @@ export default function FileUploader({ setExtractedData, progress, setProgress }
         }
     };
 
+    const isUploadDisabled = isUploading || files.length === 0;
+
     return (
         <div className="flex flex-col w-full h-full gap-6 min-h-75">
             <h1 className={styles.Header}>อัพโหลดไฟล์เอกสาร</h1>
@@ -118,7 +116,15 @@ export default function FileUploader({ setExtractedData, progress, setProgress }
             >
                 <div className={styles.ContentContainer}>
                     {files.length === 0 ? (
-                        <div>อัพโหลดหรือลากไฟล์เอกสารมาที่นี่</div>
+                        <div className="flex flex-col items-center justify-center w-full h-full gap-4 text-foreground p-4 opacity-80 hover:opacity-100 transition-opacity">
+                            {/* เปลี่ยนมาใช้รูปภาพ folder.png จากโฟลเดอร์ public */}
+                            <img 
+                                src="/folder.png" 
+                                alt="Folder Upload" 
+                                className="w-full h-full max-h-48 object-contain drop-shadow-md"
+                            />
+                            <span className="font-medium text-lg">อัพโหลดหรือลากไฟล์เอกสารมาที่นี่</span>
+                        </div>
                     ) : (
                         <ul className="flex flex-col gap-2 w-full max-w-sm px-4 text-sm text-foreground">
                             {files.map((file, index) => (
@@ -153,8 +159,13 @@ export default function FileUploader({ setExtractedData, progress, setProgress }
                 <button 
                     className={styles.Button} 
                     onClick={handleUpload}
-                    disabled={isUploading}
-                    style={{ opacity: isUploading ? 0.7 : 1, cursor: isUploading ? "not-allowed" : "pointer" }}
+                    disabled={isUploadDisabled}
+                    style={{ 
+                        opacity: isUploadDisabled ? 0.6 : 1, 
+                        cursor: isUploadDisabled ? "not-allowed" : "pointer",
+                        backgroundColor: files.length === 0 ? "#9ca3af" : undefined, 
+                        color: files.length === 0 ? "#ffffff" : undefined
+                    }}
                 >
                     {isUploading ? "กำลังประมวลผล..." : "อัพโหลดไฟล์"}
                 </button>

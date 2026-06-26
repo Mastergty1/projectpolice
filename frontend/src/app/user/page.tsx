@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save, Lock, User as UserIcon, Palette } from 'lucide-react';
-
+import Swal from 'sweetalert2';
 export default function UserProfilePage() {
     const [name, setName] = useState('');
     const [color, setColor] = useState('#ffffff');
@@ -14,7 +14,8 @@ export default function UserProfilePage() {
 
     useEffect(() => {
         const fetchUserData = async () => {
-            const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+            // แก้บัค: ดึง Token จาก LocalStorage ให้ตรงกับไฟล์อื่น
+            const token = localStorage.getItem("token");
             if (!token) {
                 router.push('/login');
                 return;
@@ -41,7 +42,8 @@ export default function UserProfilePage() {
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
-        const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+        // แก้บัค: ดึง Token จาก LocalStorage
+        const token = localStorage.getItem("token");
         try {
             const res = await fetch(`${backendUrl}/api/v1/users/profile`, {
                 method: 'PUT',
@@ -52,7 +54,10 @@ export default function UserProfilePage() {
                 body: JSON.stringify({ name, color })
             });
             if (res.ok) {
-                alert('อัปเดตโปรไฟล์เรียบร้อยแล้ว (รีเฟรชเพื่อดูการเปลี่ยนแปลง)');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'อัปเดตโปรไฟล์เรียบร้อยแล้ว',
+                });
             }
         } catch (err) {
             console.error(err);
@@ -61,7 +66,8 @@ export default function UserProfilePage() {
 
     const handleChangePassword = async (e: React.FormEvent) => {
         e.preventDefault();
-        const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+        // แก้บัค: ดึง Token จาก LocalStorage
+        const token = localStorage.getItem("token");
         try {
             const res = await fetch(`${backendUrl}/api/v1/users/password`, {
                 method: 'PUT',
@@ -72,7 +78,10 @@ export default function UserProfilePage() {
                 body: JSON.stringify({ password })
             });
             if (res.ok) {
-                alert('เปลี่ยนรหัสผ่านสำเร็จ');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'เปลี่ยนรหัสผ่านสำเร็จ'
+                });
                 setPassword('');
             }
         } catch (err) {

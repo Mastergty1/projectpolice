@@ -1,19 +1,17 @@
 const pool = require('../config/db');
 const User = require('../models/User');
 
-// 💡 FIX: เพิ่มฟังก์ชัน getUsers ที่หายไป เพื่อให้หน้า Dropdown ดึงรายชื่อไปแสดงได้
 // @desc    Get all users
 // @route   GET /api/v1/users
-// @access  Public (หรือจะแก้เป็น Private ก็ได้ถ้าบังคับ Login)
+// @access  Public
 exports.getUsers = async (req, res, next) => {
     try {
-        const users = await User.find(); // เรียกใช้คำสั่ง find() จาก User Model
+        const users = await User.find();
         res.status(200).json({ success: true, data: users });
     } catch (err) {
         res.status(400).json({ success: false, message: err.message });
     }
 };
-
 
 // @desc    Update my profile (Name, Color)
 // @route   PUT /api/v1/users/profile
@@ -22,16 +20,34 @@ exports.updateMyProfile = async (req, res, next) => {
     try {
         const { name, color } = req.body;
         const updateData = {};
-        if (name) updateData.name = name;
-        if (color) updateData.color = color;
 
-        if (name&&name===req.user.name) 
-            return res.status(400).json({ success: false, message: "ชื่อซ้ำ" });
+        // 1. จัดการเรื่องอัปเดตชื่อ
+        if (name && name !== req.user.name) {
+            // ถ้าพิมพ์ชื่อมาไม่ตรงกับชื่อตัวเอง (เปลี่ยนชื่อใหม่) ให้เช็คว่าชื่อใหม่นี้มีคนอื่นใช้หรือยัง
+            const existingUser = await User.findOne({ name });
+            if (existingUser) {
+                return res.status(400).json({ success: false, message: "ชื่อนี้ถูกใช้งานแล้ว กรุณาใช้ชื่ออื่น" });
+            }
+            updateData.name = name;
+        }
+
+        // 2. จัดการเรื่องอัปเดตสี
+        if (color) {
+            updateData.color = color;
+        }
+
+        // ถ้าไม่มีอะไรเปลี่ยนแปลงเลย
+        if (Object.keys(updateData).length === 0) {
+            const currentUser = await User.findById(req.user.id);
+            return res.status(200).json({ success: true, data: currentUser });
+        }
             
-        // ใช้ dynamic update จาก User model
-        const user = await User.findByIdAndUpdate(req.user.id, updateData, { new: true });
+        // 3. บันทึกข้อมูลลงฐานข้อมูล
+        // (ลบ { new: true } ออกด้วยเพราะ Database ของคุณเป็น PostgreSQL ธรรมดา ไม่ใช่ MongoDB)
+        const user = await User.findByIdAndUpdate(req.user.id, updateData);
         res.status(200).json({ success: true, data: user });
     } catch (err) {
+        console.error(err);
         res.status(400).json({ success: false, message: err.message });
     }
 };
