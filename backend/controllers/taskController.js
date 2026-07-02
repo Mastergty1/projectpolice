@@ -1,12 +1,10 @@
 const pool = require('../config/db');
 const fs = require('fs').promises;
 const path = require('path'); // เพิ่ม module path สำหรับป้องกัน Path Traversal
-const { uploadToDrive } = require('../services/googleDriveService');
+const { uploadToDrive, getSignedUrl, downloadFile } = require('../services/supabaseStorageService');
 const { generateHash } = require('../utils/duplicateChecker');
 
 const DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID; 
-// กำหนดโฟลเดอร์สำหรับเก็บไฟล์ชั่วคราวให้ชัดเจน (แก้ไข path ให้ตรงกับที่ตั้งโฟลเดอร์ uploads ของคุณ)
-const UPLOADS_DIR = path.resolve(__dirname, '../../uploads'); 
 
 exports.getAllTasks = async (req, res) => {
   try {
@@ -133,7 +131,7 @@ exports.confirmTasks = async (req, res) => {
           hash,
           JSON.stringify({ memos }), 
           driveData.id,
-          driveData.webViewLink,
+          null, // ไม่บันทึก web_view_link แบบ public เพื่อความปลอดภัย
           validCreatorId
         ]
       );
@@ -355,7 +353,7 @@ exports.getTaskById = async (req, res) => {
       LEFT JOIN documents d ON t.document_id = d.id
       LEFT JOIN users c ON t.created_by = c.id
       WHERE t.id = $1
-      GROUP BY t.id, d.drive_web_view_link, c.name
+      GROUP BY t.id, d.drive_web_view_link, d.drive_file_id, c.name
     `;
     const { rows } = await pool.query(query, [id]);
     
@@ -364,6 +362,17 @@ exports.getTaskById = async (req, res) => {
     }
     const task = rows[0];
     task.personInCharge = task.assignments.map(a => a.personInCharge).join(', ') || 'ไม่ระบุ';
+
+    // ถ้ามี drive_file_id ให้สร้าง Link ไปยัง Endpoint ภายในของเราเองเพื่อจำกัดการเข้าถึง
+    if (task.document_link) {
+      // ของเก่า
+    } else {
+      const docQuery = await pool.query(`SELECT drive_file_id FROM documents WHERE id = (SELECT document_id FROM tasks WHERE id = $1)`, [id]);
+      if (docQuery.rows.length > 0 && docQuery.rows[0].drive_file_id) {
+         // สร้าง URL วิ่งเข้ามาที่ Backend ของเราเอง
+         task.document_link = `${req.protocol}://${req.get('host')}/api/v1/tasks/${task.id}/document`;
+      }
+    }
 
     res.status(200).json({ success: true, data: task });
   } catch (err) {
@@ -449,5 +458,49 @@ exports.createTask = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server Error', error: err.message });
   } finally {
     client.release();
+  }
+};
+
+exports.downloadDocument = async (req, res) => {
+  try {
+    // 1. ตรวจสอบ Referer ป้องกันการก๊อปปี้ลิงก์ไปวางตรงๆ
+    const referer = req.headers.referer;
+    const frontendUrl = process.env.FRONTEND || 'http://localhost:3000';
+    if (!referer || !referer.startsWith(frontendUrl)) {
+      return res.status(403).send('Access Denied: ไม่อนุญาตให้เข้าถึงโดยตรง กรุณาเปิดไฟล์จากหน้าเว็บไซต์เท่านั้น');
+    }
+
+    const { id } = req.params;
+    const query = `
+      SELECT d.drive_file_id, d.filename 
+      FROM tasks t 
+      JOIN documents d ON t.document_id = d.id 
+      WHERE t.id = $1
+    `;
+    const { rows } = await pool.query(query, [id]);
+    
+    if (rows.length === 0 || !rows[0].drive_file_id) {
+      return res.status(404).send('Document not found');
+    }
+
+    const fileBuffer = await downloadFile(rows[0].drive_file_id);
+    if (!fileBuffer) {
+      return res.status(500).send('Error downloading file from storage');
+    }
+
+    // กำหนด Content-Type คร่าวๆ
+    const filename = rows[0].filename || 'document.pdf';
+    const ext = path.extname(filename).toLowerCase();
+    let contentType = 'application/octet-stream';
+    if (ext === '.pdf') contentType = 'application/pdf';
+    else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+    else if (ext === '.png') contentType = 'image/png';
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
+    res.send(fileBuffer);
+  } catch (err) {
+    console.error("Download error:", err.message);
+    res.status(500).send('Server Error');
   }
 };

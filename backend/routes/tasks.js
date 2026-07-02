@@ -8,15 +8,18 @@ const {
     getTaskById,
     updateTaskDetail,
     deleteTask,
-    createTask
+    createTask,
+    downloadDocument // นำเข้าฟังก์ชันดาวน์โหลด
 } = require('../controllers/taskController');
+const { protect } = require('../middleware/auth'); // นำเข้า auth middleware ป้องกันการเข้าถึง
 
 const router = express.Router();
 
 router.get('/', getAllTasks);
 router.get('/urgent', getUrgentTasks);
 router.put('/:id/status', updateTaskStatus);
-router.post('/confirm', confirmTasks); // เส้นทางสำหรับยืนยันงานที่แสกนมา
+router.post('/confirm', confirmTasks); 
+router.get('/:id/document', protect, downloadDocument); // เส้นทางสำหรับเปิดเอกสาร (บังคับล็อกอิน)
 router.get('/:id', getTaskById);
 router.put('/:id', updateTaskDetail);
 router.delete('/:id', deleteTask);

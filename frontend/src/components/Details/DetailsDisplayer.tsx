@@ -192,7 +192,7 @@ export default function DetailsDisplayer({
                                 <a 
                                     href={taskData.document_link} 
                                     target="_blank" 
-                                    rel="noopener noreferrer" 
+                                    rel="noopener" 
                                     className={styles.Button}
                                     style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1rem', textDecoration: 'none' }}
                                 >
