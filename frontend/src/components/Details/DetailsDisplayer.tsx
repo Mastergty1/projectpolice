@@ -211,10 +211,17 @@ export default function DetailsDisplayer({
                                             const res = await fetch(taskData.document_link, {
                                                 headers: { Authorization: `Bearer ${cookieToken}` }
                                             });
-                                            if (!res.ok) throw new Error("Failed to fetch document");
+                                            if (!res.ok) throw new Error("Failed to fetch document link");
                                             
-                                            const blob = await res.blob();
-                                            const contentType = res.headers.get("content-type") || "application/pdf";
+                                            const data = await res.json();
+                                            if (!data.success || !data.signedUrl) throw new Error("Invalid signed URL");
+                                            
+                                            // ดึงไฟล์จาก Signed URL โดยตรง เพื่อบัง URL ไม่ให้แชร์ได้
+                                            const fileRes = await fetch(data.signedUrl);
+                                            if (!fileRes.ok) throw new Error("Failed to download file");
+
+                                            const blob = await fileRes.blob();
+                                            const contentType = fileRes.headers.get("content-type") || "application/pdf";
                                             const fileBlob = new Blob([blob], { type: contentType });
                                             const url = window.URL.createObjectURL(fileBlob);
                                             

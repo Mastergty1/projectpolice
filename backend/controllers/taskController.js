@@ -474,22 +474,13 @@ exports.downloadDocument = async (req, res) => {
       return res.status(404).send('Document not found');
     }
 
-    const fileBuffer = await downloadFile(rows[0].drive_file_id);
-    if (!fileBuffer) {
-      return res.status(500).send('Error downloading file from storage');
+    const { getSignedUrl } = require('../services/supabaseStorageService');
+    const signedUrl = await getSignedUrl(rows[0].drive_file_id);
+    if (!signedUrl) {
+      return res.status(500).json({ success: false, message: 'Error generating signed URL' });
     }
 
-    // กำหนด Content-Type คร่าวๆ
-    const filename = rows[0].filename || 'document.pdf';
-    const ext = path.extname(filename).toLowerCase();
-    let contentType = 'application/octet-stream';
-    if (ext === '.pdf') contentType = 'application/pdf';
-    else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
-    else if (ext === '.png') contentType = 'image/png';
-
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
-    res.send(fileBuffer);
+    return res.json({ success: true, signedUrl });
   } catch (err) {
     console.error("Download error:", err.message);
     res.status(500).send('Server Error');
