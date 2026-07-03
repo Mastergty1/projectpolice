@@ -20,20 +20,26 @@ exports.protect = async (req, res, next) => {
   if (!token || token === "null") {
     return res.status(401).json({
       success: false,
-      message: "Not authorize to access this route",
+      message: "Not authorize to access this route (Token is missing)",
     });
   }
   try {
     //Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log(decoded);
     req.user = await User.findById(decoded.id);
+    
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authorize to access this route (User not found)",
+      });
+    }
     next();
   } catch (err) {
-    console.log(err.stack);
+    console.error("Protect Middleware Error:", err);
     return res.status(401).json({
       success: false,
-      message: "Not authorize to access this route",
+      message: `Not authorize to access this route (${err.message})`,
     });
   }
 };
