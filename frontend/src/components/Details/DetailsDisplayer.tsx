@@ -211,17 +211,13 @@ export default function DetailsDisplayer({
                                             const res = await fetch(taskData.document_link, {
                                                 headers: { Authorization: `Bearer ${cookieToken}` }
                                             });
-                                            if (!res.ok) throw new Error("Failed to fetch document link");
+                                            if (!res.ok) {
+                                                const errText = await res.text();
+                                                throw new Error(`Failed to fetch: ${res.status} ${errText}`);
+                                            }
                                             
-                                            const data = await res.json();
-                                            if (!data.success || !data.signedUrl) throw new Error("Invalid signed URL");
-                                            
-                                            // ดึงไฟล์จาก Signed URL โดยตรง เพื่อบัง URL ไม่ให้แชร์ได้
-                                            const fileRes = await fetch(data.signedUrl);
-                                            if (!fileRes.ok) throw new Error("Failed to download file");
-
-                                            const blob = await fileRes.blob();
-                                            const contentType = fileRes.headers.get("content-type") || "application/pdf";
+                                            const blob = await res.blob();
+                                            const contentType = res.headers.get("content-type") || "application/pdf";
                                             const fileBlob = new Blob([blob], { type: contentType });
                                             const url = window.URL.createObjectURL(fileBlob);
                                             
@@ -230,10 +226,10 @@ export default function DetailsDisplayer({
                                             } else {
                                                 window.location.href = url;
                                             }
-                                        } catch (err) {
+                                        } catch (err: any) {
                                             console.error("Error opening document:", err);
                                             if (newWindow) newWindow.close();
-                                            alert("เกิดข้อผิดพลาดในการเปิดไฟล์");
+                                            alert("เกิดข้อผิดพลาด: " + err.message);
                                         }
                                     }}
                                     className={styles.Button}
