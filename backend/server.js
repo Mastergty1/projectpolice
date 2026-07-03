@@ -23,3 +23,6 @@ process.on("unhandledRejection", (err, promise) => {
   console.log(`Error: ${err.message}`);
   server.close(() => process.exit(1));
 });
+
+// 3. Export app ให้ Vercel Serverless Function นำไปใช้ต่อได้
+module.exports = app;
