@@ -1,7 +1,11 @@
 const { Pool } = require("pg");
 
+let connectionString = process.env.projectpolice_POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL || process.env.DB || "";
+// 💡 Vercel / Supabase มักจะแถม ?sslmode=require มาใน URL ซึ่งไปตีกับค่า config ssl ด้านล่าง
+connectionString = connectionString.replace("?sslmode=require", "");
+
 const pool = new Pool({
-  connectionString: process.env.projectpolice_POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL || process.env.DB,
+  connectionString,
   ssl: { rejectUnauthorized: false } 
 });
 
