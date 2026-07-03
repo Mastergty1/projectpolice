@@ -2,7 +2,14 @@ const { Pool } = require("pg");
 
 // 💡 Vercel Serverless ต้องใช้ Pooling URL ก่อนเสมอ (พอร์ต 6543 สำหรับ Supabase)
 let connectionString = process.env.POSTGRES_URL || process.env.projectpolice_POSTGRES_URL || process.env.DB || process.env.POSTGRES_URL_NON_POOLING || "";
-connectionString = connectionString.replace("?sslmode=require", "");
+
+try {
+  const parsedUrl = new URL(connectionString);
+  parsedUrl.searchParams.delete("sslmode");
+  connectionString = parsedUrl.toString();
+} catch (error) {
+  console.warn("Invalid DB connection string format");
+}
 
 const pool = new Pool({
   connectionString,
