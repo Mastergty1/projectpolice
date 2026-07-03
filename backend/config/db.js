@@ -1,7 +1,7 @@
 const { Pool } = require("pg");
 
 const pool = new Pool({
-  connectionString: process.env.projectpolice_POSTGRES_URL_NON_POOLING,
+  connectionString: process.env.projectpolice_POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL || process.env.DB,
   ssl: { rejectUnauthorized: false } 
 });
 
