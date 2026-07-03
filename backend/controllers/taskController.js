@@ -459,12 +459,7 @@ exports.createTask = async (req, res) => {
 
 exports.downloadDocument = async (req, res) => {
   try {
-    // 1. ตรวจสอบ Referer ป้องกันการก๊อปปี้ลิงก์ไปวางตรงๆ
-    const referer = req.headers.referer;
-    const frontendUrl = process.env.FRONTEND || 'http://localhost:3000';
-    if (!referer || !referer.startsWith(frontendUrl)) {
-      return res.status(403).send('Access Denied: ไม่อนุญาตให้เข้าถึงโดยตรง กรุณาเปิดไฟล์จากหน้าเว็บไซต์เท่านั้น');
-    }
+    // (นำการเช็ค Referer ออกไป เพราะใช้ JWT Protect อยู่แล้ว ช่วยแก้ปัญหาบางเบราว์เซอร์ไม่ส่ง Referer)
 
     const { id } = req.params;
     const query = `
