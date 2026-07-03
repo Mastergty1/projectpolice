@@ -38,6 +38,18 @@ export default function DetailsDisplayer({
     const router = useRouter();
     const [users, setUsers] = useState<any[]>([]);
 
+    const getAuthToken = () => {
+        if (typeof document !== 'undefined') {
+            const cookieMatch = document.cookie.split('; ').find(row => row.startsWith('token='));
+            if (cookieMatch) return cookieMatch.split('=')[1];
+        }
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('token');
+        }
+        return null;
+    };
+    const cookieToken = getAuthToken();
+
     useEffect(() => {
         const fetchUsers = async () => {
             try {
@@ -123,7 +135,6 @@ export default function DetailsDisplayer({
     const handleToggleComplete = async (assignIndex: number, topicIndex: number) => {
         // 💡 ตรวจสอบ Token อย่างละเอียด
         const localToken = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
-        const cookieToken = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
         const token = (localToken && localToken !== "undefined") ? localToken : (cookieToken || null);
 
         if (!token) {
