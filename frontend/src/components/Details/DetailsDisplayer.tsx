@@ -190,7 +190,7 @@ export default function DetailsDisplayer({
                             </p>
                             {taskData?.document_link && (
                                 <a 
-                                    href={taskData.document_link} 
+                                    href={cookieToken ? `${taskData.document_link}?token=${cookieToken}` : taskData.document_link} 
                                     target="_blank" 
                                     rel="noopener" 
                                     className={styles.Button}
