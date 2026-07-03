@@ -200,15 +200,40 @@ export default function DetailsDisplayer({
                                 👤 เพิ่มเข้าระบบโดย: <span className="font-bold text-(--blueText)">{taskData?.creatorName || "ไม่ระบุ"}</span>
                             </p>
                             {taskData?.document_link && (
-                                <a 
-                                    href={cookieToken ? `${taskData.document_link}?token=${cookieToken}` : taskData.document_link} 
-                                    target="_blank" 
-                                    rel="noopener" 
+                                <button 
+                                    onClick={async () => {
+                                        const newWindow = window.open('', '_blank');
+                                        if (newWindow) {
+                                            newWindow.document.title = "Document Viewer";
+                                            newWindow.document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;"><h2>กำลังโหลดไฟล์...</h2></div>';
+                                        }
+                                        try {
+                                            const res = await fetch(taskData.document_link, {
+                                                headers: { Authorization: `Bearer ${cookieToken}` }
+                                            });
+                                            if (!res.ok) throw new Error("Failed to fetch document");
+                                            
+                                            const blob = await res.blob();
+                                            const contentType = res.headers.get("content-type") || "application/pdf";
+                                            const fileBlob = new Blob([blob], { type: contentType });
+                                            const url = window.URL.createObjectURL(fileBlob);
+                                            
+                                            if (newWindow) {
+                                                newWindow.location.href = url;
+                                            } else {
+                                                window.location.href = url;
+                                            }
+                                        } catch (err) {
+                                            console.error("Error opening document:", err);
+                                            if (newWindow) newWindow.close();
+                                            alert("เกิดข้อผิดพลาดในการเปิดไฟล์");
+                                        }
+                                    }}
                                     className={styles.Button}
-                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1rem', textDecoration: 'none' }}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1rem', border: 'none', cursor: 'pointer' }}
                                 >
-                                    📄 เปิดดูไฟล์เอกสารต้นฉบับ
-                                </a>
+                                    📄 เปิดดูไฟล์เอกสารต้นฉบับ (ปลอดภัย)
+                                </button>
                             )}
                             <div className={styles.TextArea} style={{ 
                                 padding: '1rem', 
