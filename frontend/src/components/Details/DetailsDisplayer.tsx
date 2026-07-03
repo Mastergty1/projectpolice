@@ -208,7 +208,12 @@ export default function DetailsDisplayer({
                                             newWindow.document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;"><h2>กำลังโหลดไฟล์...</h2></div>';
                                         }
                                         try {
-                                            const res = await fetch(taskData.document_link, {
+                                            let fetchUrl = taskData.document_link;
+                                            if (fetchUrl.includes('vercel.app') && fetchUrl.startsWith('http://')) {
+                                                fetchUrl = fetchUrl.replace('http://', 'https://');
+                                            }
+
+                                            const res = await fetch(fetchUrl, {
                                                 headers: { Authorization: `Bearer ${cookieToken}` }
                                             });
                                             if (!res.ok) {

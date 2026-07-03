@@ -15,6 +15,7 @@ const documents = require("./routes/documents");
 const tasks = require("./routes/tasks"); 
 
 const app = express();
+app.set("trust proxy", 1); // 💡 Vercel อยู่หลัง Proxy ทำให้ req.protocol กลายเป็น http ถ้าไม่ใส่คำสั่งนี้
 
 const swaggerOptions = {
   swaggerDefinition: {
