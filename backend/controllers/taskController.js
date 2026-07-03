@@ -103,22 +103,18 @@ exports.confirmTasks = async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const { fileInfo, memos, createdBy } = req.body;
+    
+    // รับข้อมูลมาจาก FormData
+    const data = JSON.parse(req.body.data);
+    const { fileInfo, memos, createdBy } = data;
+    const file = req.file; // ไฟล์ต้นฉบับที่ส่งมาพร้อมกัน
+
     const validCreatorId = createdBy ? createdBy : null;
     let documentId = null;
 
-    if (fileInfo && fileInfo.path) {
-      // 🔒 Snyk Fix (CWE-22): ทำความสะอาด path ที่รับมาจาก Frontend 
-      const safeFileName = path.basename(fileInfo.path);
-      const safePath = path.join(process.cwd(), 'uploads', safeFileName);
-      
-      // บังคับเปลี่ยน path เป็นอันที่ปลอดภัย
-      fileInfo.path = safePath;
-
-      const driveData = await uploadToDrive(
-        { path: fileInfo.path, originalname: fileInfo.originalname, mimetype: fileInfo.mimetype },
-        DRIVE_FOLDER_ID
-      );
+    if (fileInfo && file) {
+      // ทำการอัปโหลดไฟล์ไปที่ Supabase ทันทีที่กดยืนยัน! (ดึงจาก Memory Storage)
+      const driveData = await uploadToDrive(file);
 
       const hash = generateHash(fileInfo.text + Date.now().toString());
 

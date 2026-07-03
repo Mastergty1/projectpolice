@@ -45,6 +45,7 @@ interface FileData {
 
 interface UploadedProps {
     extractedData: FileResult[] | null; 
+    rawFiles?: File[]; // รับไฟล์ต้นฉบับมาจาก parent
 }
 
 const parseThaiDate = (dateStr: string | undefined): Date | null => {
@@ -67,7 +68,7 @@ const parseThaiDate = (dateStr: string | undefined): Date | null => {
     return monthIndex === -1 ? null : new Date(year, monthIndex, day);
 };
 
-export default function Uploaded({ extractedData }: UploadedProps) {
+export default function Uploaded({ extractedData, rawFiles }: UploadedProps) {
     const router = useRouter();
 
     const [users, setUsers] = useState<any[]>([]);
@@ -261,15 +262,24 @@ export default function Uploaded({ extractedData }: UploadedProps) {
                     return { ...memo, assignments: finalAssignments, due_date: baseDate.toISOString().split('T')[0] };
                 });
 
+                const formData = new FormData();
+                formData.append('data', JSON.stringify({ 
+                    fileInfo: file.fileInfo,
+                    documentId: file.documentId, 
+                    memos: memosWithDueDate,
+                    createdBy: currentUserId 
+                }));
+
+                if (rawFiles && rawFiles.length > 0) {
+                    const rawFile = rawFiles.find(rf => rf.name === file.filename);
+                    if (rawFile) {
+                        formData.append('file', rawFile);
+                    }
+                }
+
                 const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003"}/api/v1/tasks/confirm`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ 
-                        fileInfo: file.fileInfo,
-                        documentId: file.documentId, 
-                        memos: memosWithDueDate,
-                        createdBy: currentUserId 
-                    })
+                    body: formData // ไม่ต้องใส่ Content-Type Browser จัดการให้เอง
                 });
                 
                 if (!res.ok) throw new Error(`เกิดข้อผิดพลาดในการบันทึกข้อมูลไฟล์: ${file.filename}`);

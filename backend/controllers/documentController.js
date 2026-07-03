@@ -11,14 +11,8 @@ exports.processDocuments = async (req, res) => {
   const userName = req.user ? req.user.name : "Unknown"; 
 
   for (const file of files) {
-    let safePath;
     try {
-      // 🔒 Snyk Fix (CWE-22): บังคับให้เป็นแค่ชื่อไฟล์ หั่น Path ../ ทิ้งทั้งหมด
-      const safeFileName = path.basename(file.path);
-      // รวมกับ Default Directory ของโปรเจค (แก้ path ไปที่โฟลเดอร์เก็บไฟล์ของคุณ เช่น uploads)
-      safePath = path.join(process.cwd(), 'uploads', safeFileName);
-
-      const geminiResult = await extractDataWithGemini(safePath, file.mimetype);
+      const geminiResult = await extractDataWithGemini(file.buffer, file.mimetype);
       const { text, extractedData } = geminiResult;
 
       let dataWithDefaultUser = extractedData || {};
@@ -29,7 +23,6 @@ exports.processDocuments = async (req, res) => {
         status: 'success',
         extractedData: dataWithDefaultUser,
         fileInfo: {
-            path: safePath, 
             originalname: file.originalname,
             mimetype: file.mimetype,
             text: text
@@ -37,9 +30,6 @@ exports.processDocuments = async (req, res) => {
       });
 
     } catch (err) {
-      try { 
-        if (safePath) await fs.unlink(safePath); 
-      } catch (e) {}
       results.push({ filename: file.originalname, status: 'error', error: err.message });
     }
   }

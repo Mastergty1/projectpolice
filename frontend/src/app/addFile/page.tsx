@@ -7,6 +7,7 @@ import Uploaded from "@/components/Uploader/Uploaded";
 export default function AddFilePage() {
     // สร้าง State สำหรับเก็บข้อมูลที่สแกนได้ และ % การอัพโหลด
     const [extractedData, setExtractedData] = useState<any>(null);
+    const [rawFiles, setRawFiles] = useState<File[]>([]);
     const [progress, setProgress] = useState<number>(0);
 
     return (
@@ -15,13 +16,14 @@ export default function AddFilePage() {
                 {/* ส่งฟังก์ชันไปให้ Uploader เพื่อรับข้อมูลกลับมา */}
                 <FileUploader 
                     setExtractedData={setExtractedData} 
+                    setRawFiles={setRawFiles}
                     progress={progress}
                     setProgress={setProgress}
                 />
             </div>
             <div className="flex flex-2 min-h-0 ">
-                {/* ส่งข้อมูลที่ได้ ไปให้ Uploaded แสดงผลทางขวา */}
-                <Uploaded extractedData={extractedData} /> 
+                {/* ส่งข้อมูลที่ได้ ไปให้ Uploaded แสดงผลทางขวา พร้อมไฟล์ต้นฉบับ */}
+                <Uploaded extractedData={extractedData} rawFiles={rawFiles} /> 
             </div>
         </div>
     );

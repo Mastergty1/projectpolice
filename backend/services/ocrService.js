@@ -14,17 +14,17 @@ const genAI = new GoogleGenerativeAI(apiKey);
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // ฟังก์ชันแปลงไฟล์เป็นรูปแบบที่ Gemini รองรับ (Inline Data)
-function fileToGenerativePart(filePath, mimeType) {
+function fileToGenerativePart(fileBuffer, mimeType) {
   return {
     inlineData: {
-      data: Buffer.from(fs.readFileSync(filePath)).toString("base64"),
+      data: fileBuffer.toString("base64"),
       mimeType
     },
   };
 }
 
 // ฟังก์ชันหลักที่ใช้ประมวลผลด้วย Gemini
-exports.extractDataWithGemini = async (filePath, mimeType) => {
+exports.extractDataWithGemini = async (fileBuffer, mimeType) => {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" }); 
 
@@ -73,7 +73,7 @@ exports.extractDataWithGemini = async (filePath, mimeType) => {
     3. หากพบเนื้อหาหลัง "เรียน" แต่ไม่มีการมอบหมายงานชัดเจน ให้ใส่ค่าใน 'main_text' และปล่อย 'assignments' เป็น Array ว่าง
     `;
 
-    const filePart = fileToGenerativePart(filePath, mimeType);
+    const filePart = fileToGenerativePart(fileBuffer, mimeType);
 
     let parsedData = null;
     let maxRetries = 3; 

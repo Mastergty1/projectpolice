@@ -10,7 +10,7 @@ const BUCKET_NAME = process.env.SUPABASE_BUCKET_NAME || 'DOCUMENT';
  */
 const uploadToDrive = async (fileObject) => {
   try {
-    const fileContent = fs.readFileSync(fileObject.path);
+    const fileContent = fileObject.buffer;
     // สร้างชื่อไฟล์ที่ไม่ซ้ำกันเพื่อป้องกันการเขียนทับ
     const uniqueFilename = `${Date.now()}_${fileObject.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
     const filePath = `uploads/${uniqueFilename}`;

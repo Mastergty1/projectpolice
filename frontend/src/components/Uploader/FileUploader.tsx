@@ -7,11 +7,12 @@ import { useRouter } from "next/navigation";
 
 interface FileUploaderProps {
     setExtractedData: (data: any) => void;
+    setRawFiles: (files: File[]) => void;
     progress: number;
     setProgress: (progress: number) => void;
 }
 
-export default function FileUploader({ setExtractedData, progress, setProgress }: FileUploaderProps) {
+export default function FileUploader({ setExtractedData, setRawFiles, progress, setProgress }: FileUploaderProps) {
     const router = useRouter();
     const [files, setFiles] = useState<File[]>([]);
     const [isUploading, setIsUploading] = useState(false);
@@ -86,11 +87,11 @@ export default function FileUploader({ setExtractedData, progress, setProgress }
                 } else {
                     setMessage({ text: "แสกนข้อมูลสำเร็จ! กรุณาตรวจสอบและมอบหมายงานทางขวามือ", type: "success" });
                 }
-                
-                setFiles([]); 
                 if (results) {
                     setExtractedData(results);
+                    setRawFiles(files); // เก็บไฟล์ต้นฉบับไว้สำหรับตอนยืนยัน
                 }
+                setFiles([]); 
             }
         } catch (error: any) {
             console.error("Upload error:", error);
