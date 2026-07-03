@@ -25,18 +25,35 @@ export default function AllTask() {
     useEffect(() => {
         const fetchTasks = async () => {
             try {
+                const cacheKey = 'allTasksCache';
+                const timeKey = 'allTasksCacheTime';
+                const cachedData = sessionStorage.getItem(cacheKey);
+                const cacheTime = sessionStorage.getItem(timeKey);
+
+                if (cachedData) {
+                    setTasks(JSON.parse(cachedData));
+                    setIsLoading(false); // ทันทีทันใด ไม่ต้องรอ
+                    // ถ้าข้อมูลเพิ่งโหลดมาไม่เกิน 30 วินาที ไม่ต้องไปกวน Backend ซ้ำ (ประหยัดโควต้า)
+                    if (cacheTime && Date.now() - parseInt(cacheTime) < 30000) return;
+                }
+
                 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5003";
                 const response = await fetch(`${backendUrl}/api/v1/tasks`);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    if (data && data.length > 0) setTasks(data);
-                    else setTasks(initialTaskData);
-                } else {
+                    if (data && data.length > 0) {
+                        setTasks(data);
+                        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+                        sessionStorage.setItem(timeKey, Date.now().toString());
+                    } else {
+                        setTasks(initialTaskData);
+                    }
+                } else if (!cachedData) {
                     setTasks(initialTaskData);
                 }
             } catch (error) {
-                setTasks(initialTaskData);
+                if (!sessionStorage.getItem('allTasksCache')) setTasks(initialTaskData);
             } finally {
                 setIsLoading(false);
             }
@@ -68,9 +85,11 @@ export default function AllTask() {
 
             if (!response.ok) throw new Error("Failed to update status in database");
             
-            setTasks((prevTasks) =>
-                prevTasks.map((task) => task.id === id ? { ...task, status: newStatus } : task)
-            );
+            setTasks((prevTasks) => {
+                const updatedTasks = prevTasks.map((task) => task.id === id ? { ...task, status: newStatus } : task);
+                sessionStorage.setItem('allTasksCache', JSON.stringify(updatedTasks));
+                return updatedTasks;
+            });
 
             window.dispatchEvent(
                 new CustomEvent("taskStatusSync", {
